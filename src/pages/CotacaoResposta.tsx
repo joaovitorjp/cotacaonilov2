@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
