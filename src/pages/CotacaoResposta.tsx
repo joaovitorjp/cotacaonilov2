@@ -78,7 +78,7 @@ const CotacaoResposta = () => {
       .select('empresa, resposta')
       .eq('lista_id', linkData.lista_id);
 
-    setRespostas(resps ?? []);
+    setRespostas((resps ?? []).map((d: any) => ({ empresa: d.empresa, resposta: d.resposta as any[] })));
     setLoading(false);
   };
 

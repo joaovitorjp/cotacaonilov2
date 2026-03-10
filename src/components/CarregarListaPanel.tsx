@@ -45,7 +45,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
     if (error) {
       toast.error('Erro ao carregar listas.');
     } else {
-      setListas(data ?? []);
+      setListas((data ?? []).map((d: any) => ({ ...d, produtos: d.produtos as any[] })));
     }
     setLoading(false);
   };

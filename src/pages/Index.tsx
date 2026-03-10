@@ -35,7 +35,7 @@ const Index = () => {
       .from('respostas')
       .select('empresa, resposta')
       .eq('lista_id', listaId);
-    setRespostas(data ?? []);
+    setRespostas((data ?? []).map((d: any) => ({ empresa: d.empresa, resposta: d.resposta as any[] })));
   }, []);
 
   const handleListaSelected = async (lista: Lista, finalized = false) => {
