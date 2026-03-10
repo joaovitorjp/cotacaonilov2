@@ -70,7 +70,7 @@ const CotacaoResposta = () => {
       return;
     }
 
-    setProdutos(lista.produtos);
+    setProdutos(lista.produtos as any as Produto[]);
 
     // Load existing respostas (excluding this empresa)
     const { data: resps } = await supabase
