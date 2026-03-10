@@ -14,7 +14,100 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      links_cotacao: {
+        Row: {
+          created_at: string
+          empresa: string
+          id: string
+          lista_id: string
+          respondido: boolean
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          empresa: string
+          id?: string
+          lista_id: string
+          respondido?: boolean
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          empresa?: string
+          id?: string
+          lista_id?: string
+          respondido?: boolean
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "links_cotacao_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "listas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listas: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          produtos: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          produtos?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          produtos?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      respostas: {
+        Row: {
+          created_at: string
+          empresa: string
+          id: string
+          lista_id: string
+          resposta: Json
+        }
+        Insert: {
+          created_at?: string
+          empresa: string
+          id?: string
+          lista_id: string
+          resposta?: Json
+        }
+        Update: {
+          created_at?: string
+          empresa?: string
+          id?: string
+          lista_id?: string
+          resposta?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "respostas_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "listas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
