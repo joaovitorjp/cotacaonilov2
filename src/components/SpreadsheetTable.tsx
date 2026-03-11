@@ -78,7 +78,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   editableColumn === emp ? 'bg-primary text-primary-foreground' : 'text-foreground'
                 }`}
               >
-                Preço {emp}
+                {emp}
               </th>
             ))}
             {editableColumn && !empresas.includes(editableColumn) && (
