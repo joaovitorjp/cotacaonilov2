@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
@@ -6,6 +6,7 @@ import ImportListaPanel from '@/components/ImportListaPanel';
 import CarregarListaPanel from '@/components/CarregarListaPanel';
 import GerarLinkPanel from '@/components/GerarLinkPanel';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 interface Lista {
   id: string;
@@ -61,6 +62,41 @@ const Index = () => {
     }
   };
 
+  const handleExport = async (lista: Lista) => {
+    // Load respostas for this lista
+    const { data } = await supabase
+      .from('respostas')
+      .select('empresa, resposta')
+      .eq('lista_id', lista.id);
+
+    const resps: RespostaEmpresa[] = (data ?? []).map((d: any) => ({
+      empresa: d.empresa,
+      resposta: d.resposta as any[],
+    }));
+
+    const empresas = resps.map(r => r.empresa);
+
+    const rows = lista.produtos.map(prod => {
+      const row: Record<string, string | number> = {
+        'Código Interno': prod.codigo_interno,
+        'Descrição': prod.descricao,
+        'Código de Barras': prod.codigo_barras,
+      };
+      for (const emp of empresas) {
+        const resp = resps.find(r => r.empresa === emp);
+        const item = resp?.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+        row[`Preço ${emp}`] = item?.preco ?? '';
+      }
+      return row;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cotação');
+    XLSX.writeFile(wb, `${lista.nome}.xlsx`);
+    toast.success('Planilha exportada!');
+  };
+
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
@@ -98,6 +134,11 @@ const Index = () => {
               FINALIZADA
             </span>
           )}
+          {!isFinalized && respostas.length > 0 && (
+            <Button variant="outline" size="sm" className="ml-auto" onClick={() => loadRespostas(currentLista.id)}>
+              Atualizar Respostas
+            </Button>
+          )}
         </div>
       )}
 
@@ -106,6 +147,7 @@ const Index = () => {
         produtos={currentLista?.produtos ?? []}
         respostas={respostas}
         readOnly={isFinalized}
+        highlightLowest={!isFinalized && respostas.length > 1}
       />
 
       {/* Floating button */}
@@ -137,6 +179,7 @@ const Index = () => {
         onListaSelected={lista => handleListaSelected(lista, true)}
         statusFilter="finalizada"
         title="Cotações Finalizadas"
+        onExport={handleExport}
       />
       {currentLista && (
         <GerarLinkPanel
