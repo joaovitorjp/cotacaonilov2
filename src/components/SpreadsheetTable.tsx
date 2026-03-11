@@ -83,7 +83,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             ))}
             {editableColumn && !empresas.includes(editableColumn) && (
               <th className="border border-border px-3 py-2 text-center font-display font-bold whitespace-nowrap bg-primary text-primary-foreground">
-                Preço {editableColumn}
+                {editableColumn}
               </th>
             )}
           </tr>
