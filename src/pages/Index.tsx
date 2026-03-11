@@ -147,7 +147,7 @@ const Index = () => {
         produtos={currentLista?.produtos ?? []}
         respostas={respostas}
         readOnly={isFinalized}
-        highlightLowest={!isFinalized && respostas.length > 1}
+        highlightLowest={respostas.length > 1}
       />
 
       {/* Floating button */}
