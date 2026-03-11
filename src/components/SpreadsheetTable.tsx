@@ -64,17 +64,17 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   return (
     <div className="flex-1 overflow-auto border border-border">
-      <table className="w-full border-collapse font-body text-sm">
+      <table className="border-collapse font-body text-sm w-max">
         <thead className="sticky top-0 z-10">
           <tr className="bg-card">
-            <th className="border border-border px-3 py-2 text-left font-display font-bold text-foreground min-w-[60px]">#</th>
-            <th className="border border-border px-3 py-2 text-left font-display font-bold text-foreground min-w-[120px] sticky left-0 bg-card z-20">Código Interno</th>
-            <th className="border border-border px-3 py-2 text-left font-display font-bold text-foreground min-w-[300px]">Descrição</th>
-            <th className="border border-border px-3 py-2 text-left font-display font-bold text-foreground min-w-[150px]">Código de Barras</th>
+            <th className="border border-border px-3 py-2 text-center font-display font-bold text-foreground whitespace-nowrap">#</th>
+            <th className="border border-border px-3 py-2 text-center font-display font-bold text-foreground whitespace-nowrap sticky left-0 bg-card z-20">Código Interno</th>
+            <th className="border border-border px-3 py-2 text-left font-display font-bold text-foreground whitespace-nowrap">Descrição</th>
+            <th className="border border-border px-3 py-2 text-center font-display font-bold text-foreground whitespace-nowrap">Código de Barras</th>
             {empresas.map(emp => (
               <th
                 key={emp}
-                className={`border border-border px-3 py-2 text-left font-display font-bold min-w-[140px] ${
+                className={`border border-border px-3 py-2 text-center font-display font-bold whitespace-nowrap ${
                   editableColumn === emp ? 'bg-primary text-primary-foreground' : 'text-foreground'
                 }`}
               >
@@ -82,7 +82,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               </th>
             ))}
             {editableColumn && !empresas.includes(editableColumn) && (
-              <th className="border border-border px-3 py-2 text-left font-display font-bold min-w-[140px] bg-primary text-primary-foreground">
+              <th className="border border-border px-3 py-2 text-center font-display font-bold whitespace-nowrap bg-primary text-primary-foreground">
                 Preço {editableColumn}
               </th>
             )}
