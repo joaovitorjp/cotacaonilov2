@@ -154,23 +154,21 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                   </button>
                   <div className="flex items-center gap-1 shrink-0">
                     {statusFilter === 'aberta' && (
-                      <>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setRenameTarget(lista); setRenameValue(lista.nome); }}
-                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                          title="Renomear"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleReplicate(lista); }}
-                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                          title="Replicar"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setRenameTarget(lista); setRenameValue(lista.nome); }}
+                        className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                        title="Renomear"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                     )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleReplicate(lista); }}
+                      className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      title="Replicar"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
                     {statusFilter === 'finalizada' && onExport && (
                       <Button
                         variant="outline"
