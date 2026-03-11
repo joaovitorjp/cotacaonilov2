@@ -85,7 +85,7 @@ const Index = () => {
       for (const emp of empresas) {
         const resp = resps.find(r => r.empresa === emp);
         const item = resp?.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
-        row[`Preço ${emp}`] = item?.preco ?? '';
+        row[emp] = item?.preco ?? '';
       }
       return row;
     });

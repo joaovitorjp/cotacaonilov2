@@ -122,9 +122,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             onChange={e => onPriceChange?.(idx, e.target.value)}
                             placeholder="0,00"
                           />
-                        ) : (
-                          getPreco(emp, prod.codigo_interno)
-                        )}
+                        ) : (() => {
+                          const raw = getPreco(emp, prod.codigo_interno);
+                          if (raw === '' || raw === undefined || raw === null) return '';
+                          const num = parsePrice(raw as string | number);
+                          return num === Infinity ? raw : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
+                        })()}
                       </td>
                     );
                   })}
