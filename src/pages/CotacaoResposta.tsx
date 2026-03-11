@@ -19,7 +19,7 @@ const CotacaoResposta = () => {
   const [listaId, setListaId] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [respostas, setRespostas] = useState<{ empresa: string; resposta: any[] }[]>([]);
-  const [prices, setPrices] = useState<Record<string, string>>({});
+  const [prices, setPrices] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [linkRespondido, setLinkRespondido] = useState(false);
@@ -31,7 +31,6 @@ const CotacaoResposta = () => {
   const loadData = async () => {
     if (!token) { setError('Link inválido.'); setLoading(false); return; }
 
-    // Find link
     const { data: linkData, error: linkErr } = await supabase
       .from('links_cotacao')
       .select('*')
@@ -51,7 +50,6 @@ const CotacaoResposta = () => {
     setEmpresa(linkData.empresa);
     setListaId(linkData.lista_id);
 
-    // Load lista
     const { data: lista } = await supabase
       .from('listas')
       .select('*')
@@ -70,27 +68,38 @@ const CotacaoResposta = () => {
       return;
     }
 
-    setProdutos(lista.produtos as any as Produto[]);
+    const prods = lista.produtos as any as Produto[];
+    setProdutos(prods);
 
-    // Load existing respostas (excluding this empresa)
     const { data: resps } = await supabase
       .from('respostas')
       .select('empresa, resposta')
       .eq('lista_id', linkData.lista_id);
 
     setRespostas((resps ?? []).map((d: any) => ({ empresa: d.empresa, resposta: d.resposta as any[] })));
+
+    // Pre-fill prices if already responded
+    const myResp = (resps ?? []).find((r: any) => r.empresa === linkData.empresa);
+    if (myResp) {
+      const prefilled: Record<number, string> = {};
+      prods.forEach((p, idx) => {
+        const item = (myResp.resposta as any[]).find((i: any) => i.codigo_interno === p.codigo_interno);
+        if (item && item.preco) prefilled[idx] = String(item.preco);
+      });
+      setPrices(prefilled);
+    }
+
     setLoading(false);
   };
 
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const resposta = produtos.map(p => ({
+      const resposta = produtos.map((p, idx) => ({
         codigo_interno: p.codigo_interno,
-        preco: prices[p.codigo_interno] || '',
+        preco: prices[idx] || '',
       }));
 
-      // Upsert response
       const existing = respostas.find(r => r.empresa === empresa);
       if (existing) {
         await supabase
@@ -104,7 +113,6 @@ const CotacaoResposta = () => {
           .insert({ lista_id: listaId, empresa, resposta });
       }
 
-      // Mark link as responded
       await supabase
         .from('links_cotacao')
         .update({ respondido: true })
@@ -163,7 +171,7 @@ const CotacaoResposta = () => {
         produtos={produtos}
         respostas={[]}
         editableColumn={empresa}
-        onPriceChange={(codigo, preco) => setPrices(prev => ({ ...prev, [codigo]: preco }))}
+        onPriceChange={(rowIndex, preco) => setPrices(prev => ({ ...prev, [rowIndex]: preco }))}
         editPrices={prices}
       />
 

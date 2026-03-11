@@ -16,9 +16,18 @@ interface SpreadsheetTableProps {
   respostas: RespostaEmpresa[];
   readOnly?: boolean;
   editableColumn?: string;
-  onPriceChange?: (codigoInterno: string, preco: string) => void;
-  editPrices?: Record<string, string>;
+  onPriceChange?: (rowIndex: number, preco: string) => void;
+  editPrices?: Record<number, string>;
+  highlightLowest?: boolean;
 }
+
+const parsePrice = (val: string | number): number => {
+  if (typeof val === 'number') return val;
+  if (!val || val === '') return Infinity;
+  const normalized = val.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(normalized);
+  return isNaN(num) ? Infinity : num;
+};
 
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   produtos,
@@ -27,6 +36,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   editableColumn,
   onPriceChange,
   editPrices = {},
+  highlightLowest = false,
 }) => {
   const empresas = respostas.map(r => r.empresa);
 
@@ -35,6 +45,21 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (!resp) return '';
     const item = resp.resposta.find(i => i.codigo_interno === codigoInterno);
     return item ? item.preco : '';
+  };
+
+  const getLowestEmpresa = (codigoInterno: string): string | null => {
+    if (!highlightLowest || empresas.length === 0) return null;
+    let lowest = Infinity;
+    let lowestEmp: string | null = null;
+    for (const emp of empresas) {
+      const raw = getPreco(emp, codigoInterno);
+      const val = parsePrice(raw as string | number);
+      if (val < lowest && val > 0) {
+        lowest = val;
+        lowestEmp = emp;
+      }
+    }
+    return lowestEmp;
   };
 
   return (
@@ -71,44 +96,55 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               </td>
             </tr>
           ) : (
-            produtos.map((prod, idx) => (
-              <tr key={prod.codigo_interno + idx} className="hover:bg-muted/30">
-                <td className="border border-border px-3 py-1.5 text-muted-foreground">{idx + 1}</td>
-                <td className="border border-border px-3 py-1.5 sticky left-0 bg-background">{prod.codigo_interno}</td>
-                <td className="border border-border px-3 py-1.5">{prod.descricao}</td>
-                <td className="border border-border px-3 py-1.5">{prod.codigo_barras}</td>
-                {empresas.map(emp => (
-                  <td key={emp} className={`border border-border px-3 py-1.5 ${editableColumn === emp ? 'bg-primary/5' : ''}`}>
-                    {editableColumn === emp && !readOnly ? (
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1"
-                        value={editPrices[prod.codigo_interno] ?? ''}
-                        onChange={e => onPriceChange?.(prod.codigo_interno, e.target.value)}
-                        placeholder="0,00"
-                      />
-                    ) : (
-                      getPreco(emp, prod.codigo_interno)
-                    )}
-                  </td>
-                ))}
-                {editableColumn && !empresas.includes(editableColumn) && (
-                  <td className="border border-border px-3 py-1.5 bg-primary/5">
-                    {!readOnly ? (
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1"
-                        value={editPrices[prod.codigo_interno] ?? ''}
-                        onChange={e => onPriceChange?.(prod.codigo_interno, e.target.value)}
-                        placeholder="0,00"
-                      />
-                    ) : ''}
-                  </td>
-                )}
-              </tr>
-            ))
+            produtos.map((prod, idx) => {
+              const lowestEmp = getLowestEmpresa(prod.codigo_interno);
+              return (
+                <tr key={idx} className="hover:bg-muted/30">
+                  <td className="border border-border px-3 py-1.5 text-muted-foreground">{idx + 1}</td>
+                  <td className="border border-border px-3 py-1.5 sticky left-0 bg-background">{prod.codigo_interno}</td>
+                  <td className="border border-border px-3 py-1.5">{prod.descricao}</td>
+                  <td className="border border-border px-3 py-1.5">{prod.codigo_barras}</td>
+                  {empresas.map(emp => {
+                    const isLowest = lowestEmp === emp;
+                    const cellClass = editableColumn === emp
+                      ? 'bg-primary/5'
+                      : isLowest
+                        ? 'bg-green-100 text-green-800 font-bold'
+                        : '';
+                    return (
+                      <td key={emp} className={`border border-border px-3 py-1.5 ${cellClass}`}>
+                        {editableColumn === emp && !readOnly ? (
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1"
+                            value={editPrices[idx] ?? ''}
+                            onChange={e => onPriceChange?.(idx, e.target.value)}
+                            placeholder="0,00"
+                          />
+                        ) : (
+                          getPreco(emp, prod.codigo_interno)
+                        )}
+                      </td>
+                    );
+                  })}
+                  {editableColumn && !empresas.includes(editableColumn) && (
+                    <td className="border border-border px-3 py-1.5 bg-primary/5">
+                      {!readOnly ? (
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1"
+                          value={editPrices[idx] ?? ''}
+                          onChange={e => onPriceChange?.(idx, e.target.value)}
+                          placeholder="0,00"
+                        />
+                      ) : ''}
+                    </td>
+                  )}
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
