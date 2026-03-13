@@ -7,6 +7,8 @@ import CarregarListaPanel from '@/components/CarregarListaPanel';
 import GerarLinkPanel from '@/components/GerarLinkPanel';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/contexts/AuthContext';
+import { LogOut } from 'lucide-react';
 
 interface Lista {
   id: string;
@@ -22,6 +24,7 @@ interface RespostaEmpresa {
 }
 
 const Index = () => {
+  const { signOut } = useAuth();
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
@@ -186,6 +189,9 @@ const Index = () => {
           </Button>
           <Button variant="outline" onClick={() => setFinalizadasOpen(true)}>
             Cotações Finalizadas
+          </Button>
+          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </header>
