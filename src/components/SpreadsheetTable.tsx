@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 
 interface Produto {
   codigo_interno: string;
@@ -28,6 +28,10 @@ const parsePrice = (val: string | number): number => {
   const num = parseFloat(normalized);
   return isNaN(num) ? Infinity : num;
 };
+
+const MIN_COL_WIDTH = 40;
+const MIN_ROW_HEIGHT = 24;
+const DEFAULT_ROW_HEIGHT = 30;
 
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   produtos,
@@ -70,45 +74,125 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const fillerCols = gridCols - totalCols;
   const rowCount = produtos.length > 0 ? produtos.length : EMPTY_ROWS;
   const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : 0;
+  const totalRows = rowCount + fillerRows;
+
+  // Column widths state: keyed by column index
+  const [colWidths, setColWidths] = useState<Record<number, number>>({});
+  // Row heights state: keyed by row index
+  const [rowHeights, setRowHeights] = useState<Record<number, number>>({});
+
+  // Resize refs
+  const resizingCol = useRef<{ colIdx: number; startX: number; startW: number } | null>(null);
+  const resizingRow = useRef<{ rowIdx: number; startY: number; startH: number } | null>(null);
+
+  const handleColResizeStart = useCallback((e: React.MouseEvent, colIdx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startW = colWidths[colIdx] || 100;
+    resizingCol.current = { colIdx, startX, startW };
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!resizingCol.current) return;
+      const diff = ev.clientX - resizingCol.current.startX;
+      const newW = Math.max(MIN_COL_WIDTH, resizingCol.current.startW + diff);
+      setColWidths(prev => ({ ...prev, [resizingCol.current!.colIdx]: newW }));
+    };
+    const onMouseUp = () => {
+      resizingCol.current = null;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [colWidths]);
+
+  const handleRowResizeStart = useCallback((e: React.MouseEvent, rowIdx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startY = e.clientY;
+    const startH = rowHeights[rowIdx] || DEFAULT_ROW_HEIGHT;
+    resizingRow.current = { rowIdx, startY, startH };
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!resizingRow.current) return;
+      const diff = ev.clientY - resizingRow.current.startY;
+      const newH = Math.max(MIN_ROW_HEIGHT, resizingRow.current.startH + diff);
+      setRowHeights(prev => ({ ...prev, [resizingRow.current!.rowIdx]: newH }));
+    };
+    const onMouseUp = () => {
+      resizingRow.current = null;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [rowHeights]);
+
+  // Build column definitions for consistent indexing
+  const colDefs: { key: string; label: string; align: string; sticky?: boolean; highlight?: boolean }[] = [
+    { key: '#', label: '#', align: 'center' },
+    { key: 'cod_int', label: 'Código Interno', align: 'center', sticky: true },
+    { key: 'desc', label: 'Descrição', align: 'left' },
+    { key: 'cod_bar', label: 'Código de Barras', align: 'center' },
+    ...empresas.map(emp => ({ key: `emp_${emp}`, label: emp, align: 'center', highlight: editableColumn === emp })),
+    ...(editableColumn && !empresas.includes(editableColumn) ? [{ key: `emp_${editableColumn}`, label: editableColumn, align: 'center', highlight: true }] : []),
+    ...Array.from({ length: fillerCols }).map((_, i) => ({ key: `filler_${i}`, label: '', align: 'center' })),
+  ];
 
   return (
     <div className="flex-1 overflow-auto border border-border">
-      <table className="border-collapse font-body text-sm w-full min-w-max">
+      <table className="border-collapse font-body text-sm w-full min-w-max" style={{ tableLayout: 'fixed' }}>
+        <colgroup>
+          {colDefs.map((col, i) => (
+            <col key={col.key} style={{ width: colWidths[i] ? `${colWidths[i]}px` : (i === 0 ? '40px' : i === 2 ? '250px' : '120px') }} />
+          ))}
+        </colgroup>
         <thead className="sticky top-0 z-10">
           <tr className="bg-card">
-            <th className="border border-border px-3 py-2 text-center font-display font-bold text-foreground whitespace-nowrap">#</th>
-            <th className="border border-border px-3 py-2 text-center font-display font-bold text-foreground whitespace-nowrap sticky left-0 bg-card z-20">Código Interno</th>
-            <th className="border border-border px-3 py-2 text-left font-display font-bold text-foreground whitespace-nowrap">Descrição</th>
-            <th className="border border-border px-3 py-2 text-center font-display font-bold text-foreground whitespace-nowrap">Código de Barras</th>
-            {empresas.map(emp => (
+            {colDefs.map((col, i) => (
               <th
-                key={emp}
-                className={`border border-border px-3 py-2 text-center font-display font-bold whitespace-nowrap ${
-                  editableColumn === emp ? 'bg-primary text-primary-foreground' : 'text-foreground'
-                }`}
+                key={col.key}
+                className={`border border-border px-3 py-2 font-display font-bold whitespace-nowrap relative select-none ${
+                  col.align === 'left' ? 'text-left' : 'text-center'
+                } ${col.sticky ? 'sticky left-0 bg-card z-20' : ''} ${col.highlight ? 'bg-primary text-primary-foreground' : 'text-foreground'}`}
+                style={{ height: DEFAULT_ROW_HEIGHT }}
               >
-                {emp}
+                {col.label}
+                {/* Column resize handle */}
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-[5px] cursor-col-resize hover:bg-primary/30 z-30"
+                  onMouseDown={e => handleColResizeStart(e, i)}
+                />
               </th>
-            ))}
-            {editableColumn && !empresas.includes(editableColumn) && (
-              <th className="border border-border px-3 py-2 text-center font-display font-bold whitespace-nowrap bg-primary text-primary-foreground">
-                {editableColumn}
-              </th>
-            )}
-            {Array.from({ length: fillerCols }).map((_, i) => (
-              <th key={`fh-${i}`} className="border border-border px-3 py-2">&nbsp;</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {produtos.map((prod, idx) => {
             const lowestEmp = getLowestEmpresa(prod.codigo_interno);
+            const h = rowHeights[idx] || DEFAULT_ROW_HEIGHT;
             return (
-              <tr key={idx} className="hover:bg-muted/30">
-                <td className="border border-border px-3 py-1.5 text-center text-muted-foreground whitespace-nowrap">{idx + 1}</td>
-                <td className="border border-border px-3 py-1.5 text-center sticky left-0 bg-background whitespace-nowrap">{prod.codigo_interno}</td>
-                <td className="border border-border px-3 py-1.5 whitespace-nowrap">{prod.descricao}</td>
-                <td className="border border-border px-3 py-1.5 text-center whitespace-nowrap">{prod.codigo_barras}</td>
+              <tr key={idx} className="hover:bg-muted/30 relative" style={{ height: `${h}px` }}>
+                <td className="border border-border px-3 text-center text-muted-foreground whitespace-nowrap relative">
+                  {idx + 1}
+                  {/* Row resize handle */}
+                  <div
+                    className="absolute left-0 right-0 bottom-0 h-[4px] cursor-row-resize hover:bg-primary/30 z-30"
+                    onMouseDown={e => handleRowResizeStart(e, idx)}
+                  />
+                </td>
+                <td className="border border-border px-3 text-center sticky left-0 bg-background whitespace-nowrap">{prod.codigo_interno}</td>
+                <td className="border border-border px-3 whitespace-nowrap overflow-hidden text-ellipsis">{prod.descricao}</td>
+                <td className="border border-border px-3 text-center whitespace-nowrap">{prod.codigo_barras}</td>
                 {empresas.map(emp => {
                   const isLowest = lowestEmp === emp;
                   const cellClass = editableColumn === emp
@@ -117,7 +201,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       ? 'bg-green-100 text-green-800 font-bold'
                       : '';
                   return (
-                    <td key={emp} className={`border border-border px-3 py-1.5 text-center whitespace-nowrap ${cellClass}`}>
+                    <td key={emp} className={`border border-border px-3 text-center whitespace-nowrap ${cellClass}`}>
                       {editableColumn === emp && !readOnly ? (
                         <input
                           type="text"
@@ -137,7 +221,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   );
                 })}
                 {editableColumn && !empresas.includes(editableColumn) && (
-                  <td className="border border-border px-3 py-1.5 text-center bg-primary/5 whitespace-nowrap">
+                  <td className="border border-border px-3 text-center bg-primary/5 whitespace-nowrap">
                     {!readOnly ? (
                       <input
                         type="text"
@@ -151,22 +235,29 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   </td>
                 )}
                 {Array.from({ length: fillerCols }).map((_, i) => (
-                  <td key={`fc-${i}`} className="border border-border px-3 py-1.5">&nbsp;</td>
+                  <td key={`fc-${i}`} className="border border-border px-3">&nbsp;</td>
                 ))}
               </tr>
             );
           })}
-          {/* Empty filler rows to fill the remaining space */}
-          {Array.from({ length: produtos.length === 0 ? EMPTY_ROWS : fillerRows }).map((_, rowIdx) => (
-            <tr key={`empty-${rowIdx}`}>
-              <td className="border border-border px-3 py-1.5 text-center text-muted-foreground whitespace-nowrap">
-                {produtos.length > 0 ? produtos.length + rowIdx + 1 : ''}
-              </td>
-              {Array.from({ length: gridCols - 1 }).map((_, colIdx) => (
-                <td key={`ec-${colIdx}`} className={`border border-border px-3 py-1.5 ${colIdx === 0 ? 'sticky left-0 bg-background' : ''}`}>&nbsp;</td>
-              ))}
-            </tr>
-          ))}
+          {Array.from({ length: produtos.length === 0 ? EMPTY_ROWS : fillerRows }).map((_, rowIdx) => {
+            const absIdx = produtos.length + rowIdx;
+            const h = rowHeights[absIdx] || DEFAULT_ROW_HEIGHT;
+            return (
+              <tr key={`empty-${rowIdx}`} style={{ height: `${h}px` }}>
+                <td className="border border-border px-3 text-center text-muted-foreground whitespace-nowrap relative">
+                  {produtos.length > 0 ? absIdx + 1 : ''}
+                  <div
+                    className="absolute left-0 right-0 bottom-0 h-[4px] cursor-row-resize hover:bg-primary/30 z-30"
+                    onMouseDown={e => handleRowResizeStart(e, absIdx)}
+                  />
+                </td>
+                {Array.from({ length: gridCols - 1 }).map((_, colIdx) => (
+                  <td key={`ec-${colIdx}`} className={`border border-border px-3 ${colIdx === 0 ? 'sticky left-0 bg-background' : ''}`}>&nbsp;</td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
