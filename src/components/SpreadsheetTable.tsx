@@ -62,9 +62,18 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return lowestEmp;
   };
 
+  const EMPTY_ROWS = 30;
+  const EMPTY_COLS = 8;
+
+  const totalCols = 4 + empresas.length + (editableColumn && !empresas.includes(editableColumn) ? 1 : 0);
+  const gridCols = Math.max(totalCols, EMPTY_COLS);
+  const fillerCols = gridCols - totalCols;
+  const rowCount = produtos.length > 0 ? produtos.length : EMPTY_ROWS;
+  const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : 0;
+
   return (
     <div className="flex-1 overflow-auto border border-border">
-      <table className="border-collapse font-body text-sm w-max">
+      <table className="border-collapse font-body text-sm w-full min-w-max">
         <thead className="sticky top-0 z-10">
           <tr className="bg-card">
             <th className="border border-border px-3 py-2 text-center font-display font-bold text-foreground whitespace-nowrap">#</th>
@@ -86,54 +95,30 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 {editableColumn}
               </th>
             )}
+            {Array.from({ length: fillerCols }).map((_, i) => (
+              <th key={`fh-${i}`} className="border border-border px-3 py-2">&nbsp;</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {produtos.length === 0 ? (
-            <tr>
-              <td colSpan={4 + empresas.length + (editableColumn && !empresas.includes(editableColumn) ? 1 : 0)} className="px-3 py-8 text-center text-muted-foreground">
-                Nenhum produto carregado. Use "Importar Lista" ou "Carregar Lista" para começar.
-              </td>
-            </tr>
-          ) : (
-            produtos.map((prod, idx) => {
-              const lowestEmp = getLowestEmpresa(prod.codigo_interno);
-              return (
-                <tr key={idx} className="hover:bg-muted/30">
-                  <td className="border border-border px-3 py-1.5 text-center text-muted-foreground whitespace-nowrap">{idx + 1}</td>
-                  <td className="border border-border px-3 py-1.5 text-center sticky left-0 bg-background whitespace-nowrap">{prod.codigo_interno}</td>
-                  <td className="border border-border px-3 py-1.5 whitespace-nowrap">{prod.descricao}</td>
-                  <td className="border border-border px-3 py-1.5 text-center whitespace-nowrap">{prod.codigo_barras}</td>
-                  {empresas.map(emp => {
-                    const isLowest = lowestEmp === emp;
-                    const cellClass = editableColumn === emp
-                      ? 'bg-primary/5'
-                      : isLowest
-                        ? 'bg-green-100 text-green-800 font-bold'
-                        : '';
-                    return (
-                      <td key={emp} className={`border border-border px-3 py-1.5 text-center whitespace-nowrap ${cellClass}`}>
-                        {editableColumn === emp && !readOnly ? (
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 text-center"
-                            value={editPrices[idx] ?? ''}
-                            onChange={e => onPriceChange?.(idx, e.target.value)}
-                            placeholder="0,00"
-                          />
-                        ) : (() => {
-                          const raw = getPreco(emp, prod.codigo_interno);
-                          if (raw === '' || raw === undefined || raw === null) return '';
-                          const num = parsePrice(raw as string | number);
-                          return num === Infinity ? raw : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
-                        })()}
-                      </td>
-                    );
-                  })}
-                  {editableColumn && !empresas.includes(editableColumn) && (
-                    <td className="border border-border px-3 py-1.5 text-center bg-primary/5 whitespace-nowrap">
-                      {!readOnly ? (
+          {produtos.map((prod, idx) => {
+            const lowestEmp = getLowestEmpresa(prod.codigo_interno);
+            return (
+              <tr key={idx} className="hover:bg-muted/30">
+                <td className="border border-border px-3 py-1.5 text-center text-muted-foreground whitespace-nowrap">{idx + 1}</td>
+                <td className="border border-border px-3 py-1.5 text-center sticky left-0 bg-background whitespace-nowrap">{prod.codigo_interno}</td>
+                <td className="border border-border px-3 py-1.5 whitespace-nowrap">{prod.descricao}</td>
+                <td className="border border-border px-3 py-1.5 text-center whitespace-nowrap">{prod.codigo_barras}</td>
+                {empresas.map(emp => {
+                  const isLowest = lowestEmp === emp;
+                  const cellClass = editableColumn === emp
+                    ? 'bg-primary/5'
+                    : isLowest
+                      ? 'bg-green-100 text-green-800 font-bold'
+                      : '';
+                  return (
+                    <td key={emp} className={`border border-border px-3 py-1.5 text-center whitespace-nowrap ${cellClass}`}>
+                      {editableColumn === emp && !readOnly ? (
                         <input
                           type="text"
                           inputMode="decimal"
@@ -142,13 +127,46 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           onChange={e => onPriceChange?.(idx, e.target.value)}
                           placeholder="0,00"
                         />
-                      ) : ''}
+                      ) : (() => {
+                        const raw = getPreco(emp, prod.codigo_interno);
+                        if (raw === '' || raw === undefined || raw === null) return '';
+                        const num = parsePrice(raw as string | number);
+                        return num === Infinity ? raw : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
+                      })()}
                     </td>
-                  )}
-                </tr>
-              );
-            })
-          )}
+                  );
+                })}
+                {editableColumn && !empresas.includes(editableColumn) && (
+                  <td className="border border-border px-3 py-1.5 text-center bg-primary/5 whitespace-nowrap">
+                    {!readOnly ? (
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 text-center"
+                        value={editPrices[idx] ?? ''}
+                        onChange={e => onPriceChange?.(idx, e.target.value)}
+                        placeholder="0,00"
+                      />
+                    ) : ''}
+                  </td>
+                )}
+                {Array.from({ length: fillerCols }).map((_, i) => (
+                  <td key={`fc-${i}`} className="border border-border px-3 py-1.5">&nbsp;</td>
+                ))}
+              </tr>
+            );
+          })}
+          {/* Empty filler rows to fill the remaining space */}
+          {Array.from({ length: produtos.length === 0 ? EMPTY_ROWS : fillerRows }).map((_, rowIdx) => (
+            <tr key={`empty-${rowIdx}`}>
+              <td className="border border-border px-3 py-1.5 text-center text-muted-foreground whitespace-nowrap">
+                {produtos.length > 0 ? produtos.length + rowIdx + 1 : ''}
+              </td>
+              {Array.from({ length: gridCols - 1 }).map((_, colIdx) => (
+                <td key={`ec-${colIdx}`} className={`border border-border px-3 py-1.5 ${colIdx === 0 ? 'sticky left-0 bg-background' : ''}`}>&nbsp;</td>
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
