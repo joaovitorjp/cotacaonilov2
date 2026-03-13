@@ -226,6 +226,7 @@ const Index = () => {
         statusFilter="finalizada"
         title="Cotações Finalizadas"
         onExport={handleExport}
+        onDownloadResultados={handleDownloadResultados}
       />
       {currentLista && (
         <GerarLinkPanel
