@@ -180,6 +180,15 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                         Exportar
                       </Button>
                     )}
+                    {statusFilter === 'finalizada' && onDownloadResultados && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); onDownloadResultados(lista); }}
+                      >
+                        Baixar Resultados
+                      </Button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleteTarget(lista); }}
                       className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
