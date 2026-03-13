@@ -81,9 +81,45 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   // Row heights state: keyed by row index
   const [rowHeights, setRowHeights] = useState<Record<number, number>>({});
 
-  // Resize refs
-  const resizingCol = useRef<{ colIdx: number; startX: number; startW: number } | null>(null);
-  const resizingRow = useRef<{ rowIdx: number; startY: number; startH: number } | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const resizingCol = useRef<{ colIdx: number; startX: number; startW: number; minW: number } | null>(null);
+  const resizingRow = useRef<{ rowIdx: number; startY: number; startH: number; minH: number } | null>(null);
+
+  // Measure the minimum width for a column based on content
+  const measureColMinWidth = useCallback((colIdx: number): number => {
+    if (!tableRef.current) return MIN_COL_WIDTH;
+    const cells = tableRef.current.querySelectorAll(`th:nth-child(${colIdx + 1}), td:nth-child(${colIdx + 1})`);
+    let maxContentWidth = MIN_COL_WIDTH;
+    cells.forEach(cell => {
+      const el = cell as HTMLElement;
+      // Temporarily remove width constraint to measure natural content width
+      const prevWidth = el.style.width;
+      const prevOverflow = el.style.overflow;
+      el.style.width = 'auto';
+      el.style.overflow = 'visible';
+      const contentWidth = el.scrollWidth;
+      el.style.width = prevWidth;
+      el.style.overflow = prevOverflow;
+      if (contentWidth > maxContentWidth) maxContentWidth = contentWidth;
+    });
+    return maxContentWidth;
+  }, []);
+
+  // Measure the minimum height for a row based on content
+  const measureRowMinHeight = useCallback((rowIdx: number): number => {
+    if (!tableRef.current) return MIN_ROW_HEIGHT;
+    const rows = tableRef.current.querySelectorAll('tr');
+    // +1 to skip header row
+    const row = rows[rowIdx + 1];
+    if (!row) return MIN_ROW_HEIGHT;
+    let maxContentHeight = MIN_ROW_HEIGHT;
+    row.querySelectorAll('td, th').forEach(cell => {
+      const el = cell as HTMLElement;
+      const contentHeight = el.scrollHeight;
+      if (contentHeight > maxContentHeight) maxContentHeight = contentHeight;
+    });
+    return maxContentHeight;
+  }, []);
 
   const handleColResizeStart = useCallback((e: React.MouseEvent, colIdx: number) => {
     e.preventDefault();
