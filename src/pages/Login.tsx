@@ -10,38 +10,21 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error('Preencha email e senha.');
       return;
     }
-    if (isSignUp && password.length < 6) {
-      toast.error('A senha deve ter no mínimo 6 caracteres.');
-      return;
-    }
     setLoading(true);
-
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password });
-      setLoading(false);
-      if (error) {
-        toast.error('Erro ao cadastrar: ' + error.message);
-      } else {
-        toast.success('Conta criada! Você já está logado.');
-        navigate('/');
-      }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) {
+      toast.error('Credenciais inválidas.');
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      setLoading(false);
-      if (error) {
-        toast.error('Credenciais inválidas.');
-      } else {
-        navigate('/');
-      }
+      navigate('/');
     }
   };
 
@@ -55,7 +38,7 @@ const Login = () => {
           <p className="text-sm text-muted-foreground mt-1">Acesso administrativo</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -75,23 +58,13 @@ const Login = () => {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              autoComplete={isSignUp ? 'new-password' : 'current-password'}
+              autoComplete="current-password"
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? (isSignUp ? 'Cadastrando...' : 'Entrando...') : (isSignUp ? 'Cadastrar' : 'Entrar')}
+            {loading ? 'Entrando...' : 'Entrar'}
           </Button>
         </form>
-
-        <div className="text-center mt-4">
-          <button
-            type="button"
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-sm text-muted-foreground hover:text-foreground underline"
-          >
-            {isSignUp ? 'Já tem conta? Entrar' : 'Criar primeira conta admin'}
-          </button>
-        </div>
       </div>
     </div>
   );
