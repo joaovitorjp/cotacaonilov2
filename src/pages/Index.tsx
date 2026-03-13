@@ -107,10 +107,13 @@ const Index = () => {
       resposta: d.resposta as any[],
     }));
 
-    // Build CSV: codigo_barras;quantidade;preco_ganhador
-    const csvLines = ['codigo_barras;quantidade;preco'];
+    // For each product, find the winning supplier (lowest price)
+    const winnersBySupplier: Record<string, { codigo_barras: string; preco: number }[]> = {};
+
     for (const prod of lista.produtos) {
       let lowestPrice = Infinity;
+      let winnerEmpresa: string | null = null;
+
       for (const resp of resps) {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
         if (item) {
@@ -125,22 +128,41 @@ const Index = () => {
           }
           if (!isNaN(num) && num > 0 && num < lowestPrice) {
             lowestPrice = num;
+            winnerEmpresa = resp.empresa;
           }
         }
       }
-      const preco = lowestPrice === Infinity ? '0' : lowestPrice.toFixed(2);
-      csvLines.push(`${prod.codigo_barras};1;${preco}`);
+
+      if (winnerEmpresa && lowestPrice !== Infinity) {
+        if (!winnersBySupplier[winnerEmpresa]) winnersBySupplier[winnerEmpresa] = [];
+        winnersBySupplier[winnerEmpresa].push({ codigo_barras: prod.codigo_barras, preco: lowestPrice });
+      }
     }
 
-    const csvContent = csvLines.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${lista.nome}_resultados.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('CSV de resultados baixado!');
+    const suppliers = Object.keys(winnersBySupplier);
+    if (suppliers.length === 0) {
+      toast.error('Nenhum preço ganhador encontrado.');
+      return;
+    }
+
+    // Generate one CSV file per supplier
+    for (const empresa of suppliers) {
+      const items = winnersBySupplier[empresa];
+      const csvLines = items.map(item => {
+        const precoFormatted = item.preco.toFixed(2).replace('.', ',');
+        return `${item.codigo_barras};1;${precoFormatted}`;
+      });
+      const csvContent = csvLines.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${lista.nome}_${empresa}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    toast.success(`${suppliers.length} arquivo(s) CSV baixado(s)!`);
   };
 
   return (
