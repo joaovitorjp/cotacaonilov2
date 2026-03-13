@@ -188,7 +188,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   return (
     <div className="flex-1 overflow-auto border border-border">
-      <table className="border-collapse font-body text-sm w-full min-w-max" style={{ tableLayout: 'fixed' }}>
+      <table ref={tableRef} className="border-collapse font-body text-sm w-full min-w-max" style={{ tableLayout: 'fixed' }}>
         <colgroup>
           {colDefs.map((col, i) => (
             <col key={col.key} style={{ width: colWidths[i] ? `${colWidths[i]}px` : (i === 0 ? '40px' : i === 2 ? '250px' : '120px') }} />
