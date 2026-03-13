@@ -126,12 +126,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     e.stopPropagation();
     const startX = e.clientX;
     const startW = colWidths[colIdx] || 100;
-    resizingCol.current = { colIdx, startX, startW };
+    const minW = measureColMinWidth(colIdx);
+    resizingCol.current = { colIdx, startX, startW, minW };
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!resizingCol.current) return;
       const diff = ev.clientX - resizingCol.current.startX;
-      const newW = Math.max(MIN_COL_WIDTH, resizingCol.current.startW + diff);
+      const newW = Math.max(resizingCol.current.minW, resizingCol.current.startW + diff);
       setColWidths(prev => ({ ...prev, [resizingCol.current!.colIdx]: newW }));
     };
     const onMouseUp = () => {
@@ -145,19 +146,20 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [colWidths]);
+  }, [colWidths, measureColMinWidth]);
 
   const handleRowResizeStart = useCallback((e: React.MouseEvent, rowIdx: number) => {
     e.preventDefault();
     e.stopPropagation();
     const startY = e.clientY;
     const startH = rowHeights[rowIdx] || DEFAULT_ROW_HEIGHT;
-    resizingRow.current = { rowIdx, startY, startH };
+    const minH = measureRowMinHeight(rowIdx);
+    resizingRow.current = { rowIdx, startY, startH, minH };
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!resizingRow.current) return;
       const diff = ev.clientY - resizingRow.current.startY;
-      const newH = Math.max(MIN_ROW_HEIGHT, resizingRow.current.startH + diff);
+      const newH = Math.max(resizingRow.current.minH, resizingRow.current.startH + diff);
       setRowHeights(prev => ({ ...prev, [resizingRow.current!.rowIdx]: newH }));
     };
     const onMouseUp = () => {
@@ -171,7 +173,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [rowHeights]);
+  }, [rowHeights, measureRowMinHeight]);
 
   // Build column definitions for consistent indexing
   const colDefs: { key: string; label: string; align: string; sticky?: boolean; highlight?: boolean }[] = [
