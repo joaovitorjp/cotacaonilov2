@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      fornecedores: {
+        Row: {
+          contato: string | null
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          contato?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          contato?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       links_cotacao: {
         Row: {
           created_at: string
