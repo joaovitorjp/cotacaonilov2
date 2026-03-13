@@ -24,6 +24,7 @@ interface RespostaEmpresa {
 }
 
 const Index = () => {
+  const { signOut } = useAuth();
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
