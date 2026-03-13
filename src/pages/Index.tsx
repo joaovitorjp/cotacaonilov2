@@ -190,6 +190,9 @@ const Index = () => {
           <Button variant="outline" onClick={() => setFinalizadasOpen(true)}>
             Cotações Finalizadas
           </Button>
+          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </header>
 
