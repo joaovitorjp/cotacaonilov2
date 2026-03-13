@@ -131,9 +131,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!resizingCol.current) return;
-      const diff = ev.clientX - resizingCol.current.startX;
-      const newW = Math.max(resizingCol.current.minW, resizingCol.current.startW + diff);
-      setColWidths(prev => ({ ...prev, [resizingCol.current!.colIdx]: newW }));
+      const { startX, startW, minW, colIdx: ci } = resizingCol.current;
+      const diff = ev.clientX - startX;
+      const newW = Math.max(minW, startW + diff);
+      setColWidths(prev => ({ ...prev, [ci]: newW }));
     };
     const onMouseUp = () => {
       resizingCol.current = null;
@@ -158,9 +159,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!resizingRow.current) return;
-      const diff = ev.clientY - resizingRow.current.startY;
-      const newH = Math.max(resizingRow.current.minH, resizingRow.current.startH + diff);
-      setRowHeights(prev => ({ ...prev, [resizingRow.current!.rowIdx]: newH }));
+      const { startY, startH, minH, rowIdx: ri } = resizingRow.current;
+      const diff = ev.clientY - startY;
+      const newH = Math.max(minH, startH + diff);
+      setRowHeights(prev => ({ ...prev, [ri]: newH }));
     };
     const onMouseUp = () => {
       resizingRow.current = null;
