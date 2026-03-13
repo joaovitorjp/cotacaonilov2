@@ -7,6 +7,8 @@ import CarregarListaPanel from '@/components/CarregarListaPanel';
 import GerarLinkPanel from '@/components/GerarLinkPanel';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/contexts/AuthContext';
+import { LogOut } from 'lucide-react';
 
 interface Lista {
   id: string;
