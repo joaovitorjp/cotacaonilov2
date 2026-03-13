@@ -41,6 +41,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   statusFilter,
   title,
   onExport,
+  onDownloadResultados,
 }) => {
   const [listas, setListas] = useState<Lista[]>([]);
   const [loading, setLoading] = useState(false);
