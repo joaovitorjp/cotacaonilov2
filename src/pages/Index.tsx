@@ -1,15 +1,17 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
 import ImportListaPanel from '@/components/ImportListaPanel';
 import CarregarListaPanel from '@/components/CarregarListaPanel';
 import GerarLinkPanel from '@/components/GerarLinkPanel';
+import FornecedoresPanel from '@/components/FornecedoresPanel';
+import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import Dashboard from '@/components/Dashboard';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare } from 'lucide-react';
+import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table } from 'lucide-react';
 
 interface Lista {
   id: string;
@@ -30,12 +32,14 @@ const Index = () => {
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
   const [gerarLinkOpen, setGerarLinkOpen] = useState(false);
+  const [fornecedoresOpen, setFornecedoresOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
   const [respostas, setRespostas] = useState<RespostaEmpresa[]>([]);
   const [isFinalized, setIsFinalized] = useState(false);
   const [showDashboard, setShowDashboard] = useState(true);
+  const [activeTab, setActiveTab] = useState<'planilha' | 'analise'>('planilha');
 
   const loadRespostas = useCallback(async (listaId: string) => {
     const { data } = await supabase
@@ -49,6 +53,7 @@ const Index = () => {
     setCurrentLista(lista);
     setIsFinalized(finalized);
     setShowDashboard(false);
+    setActiveTab('planilha');
     await loadRespostas(lista.id);
   };
 
@@ -57,6 +62,7 @@ const Index = () => {
     setRespostas([]);
     setIsFinalized(false);
     setShowDashboard(true);
+    setActiveTab('planilha');
   };
 
   const handleEncerrar = async () => {
@@ -186,6 +192,7 @@ const Index = () => {
     { label: 'Carregar', icon: FolderOpen, action: () => { setCarregarOpen(true); setMobileMenuOpen(false); } },
     { label: 'Gerar Link', icon: Link2, action: () => { setGerarLinkOpen(true); setMobileMenuOpen(false); }, disabled: !currentLista || isFinalized },
     { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
   ];
 
   return (
@@ -249,26 +256,55 @@ const Index = () => {
         </div>
       )}
 
-      {/* Lista info bar */}
+      {/* Lista info bar with tabs */}
       {currentLista && !showDashboard && (
-        <div className="bg-muted/50 px-4 sm:px-6 py-2 text-sm text-foreground border-b border-border shrink-0 flex items-center gap-2 flex-wrap">
-          <button onClick={handleBackToDashboard} className="text-primary hover:underline text-xs font-display">
-            ← Início
-          </button>
-          <span className="text-muted-foreground">·</span>
-          <span className="font-display font-bold">{currentLista.nome}</span>
-          <span className="text-muted-foreground text-xs">
-            {currentLista.produtos.length} produtos · {respostas.length} resposta(s)
-          </span>
-          {isFinalized && (
-            <span className="text-[10px] bg-success/10 text-success px-2 py-0.5 rounded-full font-display font-bold">
-              FINALIZADA
+        <div className="shrink-0 border-b border-border">
+          <div className="bg-muted/50 px-4 sm:px-6 py-2 text-sm text-foreground flex items-center gap-2 flex-wrap">
+            <button onClick={handleBackToDashboard} className="text-primary hover:underline text-xs font-display">
+              ← Início
+            </button>
+            <span className="text-muted-foreground">·</span>
+            <span className="font-display font-bold">{currentLista.nome}</span>
+            <span className="text-muted-foreground text-xs">
+              {currentLista.produtos.length} produtos · {respostas.length} resposta(s)
             </span>
-          )}
-          {!isFinalized && respostas.length > 0 && (
-            <Button variant="outline" size="sm" className="ml-auto text-xs" onClick={() => loadRespostas(currentLista.id)}>
-              Atualizar
-            </Button>
+            {isFinalized && (
+              <span className="text-[10px] bg-success/10 text-success px-2 py-0.5 rounded-full font-display font-bold">
+                FINALIZADA
+              </span>
+            )}
+            {!isFinalized && respostas.length > 0 && (
+              <Button variant="outline" size="sm" className="ml-auto text-xs" onClick={() => loadRespostas(currentLista.id)}>
+                Atualizar
+              </Button>
+            )}
+          </div>
+          {/* Tabs */}
+          {respostas.length > 0 && (
+            <div className="flex px-4 sm:px-6 bg-card">
+              <button
+                onClick={() => setActiveTab('planilha')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-display font-bold border-b-2 transition-colors ${
+                  activeTab === 'planilha'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Table className="w-3.5 h-3.5" />
+                Planilha
+              </button>
+              <button
+                onClick={() => setActiveTab('analise')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-display font-bold border-b-2 transition-colors ${
+                  activeTab === 'analise'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                Análise
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -276,12 +312,17 @@ const Index = () => {
       {/* Main content */}
       {showDashboard ? (
         <Dashboard onNavigate={handleDashboardNavigate} />
-      ) : (
+      ) : activeTab === 'planilha' ? (
         <SpreadsheetTable
           produtos={currentLista?.produtos ?? []}
           respostas={respostas}
           readOnly={isFinalized}
           highlightLowest={respostas.length > 1}
+        />
+      ) : (
+        <AnalisePrecosPanel
+          produtos={currentLista?.produtos ?? []}
+          respostas={respostas}
         />
       )}
 
@@ -313,6 +354,7 @@ const Index = () => {
         onExport={handleExport}
         onDownloadResultados={handleDownloadResultados}
       />
+      <FornecedoresPanel open={fornecedoresOpen} onOpenChange={setFornecedoresOpen} />
       {currentLista && (
         <GerarLinkPanel open={gerarLinkOpen} onOpenChange={setGerarLinkOpen} listaId={currentLista.id} />
       )}
