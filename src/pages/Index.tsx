@@ -63,7 +63,6 @@ const Index = () => {
   };
 
   const handleExport = async (lista: Lista) => {
-    // Load respostas for this lista
     const { data } = await supabase
       .from('respostas')
       .select('empresa, resposta')
@@ -95,6 +94,53 @@ const Index = () => {
     XLSX.utils.book_append_sheet(wb, ws, 'Cotação');
     XLSX.writeFile(wb, `${lista.nome}.xlsx`);
     toast.success('Planilha exportada!');
+  };
+
+  const handleDownloadResultados = async (lista: Lista) => {
+    const { data } = await supabase
+      .from('respostas')
+      .select('empresa, resposta')
+      .eq('lista_id', lista.id);
+
+    const resps: RespostaEmpresa[] = (data ?? []).map((d: any) => ({
+      empresa: d.empresa,
+      resposta: d.resposta as any[],
+    }));
+
+    // Build CSV: codigo_barras;quantidade;preco_ganhador
+    const csvLines = ['codigo_barras;quantidade;preco'];
+    for (const prod of lista.produtos) {
+      let lowestPrice = Infinity;
+      for (const resp of resps) {
+        const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+        if (item) {
+          const raw = item.preco;
+          let num: number;
+          if (typeof raw === 'number') {
+            num = raw;
+          } else if (typeof raw === 'string' && raw !== '') {
+            num = parseFloat(raw.replace(/\./g, '').replace(',', '.'));
+          } else {
+            continue;
+          }
+          if (!isNaN(num) && num > 0 && num < lowestPrice) {
+            lowestPrice = num;
+          }
+        }
+      }
+      const preco = lowestPrice === Infinity ? '0' : lowestPrice.toFixed(2);
+      csvLines.push(`${prod.codigo_barras};1;${preco}`);
+    }
+
+    const csvContent = csvLines.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${lista.nome}_resultados.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV de resultados baixado!');
   };
 
   return (
@@ -180,6 +226,7 @@ const Index = () => {
         statusFilter="finalizada"
         title="Cotações Finalizadas"
         onExport={handleExport}
+        onDownloadResultados={handleDownloadResultados}
       />
       {currentLista && (
         <GerarLinkPanel

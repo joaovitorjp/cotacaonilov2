@@ -31,6 +31,7 @@ interface CarregarListaPanelProps {
   statusFilter: 'aberta' | 'finalizada';
   title: string;
   onExport?: (lista: Lista) => void;
+  onDownloadResultados?: (lista: Lista) => void;
 }
 
 const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
@@ -40,6 +41,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   statusFilter,
   title,
   onExport,
+  onDownloadResultados,
 }) => {
   const [listas, setListas] = useState<Lista[]>([]);
   const [loading, setLoading] = useState(false);
@@ -176,6 +178,15 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                         onClick={(e) => { e.stopPropagation(); onExport(lista); }}
                       >
                         Exportar
+                      </Button>
+                    )}
+                    {statusFilter === 'finalizada' && onDownloadResultados && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); onDownloadResultados(lista); }}
+                      >
+                        Baixar Resultados
                       </Button>
                     )}
                     <button
