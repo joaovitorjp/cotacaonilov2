@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 interface Produto {
   codigo_interno: string;
@@ -81,21 +81,58 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   // Row heights state: keyed by row index
   const [rowHeights, setRowHeights] = useState<Record<number, number>>({});
 
-  // Resize refs
-  const resizingCol = useRef<{ colIdx: number; startX: number; startW: number } | null>(null);
-  const resizingRow = useRef<{ rowIdx: number; startY: number; startH: number } | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const resizingCol = useRef<{ colIdx: number; startX: number; startW: number; minW: number } | null>(null);
+  const resizingRow = useRef<{ rowIdx: number; startY: number; startH: number; minH: number } | null>(null);
+
+  // Measure the minimum width for a column based on content
+  const measureColMinWidth = useCallback((colIdx: number): number => {
+    if (!tableRef.current) return MIN_COL_WIDTH;
+    const cells = tableRef.current.querySelectorAll(`th:nth-child(${colIdx + 1}), td:nth-child(${colIdx + 1})`);
+    let maxContentWidth = MIN_COL_WIDTH;
+    cells.forEach(cell => {
+      const el = cell as HTMLElement;
+      // Temporarily remove width constraint to measure natural content width
+      const prevWidth = el.style.width;
+      const prevOverflow = el.style.overflow;
+      el.style.width = 'auto';
+      el.style.overflow = 'visible';
+      const contentWidth = el.scrollWidth;
+      el.style.width = prevWidth;
+      el.style.overflow = prevOverflow;
+      if (contentWidth > maxContentWidth) maxContentWidth = contentWidth;
+    });
+    return maxContentWidth;
+  }, []);
+
+  // Measure the minimum height for a row based on content
+  const measureRowMinHeight = useCallback((rowIdx: number): number => {
+    if (!tableRef.current) return MIN_ROW_HEIGHT;
+    const rows = tableRef.current.querySelectorAll('tr');
+    // +1 to skip header row
+    const row = rows[rowIdx + 1];
+    if (!row) return MIN_ROW_HEIGHT;
+    let maxContentHeight = MIN_ROW_HEIGHT;
+    row.querySelectorAll('td, th').forEach(cell => {
+      const el = cell as HTMLElement;
+      const contentHeight = el.scrollHeight;
+      if (contentHeight > maxContentHeight) maxContentHeight = contentHeight;
+    });
+    return maxContentHeight;
+  }, []);
 
   const handleColResizeStart = useCallback((e: React.MouseEvent, colIdx: number) => {
     e.preventDefault();
     e.stopPropagation();
     const startX = e.clientX;
     const startW = colWidths[colIdx] || 100;
-    resizingCol.current = { colIdx, startX, startW };
+    const minW = measureColMinWidth(colIdx);
+    resizingCol.current = { colIdx, startX, startW, minW };
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!resizingCol.current) return;
       const diff = ev.clientX - resizingCol.current.startX;
-      const newW = Math.max(MIN_COL_WIDTH, resizingCol.current.startW + diff);
+      const newW = Math.max(resizingCol.current.minW, resizingCol.current.startW + diff);
       setColWidths(prev => ({ ...prev, [resizingCol.current!.colIdx]: newW }));
     };
     const onMouseUp = () => {
@@ -109,19 +146,20 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [colWidths]);
+  }, [colWidths, measureColMinWidth]);
 
   const handleRowResizeStart = useCallback((e: React.MouseEvent, rowIdx: number) => {
     e.preventDefault();
     e.stopPropagation();
     const startY = e.clientY;
     const startH = rowHeights[rowIdx] || DEFAULT_ROW_HEIGHT;
-    resizingRow.current = { rowIdx, startY, startH };
+    const minH = measureRowMinHeight(rowIdx);
+    resizingRow.current = { rowIdx, startY, startH, minH };
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!resizingRow.current) return;
       const diff = ev.clientY - resizingRow.current.startY;
-      const newH = Math.max(MIN_ROW_HEIGHT, resizingRow.current.startH + diff);
+      const newH = Math.max(resizingRow.current.minH, resizingRow.current.startH + diff);
       setRowHeights(prev => ({ ...prev, [resizingRow.current!.rowIdx]: newH }));
     };
     const onMouseUp = () => {
@@ -135,7 +173,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [rowHeights]);
+  }, [rowHeights, measureRowMinHeight]);
 
   // Build column definitions for consistent indexing
   const colDefs: { key: string; label: string; align: string; sticky?: boolean; highlight?: boolean }[] = [
@@ -150,7 +188,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   return (
     <div className="flex-1 overflow-auto border border-border">
-      <table className="border-collapse font-body text-sm w-full min-w-max" style={{ tableLayout: 'fixed' }}>
+      <table ref={tableRef} className="border-collapse font-body text-sm w-full min-w-max" style={{ tableLayout: 'fixed' }}>
         <colgroup>
           {colDefs.map((col, i) => (
             <col key={col.key} style={{ width: colWidths[i] ? `${colWidths[i]}px` : (i === 0 ? '40px' : i === 2 ? '250px' : '120px') }} />
