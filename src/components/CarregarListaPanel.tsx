@@ -31,6 +31,7 @@ interface CarregarListaPanelProps {
   statusFilter: 'aberta' | 'finalizada';
   title: string;
   onExport?: (lista: Lista) => void;
+  onDownloadResultados?: (lista: Lista) => void;
 }
 
 const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
