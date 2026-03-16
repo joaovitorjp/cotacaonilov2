@@ -98,6 +98,17 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [colAligns, setColAligns] = useState<Record<number, TextAlign>>({});
   const [rowAligns, setRowAligns] = useState<Record<number, TextAlign>>({});
 
+  // Formatting state (bold, italic, bgColor)
+  const [cellBold, setCellBold] = useState<Record<string, boolean>>({});
+  const [cellItalic, setCellItalic] = useState<Record<string, boolean>>({});
+  const [cellBgColor, setCellBgColor] = useState<Record<string, string>>({});
+  const [colBold, setColBold] = useState<Record<number, boolean>>({});
+  const [colItalic, setColItalic] = useState<Record<number, boolean>>({});
+  const [colBgColor, setColBgColor] = useState<Record<number, string>>({});
+  const [rowBold, setRowBold] = useState<Record<number, boolean>>({});
+  const [rowItalic, setRowItalic] = useState<Record<number, boolean>>({});
+  const [rowBgColor, setRowBgColor] = useState<Record<number, string>>({});
+
   // Column/row order for drag-move
   const [colOrder, setColOrder] = useState<number[]>([]);
   const [rowOrder, setRowOrder] = useState<number[]>([]);
