@@ -121,12 +121,22 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
+  interface ColDef {
+    key: string;
+    label: string;
+    defaultAlign: TextAlign;
+    isData: boolean;
+    originalIdx: number;
+    sticky?: boolean;
+    highlight?: boolean;
+  }
+
   // Build column definitions
-  const baseColDefs = useMemo(() => [
-    { key: '#', label: '', defaultAlign: 'center' as TextAlign, isData: false, originalIdx: 0 },
-    { key: 'cod_int', label: 'Código Interno', defaultAlign: 'center' as TextAlign, sticky: true, isData: true, originalIdx: 1 },
-    { key: 'desc', label: 'Descrição', defaultAlign: 'left' as TextAlign, isData: true, originalIdx: 2 },
-    { key: 'cod_bar', label: 'Código de Barras', defaultAlign: 'center' as TextAlign, isData: true, originalIdx: 3 },
+  const baseColDefs = useMemo((): ColDef[] => [
+    { key: '#', label: '', defaultAlign: 'center', isData: false, originalIdx: 0 },
+    { key: 'cod_int', label: 'Código Interno', defaultAlign: 'center', sticky: true, isData: true, originalIdx: 1 },
+    { key: 'desc', label: 'Descrição', defaultAlign: 'left', isData: true, originalIdx: 2 },
+    { key: 'cod_bar', label: 'Código de Barras', defaultAlign: 'center', isData: true, originalIdx: 3 },
     ...empresas.map((emp, i) => ({ key: `emp_${emp}`, label: emp, defaultAlign: 'center' as TextAlign, highlight: editableColumn === emp, isData: true, originalIdx: 4 + i })),
     ...(editableColumn && !empresas.includes(editableColumn) ? [{ key: `emp_${editableColumn}`, label: editableColumn, defaultAlign: 'center' as TextAlign, highlight: true, isData: true, originalIdx: 4 + empresas.length }] : []),
     ...Array.from({ length: fillerCols }).map((_, i) => ({ key: `filler_${i}`, label: '', defaultAlign: 'center' as TextAlign, isData: false, originalIdx: totalCols + i })),
