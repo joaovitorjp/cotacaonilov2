@@ -103,7 +103,7 @@ const CotacaoResposta = () => {
     try {
       const resposta = produtos.map((p, idx) => ({
         codigo_interno: p.codigo_interno,
-        preco: prices[idx] || '',
+        preco: (prices[idx] && prices[idx].trim() !== '') ? prices[idx] : 'R$ - ',
       }));
 
       const { data: existing } = await supabase
