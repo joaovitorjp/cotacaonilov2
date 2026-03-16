@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
-import { BarChart3, Trophy, TrendingDown } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { BarChart3, Trophy, TrendingDown, History } from 'lucide-react';
 
 interface Produto {
   codigo_interno: string;
@@ -23,7 +24,85 @@ const parsePreco = (raw: number | string): number => {
   return NaN;
 };
 
+interface HistoricoItem {
+  listaNome: string;
+  data: string;
+  menorPreco: number;
+  empresa: string;
+}
+
 const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respostas }) => {
+  // 2. PRICE HISTORY: Load historical prices for products
+  const [historico, setHistorico] = useState<Record<string, HistoricoItem[]>>({});
+  const [showHistorico, setShowHistorico] = useState(false);
+  const [loadingHistorico, setLoadingHistorico] = useState(false);
+
+  const loadHistorico = async () => {
+    if (Object.keys(historico).length > 0) {
+      setShowHistorico(!showHistorico);
+      return;
+    }
+    setLoadingHistorico(true);
+    
+    // Fetch all finalized lists with their responses
+    const { data: listas } = await supabase
+      .from('listas')
+      .select('id, nome, created_at, produtos')
+      .eq('status', 'finalizada')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!listas || listas.length === 0) {
+      setLoadingHistorico(false);
+      setShowHistorico(true);
+      return;
+    }
+
+    const ids = listas.map(l => l.id);
+    const { data: allRespostas } = await supabase
+      .from('respostas')
+      .select('lista_id, empresa, resposta')
+      .in('lista_id', ids);
+
+    const hist: Record<string, HistoricoItem[]> = {};
+
+    for (const lista of listas) {
+      const listaResps = (allRespostas ?? []).filter(r => r.lista_id === lista.id);
+      const prods = lista.produtos as any as Produto[];
+
+      for (const prod of prods) {
+        let lowestPrice = Infinity;
+        let lowestEmpresa = '';
+
+        for (const resp of listaResps) {
+          const items = resp.resposta as any[];
+          const item = items.find((i: any) => i.codigo_interno === prod.codigo_interno);
+          if (item) {
+            const num = parsePreco(item.preco);
+            if (!isNaN(num) && num > 0 && num < lowestPrice) {
+              lowestPrice = num;
+              lowestEmpresa = resp.empresa;
+            }
+          }
+        }
+
+        if (lowestPrice !== Infinity) {
+          if (!hist[prod.codigo_interno]) hist[prod.codigo_interno] = [];
+          hist[prod.codigo_interno].push({
+            listaNome: lista.nome,
+            data: new Date(lista.created_at).toLocaleDateString('pt-BR'),
+            menorPreco: lowestPrice,
+            empresa: lowestEmpresa,
+          });
+        }
+      }
+    }
+
+    setHistorico(hist);
+    setShowHistorico(true);
+    setLoadingHistorico(false);
+  };
+
   const analysis = useMemo(() => {
     if (respostas.length === 0) return null;
 
@@ -31,7 +110,6 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     let totalByEmpresa: Record<string, { total: number; count: number; wins: number }> = {};
     empresas.forEach(e => { totalByEmpresa[e] = { total: 0, count: 0, wins: 0 }; });
 
-    // Per-product analysis
     const prodAnalysis = produtos.map(prod => {
       const prices: { empresa: string; preco: number }[] = [];
       for (const resp of respostas) {
@@ -57,7 +135,6 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       return { prod, prices, winner, avg, savings };
     });
 
-    // Ranking
     const ranking = Object.entries(totalByEmpresa)
       .map(([empresa, data]) => ({
         empresa,
@@ -117,6 +194,69 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         </div>
       </div>
 
+      {/* 2. PRICE HISTORY button */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={loadHistorico}
+          disabled={loadingHistorico}
+          className="flex items-center gap-2 px-3 py-2 text-xs font-display font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+        >
+          <History className="w-4 h-4" />
+          {loadingHistorico ? 'Carregando...' : showHistorico ? 'Ocultar Histórico' : 'Histórico de Preços'}
+        </button>
+      </div>
+
+      {/* 2. PRICE HISTORY section */}
+      {showHistorico && (
+        <div>
+          <h3 className="font-display font-bold text-foreground mb-3 text-sm">Histórico de Menores Preços (Cotações Anteriores)</h3>
+          {Object.keys(historico).length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum histórico encontrado em cotações finalizadas.</p>
+          ) : (
+            <div className="space-y-2 max-h-[400px] overflow-auto">
+              {produtos.filter(p => historico[p.codigo_interno]?.length > 0).slice(0, 20).map(prod => {
+                const items = historico[prod.codigo_interno] || [];
+                const currentWinner = analysis.prodAnalysis.find(a => a.prod.codigo_interno === prod.codigo_interno)?.winner;
+                return (
+                  <div key={prod.codigo_interno} className="bg-card border border-border rounded-lg p-3">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0">
+                        <p className="font-display font-bold text-foreground text-sm truncate">{prod.descricao}</p>
+                        <p className="text-[11px] text-muted-foreground">{prod.codigo_interno}</p>
+                      </div>
+                      {currentWinner && (
+                        <span className="text-[11px] font-display font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full shrink-0">
+                          Atual: R$ {currentWinner.preco.toFixed(2).replace('.', ',')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      {items.slice(0, 5).map((h, idx) => {
+                        const trend = currentWinner
+                          ? h.menorPreco > currentWinner.preco ? '↑' : h.menorPreco < currentWinner.preco ? '↓' : '='
+                          : '';
+                        const trendColor = trend === '↑' ? 'text-destructive' : trend === '↓' ? 'text-success' : 'text-muted-foreground';
+                        return (
+                          <div key={idx} className="flex items-center gap-2 text-xs">
+                            <span className="text-muted-foreground w-20 shrink-0">{h.data}</span>
+                            <span className="text-muted-foreground w-24 truncate shrink-0">{h.empresa}</span>
+                            <span className="font-display font-bold text-foreground">
+                              R$ {h.menorPreco.toFixed(2).replace('.', ',')}
+                            </span>
+                            {trend && <span className={`font-bold ${trendColor}`}>{trend}</span>}
+                            <span className="text-[10px] text-muted-foreground truncate">{h.listaNome}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Ranking */}
       <div>
         <h3 className="font-display font-bold text-foreground mb-3 text-sm">Ranking de Fornecedores</h3>
@@ -157,7 +297,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         </div>
       </div>
 
-      {/* Per-product comparison - top 10 with biggest savings */}
+      {/* Per-product comparison */}
       <div>
         <h3 className="font-display font-bold text-foreground mb-3 text-sm">Maiores Diferenças de Preço</h3>
         <div className="space-y-2">
@@ -176,7 +316,6 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
                     -{item.savings.toFixed(0)}%
                   </span>
                 </div>
-                {/* Mini bar chart */}
                 <div className="space-y-1">
                   {item.prices.map((p, idx) => {
                     const maxPrice = item.prices[item.prices.length - 1].preco;
