@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Plus, Trash2, Users } from 'lucide-react';
+import { Plus, Trash2, Users, Phone } from 'lucide-react';
 
 interface Fornecedor {
   id: string;
   nome: string;
   contato: string | null;
+  whatsapp: string;
 }
 
 interface FornecedoresPanelProps {
@@ -21,6 +22,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [loading, setLoading] = useState(false);
   const [nome, setNome] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [contato, setContato] = useState('');
   const [adding, setAdding] = useState(false);
 
@@ -35,15 +37,30 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
     setLoading(false);
   };
 
+  const formatWhatsapp = (value: string) => {
+    // Keep only digits
+    return value.replace(/\D/g, '');
+  };
+
   const handleAdd = async () => {
-    if (!nome.trim()) return;
+    if (!nome.trim() || !whatsapp.trim()) return;
+    const cleanWhatsapp = formatWhatsapp(whatsapp);
+    if (cleanWhatsapp.length < 10) {
+      toast.error('Número de WhatsApp inválido. Insira com DDD.');
+      return;
+    }
     setAdding(true);
-    const { error } = await supabase.from('fornecedores').insert({ nome: nome.trim(), contato: contato.trim() || null });
+    const { error } = await supabase.from('fornecedores').insert({
+      nome: nome.trim(),
+      whatsapp: cleanWhatsapp,
+      contato: contato.trim() || null,
+    });
     if (error) {
       toast.error('Erro ao adicionar fornecedor.');
     } else {
       toast.success('Fornecedor adicionado.');
       setNome('');
+      setWhatsapp('');
       setContato('');
       fetchFornecedores();
     }
@@ -67,15 +84,25 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
             <SheetTitle className="font-display text-xl flex items-center gap-2">
               <Users className="w-5 h-5" /> Fornecedores
             </SheetTitle>
-            <SheetDescription>Cadastre fornecedores para gerar links mais rápido.</SheetDescription>
+            <SheetDescription>Cadastre fornecedores com WhatsApp para compartilhar cotações.</SheetDescription>
           </SheetHeader>
         </div>
 
         {/* Add form */}
         <div className="px-6 pt-4 pb-2 space-y-2 border-b border-border">
-          <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome do fornecedor" />
-          <Input value={contato} onChange={e => setContato(e.target.value)} placeholder="Contato (opcional)" />
-          <Button onClick={handleAdd} disabled={adding || !nome.trim()} className="w-full" size="sm">
+          <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome do fornecedor *" />
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={whatsapp}
+              onChange={e => setWhatsapp(e.target.value)}
+              placeholder="WhatsApp com DDD * (ex: 11999998888)"
+              className="pl-9"
+              inputMode="tel"
+            />
+          </div>
+          <Input value={contato} onChange={e => setContato(e.target.value)} placeholder="Contato / e-mail (opcional)" />
+          <Button onClick={handleAdd} disabled={adding || !nome.trim() || !whatsapp.trim()} className="w-full" size="sm">
             <Plus className="w-4 h-4 mr-1" />
             {adding ? 'Adicionando...' : 'Adicionar'}
           </Button>
@@ -92,6 +119,9 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
               <div key={f.id} className="flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-lg">
                 <div className="flex-1 min-w-0">
                   <p className="font-display font-bold text-foreground text-sm truncate">{f.nome}</p>
+                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                    <Phone className="w-3 h-3" /> {f.whatsapp}
+                  </p>
                   {f.contato && <p className="text-xs text-muted-foreground truncate">{f.contato}</p>}
                 </div>
                 <button
