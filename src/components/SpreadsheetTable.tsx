@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Produto {
   codigo_interno: string;
@@ -21,6 +22,7 @@ interface SpreadsheetTableProps {
   editPrices?: Record<number, string>;
   highlightLowest?: boolean;
   onSave?: (produtos: Produto[]) => void;
+  listaId?: string;
 }
 
 const parsePrice = (val: string | number): number => {
@@ -60,6 +62,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   editPrices = {},
   highlightLowest = false,
   onSave,
+  listaId,
 }) => {
   const empresas = respostas.map(r => r.empresa);
 
@@ -1072,6 +1075,42 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [markupValue, setMarkupValue] = useState('');
   const markupInputRef = useRef<HTMLInputElement>(null);
 
+  // Load markups from DB
+  useEffect(() => {
+    if (!listaId) return;
+    const loadMarkups = async () => {
+      const { data } = await supabase
+        .from('price_markups')
+        .select('empresa, markup_percent')
+        .eq('lista_id', listaId);
+      if (data && data.length > 0) {
+        const loaded: Record<string, number> = {};
+        data.forEach((row: any) => { loaded[row.empresa] = Number(row.markup_percent); });
+        setPriceMarkups(loaded);
+      }
+    };
+    loadMarkups();
+  }, [listaId]);
+
+  // Save markup to DB
+  const saveMarkupToDb = async (empresa: string, percent: number) => {
+    if (!listaId) return;
+    if (percent === 0) {
+      await supabase
+        .from('price_markups')
+        .delete()
+        .eq('lista_id', listaId)
+        .eq('empresa', empresa);
+    } else {
+      await supabase
+        .from('price_markups')
+        .upsert(
+          { lista_id: listaId, empresa, markup_percent: percent, updated_at: new Date().toISOString() },
+          { onConflict: 'lista_id,empresa' }
+        );
+    }
+  };
+
   useEffect(() => {
     if (markupDialog) {
       setTimeout(() => markupInputRef.current?.focus(), 50);
@@ -1086,10 +1125,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       setMarkupValue('');
       return;
     }
+    const newVal = (priceMarkups[markupDialog.empresa] || 0) + pct;
     setPriceMarkups(prev => ({
       ...prev,
-      [markupDialog.empresa]: (prev[markupDialog.empresa] || 0) + pct,
+      [markupDialog.empresa]: newVal,
     }));
+    saveMarkupToDb(markupDialog.empresa, newVal);
     setMarkupDialog(null);
     setMarkupValue('');
   };
@@ -1407,6 +1448,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         delete next[emp];
                         return next;
                       });
+                      saveMarkupToDb(emp, 0);
                       setContextMenu(null);
                     }}
                     className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-destructive"
