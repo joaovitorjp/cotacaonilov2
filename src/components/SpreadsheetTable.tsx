@@ -20,6 +20,7 @@ interface SpreadsheetTableProps {
   onPriceChange?: (rowIndex: number, preco: string) => void;
   editPrices?: Record<number, string>;
   highlightLowest?: boolean;
+  onSave?: (produtos: Produto[]) => void;
 }
 
 const parsePrice = (val: string | number): number => {
