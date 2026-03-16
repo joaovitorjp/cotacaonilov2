@@ -100,6 +100,41 @@ export type Database = {
         }
         Relationships: []
       }
+      price_markups: {
+        Row: {
+          created_at: string
+          empresa: string
+          id: string
+          lista_id: string
+          markup_percent: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa: string
+          id?: string
+          lista_id: string
+          markup_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa?: string
+          id?: string
+          lista_id?: string
+          markup_percent?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_markups_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "listas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
