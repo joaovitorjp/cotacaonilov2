@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste } from 'lucide-react';
 
 interface Produto {
   codigo_interno: string;
@@ -36,6 +36,11 @@ const DEFAULT_ROW_HEIGHT = 25;
 const HEADER_HEIGHT = 28;
 
 type TextAlign = 'left' | 'center' | 'right';
+
+interface CellPos {
+  row: number;
+  col: number;
+}
 
 interface ContextMenuState {
   x: number;
@@ -106,12 +111,28 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   // Context menu
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
+  // Selection state
+  const [activeCell, setActiveCell] = useState<CellPos | null>(null);
+  const [selectionAnchor, setSelectionAnchor] = useState<CellPos | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<CellPos | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+
   const tableRef = useRef<HTMLTableElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
+  interface ColDef {
+    key: string;
+    label: string;
+    defaultAlign: TextAlign;
+    isData: boolean;
+    originalIdx: number;
+    sticky?: boolean;
+    highlight?: boolean;
+  }
+
   // Build column definitions
-  const baseColDefs: { key: string; label: string; defaultAlign: TextAlign; sticky?: boolean; highlight?: boolean; isData: boolean; originalIdx: number }[] = [
+  const baseColDefs = useMemo((): ColDef[] => [
     { key: '#', label: '', defaultAlign: 'center', isData: false, originalIdx: 0 },
     { key: 'cod_int', label: 'Código Interno', defaultAlign: 'center', sticky: true, isData: true, originalIdx: 1 },
     { key: 'desc', label: 'Descrição', defaultAlign: 'left', isData: true, originalIdx: 2 },
@@ -119,7 +140,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     ...empresas.map((emp, i) => ({ key: `emp_${emp}`, label: emp, defaultAlign: 'center' as TextAlign, highlight: editableColumn === emp, isData: true, originalIdx: 4 + i })),
     ...(editableColumn && !empresas.includes(editableColumn) ? [{ key: `emp_${editableColumn}`, label: editableColumn, defaultAlign: 'center' as TextAlign, highlight: true, isData: true, originalIdx: 4 + empresas.length }] : []),
     ...Array.from({ length: fillerCols }).map((_, i) => ({ key: `filler_${i}`, label: '', defaultAlign: 'center' as TextAlign, isData: false, originalIdx: totalCols + i })),
-  ];
+  ], [empresas.length, editableColumn, fillerCols, totalCols]);
 
   // Initialize column order
   useEffect(() => {
@@ -136,13 +157,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     ? colOrder.map(i => ({ ...baseColDefs[i], orderIdx: i }))
     : baseColDefs.map((c, i) => ({ ...c, orderIdx: i }));
 
+  // Total data rows
+  const totalRows = produtos.length + fillerRows;
+
   // Auto-fit column widths on data change
   useEffect(() => {
     if (!tableRef.current) return;
     const timer = setTimeout(() => {
       const newWidths: Record<number, number> = {};
-      const colCount = gridCols;
-      for (let i = 0; i < colCount; i++) {
+      for (let i = 0; i < gridCols; i++) {
         if (colWidths[i]) continue;
         const cells = tableRef.current!.querySelectorAll(
           `thead th:nth-child(${i + 1}), tbody td:nth-child(${i + 1})`
@@ -180,6 +203,233 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return 'text-center';
   };
 
+  // Selection helpers
+  const getSelectionRange = useCallback((): { minRow: number; maxRow: number; minCol: number; maxCol: number } | null => {
+    if (!selectionAnchor || !selectionEnd) {
+      if (activeCell) return { minRow: activeCell.row, maxRow: activeCell.row, minCol: activeCell.col, maxCol: activeCell.col };
+      return null;
+    }
+    return {
+      minRow: Math.min(selectionAnchor.row, selectionEnd.row),
+      maxRow: Math.max(selectionAnchor.row, selectionEnd.row),
+      minCol: Math.min(selectionAnchor.col, selectionEnd.col),
+      maxCol: Math.max(selectionAnchor.col, selectionEnd.col),
+    };
+  }, [selectionAnchor, selectionEnd, activeCell]);
+
+  const isCellSelected = useCallback((row: number, col: number): boolean => {
+    const range = getSelectionRange();
+    if (!range) return false;
+    return row >= range.minRow && row <= range.maxRow && col >= range.minCol && col <= range.maxCol;
+  }, [getSelectionRange]);
+
+  const isCellActive = useCallback((row: number, col: number): boolean => {
+    return activeCell?.row === row && activeCell?.col === col;
+  }, [activeCell]);
+
+  // Get cell value for copy
+  const getCellValue = useCallback((rowIdx: number, colIdx: number): string => {
+    if (rowIdx >= produtos.length) return '';
+    const prod = produtos[rowIdx];
+    // Find the original column index from ordered defs
+    const colDef = orderedColDefs[colIdx];
+    if (!colDef) return '';
+    const origIdx = colDef.originalIdx;
+
+    if (origIdx === 0) return String(rowIdx + 1);
+    if (origIdx === 1) return prod.codigo_interno;
+    if (origIdx === 2) return prod.descricao;
+    if (origIdx === 3) return prod.codigo_barras;
+    if (origIdx >= 4 && origIdx < 4 + empresas.length) {
+      const emp = empresas[origIdx - 4];
+      if (editableColumn === emp && editPrices[rowIdx] !== undefined) return editPrices[rowIdx];
+      const raw = getPreco(emp, prod.codigo_interno);
+      if (raw === '' || raw === undefined || raw === null) return '';
+      const num = parsePrice(raw as string | number);
+      return num === Infinity ? String(raw) : Number(num).toFixed(2).replace('.', ',');
+    }
+    if (editableColumn && !empresas.includes(editableColumn) && origIdx === 4 + empresas.length) {
+      return editPrices[rowIdx] ?? '';
+    }
+    return '';
+  }, [produtos, orderedColDefs, empresas, editableColumn, editPrices, respostas]);
+
+  // Cell click handler
+  const handleCellClick = useCallback((row: number, col: number, e: React.MouseEvent) => {
+    if (col === 0) return; // row number column
+    if (e.shiftKey && activeCell) {
+      // Extend selection
+      setSelectionEnd({ row, col });
+    } else {
+      setActiveCell({ row, col });
+      setSelectionAnchor({ row, col });
+      setSelectionEnd({ row, col });
+    }
+    setContextMenu(null);
+  }, [activeCell]);
+
+  // Mouse down for drag selection
+  const handleCellMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
+    if (col === 0 || e.button !== 0 || e.shiftKey) return;
+    setIsSelecting(true);
+    setActiveCell({ row, col });
+    setSelectionAnchor({ row, col });
+    setSelectionEnd({ row, col });
+  }, []);
+
+  const handleCellMouseEnter = useCallback((row: number, col: number) => {
+    if (!isSelecting || col === 0) return;
+    setSelectionEnd({ row, col });
+  }, [isSelecting]);
+
+  useEffect(() => {
+    const handleMouseUp = () => setIsSelecting(false);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => document.removeEventListener('mouseup', handleMouseUp);
+  }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!activeCell) return;
+      // Don't intercept if typing in an input
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' && !['ArrowUp', 'ArrowDown', 'Tab', 'Enter', 'Escape'].includes(e.key)) return;
+
+      const maxCol = orderedColDefs.length - 1;
+      const maxRow = totalRows - 1;
+      let newRow = activeCell.row;
+      let newCol = activeCell.col;
+
+      switch (e.key) {
+        case 'ArrowUp':
+          e.preventDefault();
+          newRow = Math.max(0, activeCell.row - 1);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          newRow = Math.min(maxRow, activeCell.row + 1);
+          break;
+        case 'ArrowLeft':
+          if (target.tagName === 'INPUT') return;
+          e.preventDefault();
+          newCol = Math.max(1, activeCell.col - 1);
+          break;
+        case 'ArrowRight':
+          if (target.tagName === 'INPUT') return;
+          e.preventDefault();
+          newCol = Math.min(maxCol, activeCell.col + 1);
+          break;
+        case 'Tab':
+          e.preventDefault();
+          if (e.shiftKey) {
+            newCol = activeCell.col - 1;
+            if (newCol < 1) { newCol = maxCol; newRow = Math.max(0, activeCell.row - 1); }
+          } else {
+            newCol = activeCell.col + 1;
+            if (newCol > maxCol) { newCol = 1; newRow = Math.min(maxRow, activeCell.row + 1); }
+          }
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (e.shiftKey) {
+            newRow = Math.max(0, activeCell.row - 1);
+          } else {
+            newRow = Math.min(maxRow, activeCell.row + 1);
+          }
+          break;
+        case 'Escape':
+          setActiveCell(null);
+          setSelectionAnchor(null);
+          setSelectionEnd(null);
+          return;
+        default:
+          return;
+      }
+
+      const pos = { row: newRow, col: newCol };
+      setActiveCell(pos);
+      if (e.shiftKey && e.key.startsWith('Arrow')) {
+        setSelectionEnd(pos);
+      } else {
+        setSelectionAnchor(pos);
+        setSelectionEnd(pos);
+      }
+
+      // Scroll active cell into view
+      const cell = tableRef.current?.querySelector(`[data-cell="${newRow}-${newCol}"]`) as HTMLElement;
+      cell?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [activeCell, orderedColDefs.length, totalRows]);
+
+  // Copy (Ctrl+C)
+  useEffect(() => {
+    const handleCopy = (e: ClipboardEvent) => {
+      const range = getSelectionRange();
+      if (!range) return;
+      // Don't intercept if in an input with text selected
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT') {
+        const input = target as HTMLInputElement;
+        if (input.selectionStart !== input.selectionEnd) return;
+      }
+
+      e.preventDefault();
+      const lines: string[] = [];
+      for (let r = range.minRow; r <= range.maxRow; r++) {
+        const cells: string[] = [];
+        for (let c = range.minCol; c <= range.maxCol; c++) {
+          cells.push(getCellValue(r, c));
+        }
+        lines.push(cells.join('\t'));
+      }
+      e.clipboardData?.setData('text/plain', lines.join('\n'));
+    };
+
+    document.addEventListener('copy', handleCopy);
+    return () => document.removeEventListener('copy', handleCopy);
+  }, [getSelectionRange, getCellValue]);
+
+  // Paste (Ctrl+V)
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!activeCell || readOnly) return;
+      const target = e.target as HTMLElement;
+      // Allow paste in inputs normally if not our managed cell
+      if (target.tagName === 'INPUT') return;
+
+      const text = e.clipboardData?.getData('text/plain');
+      if (!text) return;
+      e.preventDefault();
+
+      const lines = text.split('\n').map(l => l.split('\t'));
+      for (let r = 0; r < lines.length; r++) {
+        for (let c = 0; c < lines[r].length; c++) {
+          const targetRow = activeCell.row + r;
+          const targetCol = activeCell.col + c;
+          if (targetRow >= produtos.length) continue;
+          const colDef = orderedColDefs[targetCol];
+          if (!colDef) continue;
+          const origIdx = colDef.originalIdx;
+          // Only paste into editable columns
+          const isEditableEmpCol = origIdx >= 4 && editableColumn && (
+            (origIdx < 4 + empresas.length && empresas[origIdx - 4] === editableColumn) ||
+            (!empresas.includes(editableColumn) && origIdx === 4 + empresas.length)
+          );
+          if (isEditableEmpCol) {
+            onPriceChange?.(targetRow, lines[r][c]);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [activeCell, readOnly, orderedColDefs, editableColumn, empresas, produtos.length, onPriceChange]);
+
   // Column resize
   const handleColResizeStart = useCallback((e: React.MouseEvent, colIdx: number) => {
     e.preventDefault();
@@ -190,8 +440,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
     const onMouseMove = (ev: MouseEvent) => {
       const diff = ev.clientX - startX;
-      const newW = Math.max(MIN_COL_WIDTH, startW + diff);
-      setColWidths(prev => ({ ...prev, [colIdx]: newW }));
+      setColWidths(prev => ({ ...prev, [colIdx]: Math.max(MIN_COL_WIDTH, startW + diff) }));
     };
     const onMouseUp = () => {
       setActiveColResize(null);
@@ -216,8 +465,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
     const onMouseMove = (ev: MouseEvent) => {
       const diff = ev.clientY - startY;
-      const newH = Math.max(MIN_ROW_HEIGHT, startH + diff);
-      setRowHeights(prev => ({ ...prev, [rowIdx]: newH }));
+      setRowHeights(prev => ({ ...prev, [rowIdx]: Math.max(MIN_ROW_HEIGHT, startH + diff) }));
     };
     const onMouseUp = () => {
       setActiveRowResize(null);
@@ -250,36 +498,25 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setColWidths(prev => ({ ...prev, [colIdx]: max }));
   }, []);
 
-  // Double-click to auto-fit row
   const handleRowAutoFit = useCallback((rowIdx: number) => {
-    setRowHeights(prev => {
-      const copy = { ...prev };
-      delete copy[rowIdx];
-      return copy;
-    });
+    setRowHeights(prev => { const copy = { ...prev }; delete copy[rowIdx]; return copy; });
   }, []);
 
-  // Column drag-move (only data columns 1+)
+  // Column drag-move
   const handleColDragStart = (e: React.DragEvent, colIdx: number) => {
-    if (colIdx === 0) return; // don't drag row number col
+    if (colIdx === 0) return;
     e.dataTransfer.effectAllowed = 'move';
     setDragCol(colIdx);
   };
-
   const handleColDragOver = (e: React.DragEvent, colIdx: number) => {
     if (dragCol === null || colIdx === 0) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverCol(colIdx);
   };
-
   const handleColDrop = (e: React.DragEvent, colIdx: number) => {
     e.preventDefault();
-    if (dragCol === null || dragCol === colIdx || colIdx === 0) {
-      setDragCol(null);
-      setDragOverCol(null);
-      return;
-    }
+    if (dragCol === null || dragCol === colIdx || colIdx === 0) { setDragCol(null); setDragOverCol(null); return; }
     setColOrder(prev => {
       const order = [...prev];
       const fromPos = order.indexOf(dragCol);
@@ -292,32 +529,22 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setDragCol(null);
     setDragOverCol(null);
   };
-
-  const handleColDragEnd = () => {
-    setDragCol(null);
-    setDragOverCol(null);
-  };
+  const handleColDragEnd = () => { setDragCol(null); setDragOverCol(null); };
 
   // Row drag-move
   const handleRowDragStart = (e: React.DragEvent, rowIdx: number) => {
     e.dataTransfer.effectAllowed = 'move';
     setDragRow(rowIdx);
   };
-
   const handleRowDragOver = (e: React.DragEvent, rowIdx: number) => {
     if (dragRow === null) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverRow(rowIdx);
   };
-
   const handleRowDrop = (e: React.DragEvent, rowIdx: number) => {
     e.preventDefault();
-    if (dragRow === null || dragRow === rowIdx) {
-      setDragRow(null);
-      setDragOverRow(null);
-      return;
-    }
+    if (dragRow === null || dragRow === rowIdx) { setDragRow(null); setDragOverRow(null); return; }
     setRowOrder(prev => {
       const order = [...prev];
       const fromPos = order.indexOf(dragRow);
@@ -330,11 +557,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setDragRow(null);
     setDragOverRow(null);
   };
-
-  const handleRowDragEnd = () => {
-    setDragRow(null);
-    setDragOverRow(null);
-  };
+  const handleRowDragEnd = () => { setDragRow(null); setDragOverRow(null); };
 
   // Context menu
   const handleContextMenu = (e: React.MouseEvent, type: 'cell' | 'column' | 'row', colIdx?: number, rowIdx?: number) => {
@@ -364,7 +587,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       const pos = order.indexOf(colIdx);
       if (pos === -1) return order;
       const newPos = direction === 'left' ? pos - 1 : pos + 1;
-      if (newPos < 1 || newPos >= order.length) return order; // don't move past row num col
+      if (newPos < 1 || newPos >= order.length) return order;
       const [moved] = order.splice(pos, 1);
       order.splice(newPos, 0, moved);
       return order;
@@ -388,6 +611,37 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setContextMenu(null);
   };
 
+  const handleCopyFromMenu = () => {
+    document.execCommand('copy');
+    setContextMenu(null);
+  };
+
+  const handlePasteFromMenu = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!activeCell || readOnly || !text) return;
+      const lines = text.split('\n').map(l => l.split('\t'));
+      for (let r = 0; r < lines.length; r++) {
+        for (let c = 0; c < lines[r].length; c++) {
+          const targetRow = activeCell.row + r;
+          const targetCol = activeCell.col + c;
+          if (targetRow >= produtos.length) continue;
+          const colDef = orderedColDefs[targetCol];
+          if (!colDef) continue;
+          const origIdx = colDef.originalIdx;
+          const isEditableEmpCol = origIdx >= 4 && editableColumn && (
+            (origIdx < 4 + empresas.length && empresas[origIdx - 4] === editableColumn) ||
+            (!empresas.includes(editableColumn) && origIdx === 4 + empresas.length)
+          );
+          if (isEditableEmpCol) {
+            onPriceChange?.(targetRow, lines[r][c]);
+          }
+        }
+      }
+    } catch { /* clipboard access denied */ }
+    setContextMenu(null);
+  };
+
   // Close context menu on click outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -402,14 +656,31 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   }, [contextMenu]);
 
   // Determine ordered rows
-  const allRows = [...produtos.map((p, i) => ({ prod: p, idx: i, isEmpty: false }))];
-  for (let i = 0; i < fillerRows; i++) {
-    allRows.push({ prod: null as any, idx: produtos.length + i, isEmpty: true });
-  }
+  const allRows = useMemo(() => {
+    const rows = [...produtos.map((p, i) => ({ prod: p, idx: i, isEmpty: false }))];
+    for (let i = 0; i < fillerRows; i++) {
+      rows.push({ prod: null as any, idx: produtos.length + i, isEmpty: true });
+    }
+    return rows;
+  }, [produtos, fillerRows]);
 
   const orderedRows = rowOrder.length === allRows.length
     ? rowOrder.map(i => allRows[i]).filter(Boolean)
     : allRows;
+
+  // Selection border helpers
+  const getSelectionBorders = useCallback((row: number, col: number) => {
+    const range = getSelectionRange();
+    if (!range) return '';
+    const selected = row >= range.minRow && row <= range.maxRow && col >= range.minCol && col <= range.maxCol;
+    if (!selected) return '';
+    const classes: string[] = [];
+    if (row === range.minRow) classes.push('border-t-2 border-t-primary');
+    if (row === range.maxRow) classes.push('border-b-2 border-b-primary');
+    if (col === range.minCol) classes.push('border-l-2 border-l-primary');
+    if (col === range.maxCol) classes.push('border-r-2 border-r-primary');
+    return classes.join(' ');
+  }, [getSelectionRange]);
 
   const renderRow = (prod: Produto | null, idx: number, isEmpty: boolean, displayIdx: number) => {
     const lowestEmp = prod ? getLowestEmpresa(prod.codigo_interno) : null;
@@ -439,7 +710,6 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           onContextMenu={e => handleContextMenu(e, 'row', undefined, idx)}
         >
           {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
-          {/* Row resize handle */}
           <div
             className={`absolute left-0 right-0 bottom-[-2px] h-[5px] cursor-row-resize z-30 ${
               activeRowResize === idx ? 'bg-primary' : 'hover:bg-primary/40'
@@ -455,33 +725,47 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           const colIdx = col.orderIdx;
           const visualColIdx = renderIdx + 1;
           const effectiveAlign = getCellAlign(colIdx, idx, col.defaultAlign);
+          const selected = isCellSelected(idx, visualColIdx);
+          const active = isCellActive(idx, visualColIdx);
+          const selBorders = getSelectionBorders(idx, visualColIdx);
+
+          const cellBaseClass = `border-r border-b px-2 ${alignClass(effectiveAlign)} ${
+            selected && !active ? 'bg-primary/10' : ''
+          } ${active ? 'outline outline-2 outline-primary outline-offset-[-2px]' : ''} ${selBorders}`;
+
+          const cellEvents = {
+            onClick: (e: React.MouseEvent) => handleCellClick(idx, visualColIdx, e),
+            onMouseDown: (e: React.MouseEvent) => handleCellMouseDown(idx, visualColIdx, e),
+            onMouseEnter: () => handleCellMouseEnter(idx, visualColIdx),
+            onContextMenu: (e: React.MouseEvent) => handleContextMenu(e, 'cell', colIdx, idx),
+            'data-cell': `${idx}-${visualColIdx}`,
+          };
 
           if (isEmpty) {
             return (
               <td
                 key={col.key}
-                className={`border-r border-b px-2 ${alignClass(effectiveAlign)} ${col.sticky ? 'sticky left-[36px] bg-background z-[5]' : ''}`}
+                className={`${cellBaseClass} ${col.sticky ? 'sticky left-[36px] bg-background z-[5]' : ''}`}
                 style={{
                   borderColor: 'hsl(var(--border))',
                   minWidth: getColWidth(visualColIdx),
                   width: getColWidth(visualColIdx),
                 }}
-                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+                {...cellEvents}
               >
                 &nbsp;
               </td>
             );
           }
 
-          // Render data cell based on original column definition
           const origIdx = col.originalIdx;
           if (origIdx === 1) {
             return (
               <td
                 key={col.key}
-                className={`border-r border-b px-2 ${alignClass(effectiveAlign)} sticky left-[36px] bg-background z-[5] whitespace-nowrap text-xs`}
+                className={`${cellBaseClass} sticky left-[36px] bg-background z-[5] whitespace-nowrap text-xs`}
                 style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
-                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+                {...cellEvents}
               >
                 {prod!.codigo_interno}
               </td>
@@ -491,9 +775,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             return (
               <td
                 key={col.key}
-                className={`border-r border-b px-2 ${alignClass(effectiveAlign)} whitespace-nowrap overflow-hidden text-ellipsis text-xs`}
+                className={`${cellBaseClass} whitespace-nowrap overflow-hidden text-ellipsis text-xs`}
                 style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
-                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+                {...cellEvents}
               >
                 {prod!.descricao}
               </td>
@@ -503,9 +787,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             return (
               <td
                 key={col.key}
-                className={`border-r border-b px-2 ${alignClass(effectiveAlign)} whitespace-nowrap text-xs`}
+                className={`${cellBaseClass} whitespace-nowrap text-xs`}
                 style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
-                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+                {...cellEvents}
               >
                 {prod!.codigo_barras}
               </td>
@@ -520,11 +804,11 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             return (
               <td
                 key={col.key}
-                className={`border-r border-b px-1 ${alignClass(effectiveAlign)} whitespace-nowrap text-xs ${
+                className={`${cellBaseClass} px-1 whitespace-nowrap text-xs ${
                   isEditable ? 'bg-primary/5' : isLowest ? 'bg-success/10 text-success font-bold' : ''
                 }`}
                 style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
-                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+                {...cellEvents}
               >
                 {isEditable && !readOnly ? (
                   <input
@@ -549,9 +833,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             return (
               <td
                 key={col.key}
-                className={`border-r border-b px-1 ${alignClass(effectiveAlign)} bg-primary/5 whitespace-nowrap text-xs`}
+                className={`${cellBaseClass} px-1 bg-primary/5 whitespace-nowrap text-xs`}
                 style={{ borderColor: 'hsl(var(--border))' }}
-                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+                {...cellEvents}
               >
                 {!readOnly ? (
                   <input
@@ -570,9 +854,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           return (
             <td
               key={col.key}
-              className="border-r border-b px-2"
+              className={`${cellBaseClass}`}
               style={{ borderColor: 'hsl(var(--border))' }}
-              onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+              {...cellEvents}
             >
               &nbsp;
             </td>
@@ -583,7 +867,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-auto relative" style={{ border: '1px solid hsl(var(--border))' }}>
+    <div
+      ref={containerRef}
+      className="flex-1 overflow-auto relative"
+      style={{ border: '1px solid hsl(var(--border))' }}
+      tabIndex={0}
+    >
       <table
         ref={tableRef}
         className="border-collapse text-sm min-w-max"
@@ -625,7 +914,6 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   onContextMenu={e => handleContextMenu(e, 'column', colIdx)}
                 >
                   {col.label}
-                  {/* Column resize handle */}
                   <div
                     className={`absolute top-0 bottom-0 w-[4px] cursor-col-resize z-30 ${
                       activeColResize === i ? 'bg-primary' : 'hover:bg-primary/50'
@@ -652,112 +940,62 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           className="fixed bg-popover border border-border rounded-lg shadow-lg py-1 z-50 min-w-[180px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
+          {/* Copy/Paste */}
+          <button
+            onClick={handleCopyFromMenu}
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+          >
+            <Copy className="w-3.5 h-3.5" /> Copiar (Ctrl+C)
+          </button>
+          {!readOnly && (
+            <button
+              onClick={handlePasteFromMenu}
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+            >
+              <ClipboardPaste className="w-3.5 h-3.5" /> Colar (Ctrl+V)
+            </button>
+          )}
+
+          <div className="border-t border-border my-1" />
+
           {/* Alignment options */}
           <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
             Alinhamento {contextMenu.type === 'column' ? 'da Coluna' : contextMenu.type === 'row' ? 'da Linha' : 'da Célula'}
           </div>
-          <button
-            onClick={() => setAlignment('left')}
-            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-          >
+          <button onClick={() => setAlignment('left')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
             <AlignLeft className="w-3.5 h-3.5" /> Alinhar à Esquerda
           </button>
-          <button
-            onClick={() => setAlignment('center')}
-            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-          >
+          <button onClick={() => setAlignment('center')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
             <AlignCenter className="w-3.5 h-3.5" /> Centralizar
           </button>
-          <button
-            onClick={() => setAlignment('right')}
-            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-          >
+          <button onClick={() => setAlignment('right')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
             <AlignRight className="w-3.5 h-3.5" /> Alinhar à Direita
           </button>
 
           <div className="border-t border-border my-1" />
 
           {/* Move options */}
-          {contextMenu.type === 'column' && contextMenu.colIdx !== undefined && contextMenu.colIdx > 0 && (
+          {(contextMenu.type === 'column' || contextMenu.type === 'cell') && contextMenu.colIdx !== undefined && contextMenu.colIdx > 0 && (
             <>
-              <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Mover Coluna
-              </div>
-              <button
-                onClick={() => moveColumn('left')}
-                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-              >
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mover Coluna</div>
+              <button onClick={() => moveColumn('left')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                 <ArrowLeft className="w-3.5 h-3.5" /> Mover para Esquerda
               </button>
-              <button
-                onClick={() => moveColumn('right')}
-                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-              >
+              <button onClick={() => moveColumn('right')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                 <ArrowRight className="w-3.5 h-3.5" /> Mover para Direita
               </button>
             </>
           )}
 
-          {contextMenu.type === 'row' && contextMenu.rowIdx !== undefined && (
+          {(contextMenu.type === 'row' || contextMenu.type === 'cell') && contextMenu.rowIdx !== undefined && (
             <>
-              <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Mover Linha
-              </div>
-              <button
-                onClick={() => moveRow('up')}
-                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-              >
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mover Linha</div>
+              <button onClick={() => moveRow('up')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                 <ArrowUp className="w-3.5 h-3.5" /> Mover para Cima
               </button>
-              <button
-                onClick={() => moveRow('down')}
-                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-              >
+              <button onClick={() => moveRow('down')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                 <ArrowDown className="w-3.5 h-3.5" /> Mover para Baixo
               </button>
-            </>
-          )}
-
-          {contextMenu.type === 'cell' && (
-            <>
-              {contextMenu.colIdx !== undefined && contextMenu.colIdx > 0 && (
-                <>
-                  <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Mover Coluna
-                  </div>
-                  <button
-                    onClick={() => moveColumn('left')}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" /> Mover Coluna ←
-                  </button>
-                  <button
-                    onClick={() => moveColumn('right')}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-                  >
-                    <ArrowRight className="w-3.5 h-3.5" /> Mover Coluna →
-                  </button>
-                </>
-              )}
-              {contextMenu.rowIdx !== undefined && (
-                <>
-                  <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Mover Linha
-                  </div>
-                  <button
-                    onClick={() => moveRow('up')}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-                  >
-                    <ArrowUp className="w-3.5 h-3.5" /> Mover Linha ↑
-                  </button>
-                  <button
-                    onClick={() => moveRow('down')}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
-                  >
-                    <ArrowDown className="w-3.5 h-3.5" /> Mover Linha ↓
-                  </button>
-                </>
-              )}
             </>
           )}
         </div>
