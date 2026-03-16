@@ -875,6 +875,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
           const cellBgStyle = fmt.bgColor && !selected ? { backgroundColor: fmt.bgColor } : {};
 
+          const isEditing = editingCell?.row === idx && editingCell?.col === visualColIdx;
+
           const cellEvents = {
             onClick: (e: React.MouseEvent) => handleCellClick(idx, visualColIdx, e),
             onMouseDown: (e: React.MouseEvent) => handleCellMouseDown(idx, visualColIdx, e),
