@@ -1166,6 +1166,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const hasSelection = activeCell !== null;
 
+  // 3. SEARCH: Filter rows
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+
   return (
     <div className="flex-1 flex flex-col" style={{ border: '1px solid hsl(var(--border))' }}>
       {/* Toolbar */}
