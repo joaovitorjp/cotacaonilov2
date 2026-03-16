@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { CheckCircle2, AlertCircle, Loader2, Package, Send } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, Package, Send, Search } from 'lucide-react';
 
 interface Produto {
   codigo_interno: string;
@@ -24,6 +24,8 @@ const CotacaoResposta = () => {
   const [submitted, setSubmitted] = useState(false);
   const [linkRespondido, setLinkRespondido] = useState(false);
   const [filledCount, setFilledCount] = useState(0);
+  // 3. SEARCH: filter products in supplier view
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadData();
@@ -70,6 +72,13 @@ const CotacaoResposta = () => {
 
     if (lista.status === 'finalizada') {
       setError('Esta cotação já foi encerrada.');
+      setLoading(false);
+      return;
+    }
+
+    // 5. DEADLINE: Check if expired
+    if ((lista as any).prazo && new Date((lista as any).prazo) < new Date()) {
+      setError('O prazo para responder esta cotação expirou.');
       setLoading(false);
       return;
     }
@@ -137,6 +146,17 @@ const CotacaoResposta = () => {
       setSubmitting(false);
     }
   };
+
+  // 3. SEARCH: Filter products
+  const filteredProdutos = produtos.map((prod, idx) => ({ prod, idx })).filter(({ prod }) => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      prod.codigo_interno.toLowerCase().includes(term) ||
+      prod.descricao.toLowerCase().includes(term) ||
+      prod.codigo_barras.toLowerCase().includes(term)
+    );
+  });
 
   if (loading) {
     return (
@@ -217,56 +237,80 @@ const CotacaoResposta = () => {
         </div>
       </div>
 
+      {/* 3. SEARCH BAR */}
+      {produtos.length > 10 && (
+        <div className="bg-card border-b border-border px-4 sm:px-6 py-2 shrink-0">
+          <div className="max-w-3xl mx-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                className="w-full h-9 rounded-md border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Buscar por código, descrição ou código de barras..."
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Product list */}
       <div className="flex-1 overflow-auto px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto space-y-2">
-          {produtos.map((prod, idx) => {
-            const hasPrice = prices[idx] && prices[idx].trim() !== '';
-            return (
-              <div
-                key={idx}
-                className={`border rounded-lg p-3 sm:p-4 transition-colors ${
-                  hasPrice ? 'border-success/30 bg-success/5' : 'border-border bg-card'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                  {/* Product info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
-                        {prod.codigo_interno}
-                      </span>
-                      <p className="text-sm text-foreground font-medium leading-tight truncate">
-                        {prod.descricao}
-                      </p>
+          {filteredProdutos.length === 0 && searchTerm.trim() ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              Nenhum produto encontrado para "{searchTerm}"
+            </div>
+          ) : (
+            filteredProdutos.map(({ prod, idx }) => {
+              const hasPrice = prices[idx] && prices[idx].trim() !== '';
+              return (
+                <div
+                  key={idx}
+                  className={`border rounded-lg p-3 sm:p-4 transition-colors ${
+                    hasPrice ? 'border-success/30 bg-success/5' : 'border-border bg-card'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                    {/* Product info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                          {prod.codigo_interno}
+                        </span>
+                        <p className="text-sm text-foreground font-medium leading-tight truncate">
+                          {prod.descricao}
+                        </p>
+                      </div>
+                      {prod.codigo_barras && (
+                        <p className="text-xs text-muted-foreground mt-1 ml-0 sm:ml-12">
+                          EAN: {prod.codigo_barras}
+                        </p>
+                      )}
                     </div>
-                    {prod.codigo_barras && (
-                      <p className="text-xs text-muted-foreground mt-1 ml-0 sm:ml-12">
-                        EAN: {prod.codigo_barras}
-                      </p>
-                    )}
-                  </div>
 
-                  {/* Price input */}
-                  <div className="shrink-0 w-full sm:w-36">
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
-                        R$
-                      </span>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                        value={prices[idx] ?? ''}
-                        onChange={e => setPrices(prev => ({ ...prev, [idx]: e.target.value }))}
-                        placeholder="0,00"
-                      />
+                    {/* Price input */}
+                    <div className="shrink-0 w-full sm:w-36">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
+                          R$
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                          value={prices[idx] ?? ''}
+                          onChange={e => setPrices(prev => ({ ...prev, [idx]: e.target.value }))}
+                          placeholder="0,00"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
 

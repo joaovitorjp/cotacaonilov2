@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Produto {
@@ -1166,6 +1166,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const hasSelection = activeCell !== null;
 
+  // 3. SEARCH: Filter rows
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+
   return (
     <div className="flex-1 flex flex-col" style={{ border: '1px solid hsl(var(--border))' }}>
       {/* Toolbar */}
@@ -1268,6 +1272,37 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             </button>
           </>
         )}
+
+
+        {/* Search */}
+        <div className="w-px h-5 bg-border mx-1" />
+        <button
+          onClick={() => setShowSearch(!showSearch)}
+          className={`p-1.5 rounded transition-colors ${showSearch ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+          title="Buscar"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+        {showSearch && (
+          <div className="relative flex-1 max-w-xs">
+            <input
+              type="text"
+              className="w-full h-7 rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Buscar código, descrição..."
+              autoFocus
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
+              >
+                <X className="w-3 h-3 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Spreadsheet */}
@@ -1337,7 +1372,17 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         </thead>
 
         <tbody>
-          {orderedRows.map((row, displayIdx) => renderRow(row.prod, row.idx, row.isEmpty, displayIdx))}
+          {orderedRows
+            .filter(row => {
+              if (!searchTerm.trim() || row.isEmpty || !row.prod) return true;
+              const term = searchTerm.toLowerCase();
+              return (
+                row.prod.codigo_interno.toLowerCase().includes(term) ||
+                row.prod.descricao.toLowerCase().includes(term) ||
+                row.prod.codigo_barras.toLowerCase().includes(term)
+              );
+            })
+            .map((row, displayIdx) => renderRow(row.prod, row.idx, row.isEmpty, displayIdx))}
         </tbody>
       </table>
 

@@ -15,6 +15,7 @@ interface ImportListaPanelProps {
 const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange, onImported }) => {
   const [nome, setNome] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [prazo, setPrazo] = useState('');
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -47,17 +48,25 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
         return;
       }
 
-      const { error } = await supabase.from('listas').insert({
+      const insertData: any = {
         nome: nome.trim(),
         produtos,
         status: 'aberta',
-      });
+      };
+
+      // 5. DEADLINE: Add prazo if set
+      if (prazo) {
+        insertData.prazo = new Date(prazo + 'T23:59:59').toISOString();
+      }
+
+      const { error } = await supabase.from('listas').insert(insertData);
 
       if (error) throw error;
 
       toast.success(`Lista "${nome}" importada com ${produtos.length} produtos.`);
       setNome('');
       setFile(null);
+      setPrazo('');
       if (inputRef.current) inputRef.current.value = '';
       onOpenChange(false);
       onImported();
@@ -67,6 +76,9 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
       setLoading(false);
     }
   };
+
+  // Get minimum date (today)
+  const today = new Date().toISOString().split('T')[0];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -86,6 +98,19 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
               placeholder="Ex: Cotação Março 2026"
               className="mt-1"
             />
+          </div>
+          <div>
+            <label className="text-sm font-display font-bold text-foreground">Prazo para respostas (opcional)</label>
+            <Input
+              type="date"
+              value={prazo}
+              onChange={e => setPrazo(e.target.value)}
+              min={today}
+              className="mt-1"
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Após esta data, fornecedores não poderão mais responder.
+            </p>
           </div>
           <div>
             <label className="text-sm font-display font-bold text-foreground">Arquivo (.xls / .xlsx)</label>

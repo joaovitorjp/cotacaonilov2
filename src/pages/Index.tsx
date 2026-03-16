@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
@@ -11,6 +11,10 @@ import Dashboard from '@/components/Dashboard';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table } from 'lucide-react';
 
 interface Lista {
@@ -19,6 +23,7 @@ interface Lista {
   status: string;
   produtos: { codigo_interno: string; descricao: string; codigo_barras: string }[];
   created_at: string;
+  prazo?: string | null;
 }
 
 interface RespostaEmpresa {
@@ -41,6 +46,10 @@ const Index = () => {
   const [showDashboard, setShowDashboard] = useState(true);
   const [activeTab, setActiveTab] = useState<'planilha' | 'analise'>('planilha');
 
+  // Confirmation dialog for encerrar
+  const [showEncerrarDialog, setShowEncerrarDialog] = useState(false);
+  const [encerrarStats, setEncerrarStats] = useState<{ total: number; responded: number; pending: string[] }>({ total: 0, responded: 0, pending: [] });
+
   const loadRespostas = useCallback(async (listaId: string) => {
     const { data } = await supabase
       .from('respostas')
@@ -48,6 +57,47 @@ const Index = () => {
       .eq('lista_id', listaId);
     setRespostas((data ?? []).map((d: any) => ({ empresa: d.empresa, resposta: d.resposta as any[] })));
   }, []);
+
+  // 1. REALTIME: Subscribe to new responses when a lista is open
+  useEffect(() => {
+    if (!currentLista || showDashboard) return;
+
+    const channel = supabase
+      .channel(`respostas-${currentLista.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'respostas',
+          filter: `lista_id=eq.${currentLista.id}`,
+        },
+        (payload: any) => {
+          const empresa = payload.new?.empresa || 'Fornecedor';
+          toast.success(`📩 Nova resposta recebida de "${empresa}"!`, { duration: 6000 });
+          loadRespostas(currentLista.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'respostas',
+          filter: `lista_id=eq.${currentLista.id}`,
+        },
+        (payload: any) => {
+          const empresa = payload.new?.empresa || 'Fornecedor';
+          toast.info(`🔄 Resposta atualizada por "${empresa}"`, { duration: 4000 });
+          loadRespostas(currentLista.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentLista?.id, showDashboard, loadRespostas]);
 
   const handleListaSelected = async (lista: Lista, finalized = false) => {
     setCurrentLista(lista);
@@ -65,7 +115,23 @@ const Index = () => {
     setActiveTab('planilha');
   };
 
-  const handleEncerrar = async () => {
+  // 4. CONFIRMATION: Load stats before showing dialog
+  const handleEncerrarClick = async () => {
+    if (!currentLista) return;
+    const { data: links } = await supabase
+      .from('links_cotacao')
+      .select('empresa, respondido')
+      .eq('lista_id', currentLista.id);
+
+    const allLinks = links ?? [];
+    const responded = allLinks.filter(l => l.respondido).length;
+    const pending = allLinks.filter(l => !l.respondido).map(l => l.empresa);
+
+    setEncerrarStats({ total: allLinks.length, responded, pending });
+    setShowEncerrarDialog(true);
+  };
+
+  const handleEncerrarConfirm = async () => {
     if (!currentLista) return;
     const { error } = await supabase
       .from('listas')
@@ -78,6 +144,7 @@ const Index = () => {
       toast.success(`Cotação "${currentLista.nome}" encerrada.`);
       handleBackToDashboard();
     }
+    setShowEncerrarDialog(false);
   };
 
   const handleExport = async (lista: Lista) => {
@@ -186,6 +253,9 @@ const Index = () => {
     else if (view === 'finalizadas') setFinalizadasOpen(true);
   };
 
+  // Check if deadline passed
+  const isExpired = currentLista?.prazo ? new Date(currentLista.prazo) < new Date() : false;
+
   const navItems = [
     { label: 'Início', icon: Home, action: handleBackToDashboard },
     { label: 'Importar', icon: Upload, action: () => { setImportOpen(true); setMobileMenuOpen(false); } },
@@ -273,6 +343,15 @@ const Index = () => {
                 FINALIZADA
               </span>
             )}
+            {currentLista.prazo && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-display font-bold ${
+                isExpired
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-primary/10 text-primary'
+              }`}>
+                {isExpired ? '⏰ EXPIRADA' : `📅 Prazo: ${new Date(currentLista.prazo).toLocaleDateString('pt-BR')}`}
+              </span>
+            )}
             {!isFinalized && respostas.length > 0 && (
               <Button variant="outline" size="sm" className="ml-auto text-xs" onClick={() => loadRespostas(currentLista.id)}>
                 Atualizar
@@ -342,12 +421,55 @@ const Index = () => {
       {/* Floating button */}
       {currentLista && !isFinalized && !showDashboard && (
         <button
-          onClick={handleEncerrar}
+          onClick={handleEncerrarClick}
           className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-success text-success-foreground px-4 sm:px-6 py-3 rounded shadow-lg font-display font-bold text-sm hover:bg-success/90 transition-colors duration-200 z-50"
         >
           Encerrar Cotação
         </button>
       )}
+
+      {/* 4. Encerrar Confirmation Dialog */}
+      <AlertDialog open={showEncerrarDialog} onOpenChange={setShowEncerrarDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Encerrar cotação?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Deseja encerrar a cotação <strong>"{currentLista?.nome}"</strong>? Após encerrar, fornecedores não poderão mais enviar respostas.</p>
+                
+                <div className="bg-muted rounded-lg p-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Links gerados:</span>
+                    <span className="font-bold text-foreground">{encerrarStats.total}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Responderam:</span>
+                    <span className="font-bold text-success">{encerrarStats.responded}</span>
+                  </div>
+                  {encerrarStats.pending.length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Ainda não responderam:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {encerrarStats.pending.map(emp => (
+                          <span key={emp} className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-display font-bold">
+                            {emp}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEncerrarConfirm} className="bg-success text-success-foreground hover:bg-success/90">
+              Encerrar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Panels */}
       <ImportListaPanel open={importOpen} onOpenChange={setImportOpen} onImported={() => {}} />
