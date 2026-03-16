@@ -934,7 +934,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             <td
               key={col.key}
               className={`${cellBaseClass}`}
-              style={{ borderColor: 'hsl(var(--border))' }}
+              style={{ borderColor: 'hsl(var(--border))', ...cellBgStyle }}
               {...cellEvents}
             >
               &nbsp;
