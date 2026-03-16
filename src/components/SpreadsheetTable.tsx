@@ -961,7 +961,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   const raw = getPreco(emp, prod!.codigo_interno);
                   if (raw === '' || raw === undefined || raw === null) return '';
                   const num = parsePrice(raw as string | number);
-                  return num === Infinity ? raw : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
+                  if (num === Infinity) return raw;
+                  const finalPrice = getMarkedUpPrice(num, emp);
+                  return `R$ ${Number(finalPrice).toFixed(2).replace('.', ',')}`;
                 })()}
               </td>
             );
