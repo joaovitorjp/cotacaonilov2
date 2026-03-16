@@ -298,6 +298,61 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setContextMenu(null);
   }, [activeCell]);
 
+  // Double-click to edit cell
+  const handleCellDoubleClick = useCallback((row: number, visualCol: number, origIdx: number) => {
+    if (readOnly) return;
+    // Get current displayed value
+    const editKey = `${row}-${origIdx}`;
+    let currentVal = cellEdits[editKey];
+    if (currentVal === undefined && row < produtos.length) {
+      const prod = produtos[row];
+      if (origIdx === 1) currentVal = prod.codigo_interno;
+      else if (origIdx === 2) currentVal = prod.descricao;
+      else if (origIdx === 3) currentVal = prod.codigo_barras;
+      else currentVal = '';
+    }
+    setEditingCell({ row, col: visualCol });
+    setEditingValue(currentVal ?? '');
+    setTimeout(() => editInputRef.current?.focus(), 0);
+  }, [readOnly, cellEdits, produtos]);
+
+  const commitEdit = useCallback((origIdx: number) => {
+    if (!editingCell) return;
+    const editKey = `${editingCell.row}-${origIdx}`;
+    setCellEdits(prev => ({ ...prev, [editKey]: editingValue }));
+    setHasUnsavedChanges(true);
+    setEditingCell(null);
+  }, [editingCell, editingValue]);
+
+  const cancelEdit = useCallback(() => {
+    setEditingCell(null);
+  }, []);
+
+  // Get display value for a cell (edited or original)
+  const getDisplayValue = useCallback((row: number, origIdx: number): string => {
+    const editKey = `${row}-${origIdx}`;
+    if (cellEdits[editKey] !== undefined) return cellEdits[editKey];
+    if (row >= produtos.length) return '';
+    const prod = produtos[row];
+    if (origIdx === 1) return prod.codigo_interno;
+    if (origIdx === 2) return prod.descricao;
+    if (origIdx === 3) return prod.codigo_barras;
+    return '';
+  }, [cellEdits, produtos]);
+
+  // Save handler
+  const handleSave = useCallback(() => {
+    if (!onSave) return;
+    const updated = produtos.map((prod, rowIdx) => ({
+      codigo_interno: cellEdits[`${rowIdx}-1`] ?? prod.codigo_interno,
+      descricao: cellEdits[`${rowIdx}-2`] ?? prod.descricao,
+      codigo_barras: cellEdits[`${rowIdx}-3`] ?? prod.codigo_barras,
+    }));
+    onSave(updated);
+    setCellEdits({});
+    setHasUnsavedChanges(false);
+  }, [onSave, produtos, cellEdits]);
+
   // Mouse down for drag selection
   const handleCellMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
     if (col === 0 || e.button !== 0 || e.shiftKey) return;
