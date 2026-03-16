@@ -1448,6 +1448,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         delete next[emp];
                         return next;
                       });
+                      saveMarkupToDb(emp, 0);
                       setContextMenu(null);
                     }}
                     className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-destructive"
