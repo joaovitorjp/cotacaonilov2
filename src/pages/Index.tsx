@@ -318,6 +318,18 @@ const Index = () => {
           respostas={respostas}
           readOnly={isFinalized}
           highlightLowest={respostas.length > 1}
+          onSave={currentLista && !isFinalized ? async (updatedProdutos) => {
+            const { error } = await supabase
+              .from('listas')
+              .update({ produtos: updatedProdutos as any })
+              .eq('id', currentLista.id);
+            if (error) {
+              toast.error('Erro ao salvar alterações.');
+            } else {
+              setCurrentLista({ ...currentLista, produtos: updatedProdutos });
+              toast.success('Alterações salvas com sucesso!');
+            }
+          } : undefined}
         />
       ) : (
         <AnalisePrecosPanel

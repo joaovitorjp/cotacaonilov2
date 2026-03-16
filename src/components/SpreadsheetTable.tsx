@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save } from 'lucide-react';
 
 interface Produto {
   codigo_interno: string;
@@ -20,6 +20,7 @@ interface SpreadsheetTableProps {
   onPriceChange?: (rowIndex: number, preco: string) => void;
   editPrices?: Record<number, string>;
   highlightLowest?: boolean;
+  onSave?: (produtos: Produto[]) => void;
 }
 
 const parsePrice = (val: string | number): number => {
@@ -58,8 +59,16 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onPriceChange,
   editPrices = {},
   highlightLowest = false,
+  onSave,
 }) => {
   const empresas = respostas.map(r => r.empresa);
+
+  // Editable cell data: key = "row-origColIdx", value = edited string
+  const [cellEdits, setCellEdits] = useState<Record<string, string>>({});
+  const [editingCell, setEditingCell] = useState<{ row: number; col: number } | null>(null);
+  const [editingValue, setEditingValue] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   const getPreco = (empresa: string, codigoInterno: string) => {
     const resp = respostas.find(r => r.empresa === empresa);
@@ -288,6 +297,61 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     }
     setContextMenu(null);
   }, [activeCell]);
+
+  // Double-click to edit cell
+  const handleCellDoubleClick = useCallback((row: number, visualCol: number, origIdx: number) => {
+    if (readOnly) return;
+    // Get current displayed value
+    const editKey = `${row}-${origIdx}`;
+    let currentVal = cellEdits[editKey];
+    if (currentVal === undefined && row < produtos.length) {
+      const prod = produtos[row];
+      if (origIdx === 1) currentVal = prod.codigo_interno;
+      else if (origIdx === 2) currentVal = prod.descricao;
+      else if (origIdx === 3) currentVal = prod.codigo_barras;
+      else currentVal = '';
+    }
+    setEditingCell({ row, col: visualCol });
+    setEditingValue(currentVal ?? '');
+    setTimeout(() => editInputRef.current?.focus(), 0);
+  }, [readOnly, cellEdits, produtos]);
+
+  const commitEdit = useCallback((origIdx: number) => {
+    if (!editingCell) return;
+    const editKey = `${editingCell.row}-${origIdx}`;
+    setCellEdits(prev => ({ ...prev, [editKey]: editingValue }));
+    setHasUnsavedChanges(true);
+    setEditingCell(null);
+  }, [editingCell, editingValue]);
+
+  const cancelEdit = useCallback(() => {
+    setEditingCell(null);
+  }, []);
+
+  // Get display value for a cell (edited or original)
+  const getDisplayValue = useCallback((row: number, origIdx: number): string => {
+    const editKey = `${row}-${origIdx}`;
+    if (cellEdits[editKey] !== undefined) return cellEdits[editKey];
+    if (row >= produtos.length) return '';
+    const prod = produtos[row];
+    if (origIdx === 1) return prod.codigo_interno;
+    if (origIdx === 2) return prod.descricao;
+    if (origIdx === 3) return prod.codigo_barras;
+    return '';
+  }, [cellEdits, produtos]);
+
+  // Save handler
+  const handleSave = useCallback(() => {
+    if (!onSave) return;
+    const updated = produtos.map((prod, rowIdx) => ({
+      codigo_interno: cellEdits[`${rowIdx}-1`] ?? prod.codigo_interno,
+      descricao: cellEdits[`${rowIdx}-2`] ?? prod.descricao,
+      codigo_barras: cellEdits[`${rowIdx}-3`] ?? prod.codigo_barras,
+    }));
+    onSave(updated);
+    setCellEdits({});
+    setHasUnsavedChanges(false);
+  }, [onSave, produtos, cellEdits]);
 
   // Mouse down for drag selection
   const handleCellMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
@@ -811,6 +875,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
           const cellBgStyle = fmt.bgColor && !selected ? { backgroundColor: fmt.bgColor } : {};
 
+          const isEditing = editingCell?.row === idx && editingCell?.col === visualColIdx;
+
           const cellEvents = {
             onClick: (e: React.MouseEvent) => handleCellClick(idx, visualColIdx, e),
             onMouseDown: (e: React.MouseEvent) => handleCellMouseDown(idx, visualColIdx, e),
@@ -838,39 +904,32 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           }
 
           const origIdx = col.originalIdx;
-          if (origIdx === 1) {
+          if (origIdx >= 1 && origIdx <= 3) {
+            const displayVal = getDisplayValue(idx, origIdx);
+            const stickyClass = origIdx === 1 ? 'sticky left-[36px] bg-background z-[5]' : '';
+            const extraClass = origIdx === 2 ? 'overflow-hidden text-ellipsis' : '';
             return (
               <td
                 key={col.key}
-                className={`${cellBaseClass} sticky left-[36px] bg-background z-[5] whitespace-nowrap text-xs`}
+                className={`${cellBaseClass} ${stickyClass} whitespace-nowrap ${extraClass} text-xs`}
                 style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
                 {...cellEvents}
+                onDoubleClick={() => handleCellDoubleClick(idx, visualColIdx, origIdx)}
               >
-                {prod!.codigo_interno}
-              </td>
-            );
-          }
-          if (origIdx === 2) {
-            return (
-              <td
-                key={col.key}
-                className={`${cellBaseClass} whitespace-nowrap overflow-hidden text-ellipsis text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
-                {...cellEvents}
-              >
-                {prod!.descricao}
-              </td>
-            );
-          }
-          if (origIdx === 3) {
-            return (
-              <td
-                key={col.key}
-                className={`${cellBaseClass} whitespace-nowrap text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
-                {...cellEvents}
-              >
-                {prod!.codigo_barras}
+                {isEditing ? (
+                  <input
+                    ref={editInputRef}
+                    type="text"
+                    className={`w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 ${alignClass(effectiveAlign)} text-xs h-full`}
+                    value={editingValue}
+                    onChange={e => setEditingValue(e.target.value)}
+                    onBlur={() => commitEdit(origIdx)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') commitEdit(origIdx);
+                      if (e.key === 'Escape') cancelEdit();
+                    }}
+                  />
+                ) : displayVal}
               </td>
             );
           }
@@ -1101,6 +1160,25 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             </div>
           )}
         </div>
+
+        {onSave && (
+          <>
+            <div className="w-px h-5 bg-border mx-1" />
+            <button
+              onClick={handleSave}
+              disabled={!hasUnsavedChanges}
+              className={`p-1.5 rounded transition-colors flex items-center gap-1 text-xs ${
+                hasUnsavedChanges
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'hover:bg-accent disabled:opacity-40'
+              }`}
+              title="Salvar alterações"
+            >
+              <Save className="w-4 h-4" />
+              <span className="hidden sm:inline">Salvar</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Spreadsheet */}
