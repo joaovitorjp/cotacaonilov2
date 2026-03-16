@@ -801,10 +801,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           const selected = isCellSelected(idx, visualColIdx);
           const active = isCellActive(idx, visualColIdx);
           const selBorders = getSelectionBorders(idx, visualColIdx);
+          const fmt = getCellFormatting(colIdx, idx);
 
           const cellBaseClass = `border-r border-b px-2 ${alignClass(effectiveAlign)} ${
+            fmt.bold ? 'font-bold' : ''
+          } ${fmt.italic ? 'italic' : ''} ${
             selected && !active ? 'bg-primary/10' : ''
           } ${active ? 'outline outline-2 outline-primary outline-offset-[-2px]' : ''} ${selBorders}`;
+
+          const cellBgStyle = fmt.bgColor && !selected ? { backgroundColor: fmt.bgColor } : {};
 
           const cellEvents = {
             onClick: (e: React.MouseEvent) => handleCellClick(idx, visualColIdx, e),
