@@ -632,6 +632,58 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setContextMenu(null);
   };
 
+  const BG_COLORS = [
+    { label: 'Amarelo', value: '#FEF9C3' },
+    { label: 'Verde', value: '#DCFCE7' },
+    { label: 'Azul', value: '#DBEAFE' },
+    { label: 'Rosa', value: '#FCE7F3' },
+    { label: 'Laranja', value: '#FED7AA' },
+    { label: 'Roxo', value: '#E9D5FF' },
+    { label: 'Cinza', value: '#F3F4F6' },
+  ];
+
+  const toggleBold = () => {
+    if (!contextMenu) return;
+    const { type, colIdx, rowIdx } = contextMenu;
+    if (type === 'cell' && colIdx !== undefined && rowIdx !== undefined) {
+      const key = `${rowIdx}-${colIdx}`;
+      setCellBold(prev => ({ ...prev, [key]: !prev[key] }));
+    } else if (type === 'column' && colIdx !== undefined) {
+      setColBold(prev => ({ ...prev, [colIdx]: !prev[colIdx] }));
+    } else if (type === 'row' && rowIdx !== undefined) {
+      setRowBold(prev => ({ ...prev, [rowIdx]: !prev[rowIdx] }));
+    }
+    setContextMenu(null);
+  };
+
+  const toggleItalic = () => {
+    if (!contextMenu) return;
+    const { type, colIdx, rowIdx } = contextMenu;
+    if (type === 'cell' && colIdx !== undefined && rowIdx !== undefined) {
+      const key = `${rowIdx}-${colIdx}`;
+      setCellItalic(prev => ({ ...prev, [key]: !prev[key] }));
+    } else if (type === 'column' && colIdx !== undefined) {
+      setColItalic(prev => ({ ...prev, [colIdx]: !prev[colIdx] }));
+    } else if (type === 'row' && rowIdx !== undefined) {
+      setRowItalic(prev => ({ ...prev, [rowIdx]: !prev[rowIdx] }));
+    }
+    setContextMenu(null);
+  };
+
+  const setBgColor = (color: string) => {
+    if (!contextMenu) return;
+    const { type, colIdx, rowIdx } = contextMenu;
+    if (type === 'cell' && colIdx !== undefined && rowIdx !== undefined) {
+      const key = `${rowIdx}-${colIdx}`;
+      setCellBgColor(prev => ({ ...prev, [key]: color }));
+    } else if (type === 'column' && colIdx !== undefined) {
+      setColBgColor(prev => ({ ...prev, [colIdx]: color }));
+    } else if (type === 'row' && rowIdx !== undefined) {
+      setRowBgColor(prev => ({ ...prev, [rowIdx]: color }));
+    }
+    setContextMenu(null);
+  };
+
   const handleCopyFromMenu = () => {
     document.execCommand('copy');
     setContextMenu(null);
