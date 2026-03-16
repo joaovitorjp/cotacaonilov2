@@ -1273,6 +1273,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         </div>
       )}
     </div>
+    </div>
   );
 };
 
