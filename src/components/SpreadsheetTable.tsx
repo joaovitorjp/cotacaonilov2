@@ -844,6 +844,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 key={col.key}
                 className={`${cellBaseClass} sticky left-[36px] bg-background z-[5] whitespace-nowrap text-xs`}
                 style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
+                {...cellEvents}
+              >
+                {prod!.codigo_interno}
               </td>
             );
           }
