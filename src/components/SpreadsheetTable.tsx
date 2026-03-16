@@ -30,8 +30,9 @@ const parsePrice = (val: string | number): number => {
 };
 
 const MIN_COL_WIDTH = 40;
-const MIN_ROW_HEIGHT = 24;
-const DEFAULT_ROW_HEIGHT = 30;
+const MIN_ROW_HEIGHT = 21;
+const DEFAULT_ROW_HEIGHT = 25;
+const HEADER_HEIGHT = 28;
 
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   produtos,
@@ -58,10 +59,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     for (const emp of empresas) {
       const raw = getPreco(emp, codigoInterno);
       const val = parsePrice(raw as string | number);
-      if (val < lowest && val > 0) {
-        lowest = val;
-        lowestEmp = emp;
-      }
+      if (val < lowest && val > 0) { lowest = val; lowestEmp = emp; }
     }
     return lowestEmp;
   };
@@ -72,72 +70,60 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const totalCols = 4 + empresas.length + (editableColumn && !empresas.includes(editableColumn) ? 1 : 0);
   const gridCols = Math.max(totalCols, EMPTY_COLS);
   const fillerCols = gridCols - totalCols;
-  const rowCount = produtos.length > 0 ? produtos.length : EMPTY_ROWS;
-  const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : 0;
-  const totalRows = rowCount + fillerRows;
+  const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : EMPTY_ROWS;
 
-  // Column widths state: keyed by column index
   const [colWidths, setColWidths] = useState<Record<number, number>>({});
-  // Row heights state: keyed by row index
   const [rowHeights, setRowHeights] = useState<Record<number, number>>({});
+  const [activeColResize, setActiveColResize] = useState<number | null>(null);
+  const [activeRowResize, setActiveRowResize] = useState<number | null>(null);
 
   const tableRef = useRef<HTMLTableElement>(null);
-  const resizingCol = useRef<{ colIdx: number; startX: number; startW: number; minW: number } | null>(null);
-  const resizingRow = useRef<{ rowIdx: number; startY: number; startH: number; minH: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Measure the minimum width for a column based on content
-  const measureColMinWidth = useCallback((colIdx: number): number => {
-    if (!tableRef.current) return MIN_COL_WIDTH;
-    const cells = tableRef.current.querySelectorAll(`th:nth-child(${colIdx + 1}), td:nth-child(${colIdx + 1})`);
-    let maxContentWidth = MIN_COL_WIDTH;
-    cells.forEach(cell => {
-      const el = cell as HTMLElement;
-      // Temporarily remove width constraint to measure natural content width
-      const prevWidth = el.style.width;
-      const prevOverflow = el.style.overflow;
-      el.style.width = 'auto';
-      el.style.overflow = 'visible';
-      const contentWidth = el.scrollWidth;
-      el.style.width = prevWidth;
-      el.style.overflow = prevOverflow;
-      if (contentWidth > maxContentWidth) maxContentWidth = contentWidth;
-    });
-    return maxContentWidth;
-  }, []);
+  // Auto-fit column widths on data change
+  useEffect(() => {
+    if (!tableRef.current) return;
+    const timer = setTimeout(() => {
+      const newWidths: Record<number, number> = {};
+      const colCount = gridCols;
+      for (let i = 0; i < colCount; i++) {
+        if (colWidths[i]) continue; // don't override user-resized
+        const cells = tableRef.current!.querySelectorAll(
+          `thead th:nth-child(${i + 1}), tbody td:nth-child(${i + 1})`
+        );
+        let max = i === 0 ? 36 : MIN_COL_WIDTH;
+        cells.forEach(cell => {
+          const el = cell as HTMLElement;
+          const prev = el.style.width;
+          el.style.width = 'auto';
+          const w = el.scrollWidth + 8;
+          el.style.width = prev;
+          if (w > max) max = w;
+        });
+        newWidths[i] = Math.max(max, i === 2 ? 200 : i === 0 ? 36 : 80);
+      }
+      setColWidths(prev => ({ ...newWidths, ...prev }));
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [produtos, respostas, empresas.length, gridCols]);
 
-  // Measure the minimum height for a row based on content
-  const measureRowMinHeight = useCallback((rowIdx: number): number => {
-    if (!tableRef.current) return MIN_ROW_HEIGHT;
-    const rows = tableRef.current.querySelectorAll('tr');
-    // +1 to skip header row
-    const row = rows[rowIdx + 1];
-    if (!row) return MIN_ROW_HEIGHT;
-    let maxContentHeight = MIN_ROW_HEIGHT;
-    row.querySelectorAll('td, th').forEach(cell => {
-      const el = cell as HTMLElement;
-      const contentHeight = el.scrollHeight;
-      if (contentHeight > maxContentHeight) maxContentHeight = contentHeight;
-    });
-    return maxContentHeight;
-  }, []);
+  const getColWidth = (i: number) => colWidths[i] || (i === 0 ? 36 : i === 2 ? 200 : 80);
 
+  // Column resize — Excel-style: thin line appears on hover, blue indicator while dragging
   const handleColResizeStart = useCallback((e: React.MouseEvent, colIdx: number) => {
     e.preventDefault();
     e.stopPropagation();
     const startX = e.clientX;
-    const startW = colWidths[colIdx] || 100;
-    const minW = measureColMinWidth(colIdx);
-    resizingCol.current = { colIdx, startX, startW, minW };
+    const startW = getColWidth(colIdx);
+    setActiveColResize(colIdx);
 
     const onMouseMove = (ev: MouseEvent) => {
-      if (!resizingCol.current) return;
-      const { startX, startW, minW, colIdx: ci } = resizingCol.current;
       const diff = ev.clientX - startX;
-      const newW = Math.max(minW, startW + diff);
-      setColWidths(prev => ({ ...prev, [ci]: newW }));
+      const newW = Math.max(MIN_COL_WIDTH, startW + diff);
+      setColWidths(prev => ({ ...prev, [colIdx]: newW }));
     };
     const onMouseUp = () => {
-      resizingCol.current = null;
+      setActiveColResize(null);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
       document.body.style.cursor = '';
@@ -147,25 +133,23 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [colWidths, measureColMinWidth]);
+  }, [colWidths]);
 
+  // Row resize
   const handleRowResizeStart = useCallback((e: React.MouseEvent, rowIdx: number) => {
     e.preventDefault();
     e.stopPropagation();
     const startY = e.clientY;
     const startH = rowHeights[rowIdx] || DEFAULT_ROW_HEIGHT;
-    const minH = measureRowMinHeight(rowIdx);
-    resizingRow.current = { rowIdx, startY, startH, minH };
+    setActiveRowResize(rowIdx);
 
     const onMouseMove = (ev: MouseEvent) => {
-      if (!resizingRow.current) return;
-      const { startY, startH, minH, rowIdx: ri } = resizingRow.current;
       const diff = ev.clientY - startY;
-      const newH = Math.max(minH, startH + diff);
-      setRowHeights(prev => ({ ...prev, [ri]: newH }));
+      const newH = Math.max(MIN_ROW_HEIGHT, startH + diff);
+      setRowHeights(prev => ({ ...prev, [rowIdx]: newH }));
     };
     const onMouseUp = () => {
-      resizingRow.current = null;
+      setActiveRowResize(null);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
       document.body.style.cursor = '';
@@ -175,11 +159,37 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [rowHeights, measureRowMinHeight]);
+  }, [rowHeights]);
 
-  // Build column definitions for consistent indexing
+  // Double-click to auto-fit column
+  const handleColAutoFit = useCallback((colIdx: number) => {
+    if (!tableRef.current) return;
+    const cells = tableRef.current.querySelectorAll(
+      `thead th:nth-child(${colIdx + 1}), tbody td:nth-child(${colIdx + 1})`
+    );
+    let max = MIN_COL_WIDTH;
+    cells.forEach(cell => {
+      const el = cell as HTMLElement;
+      const prev = el.style.width;
+      el.style.width = 'auto';
+      const w = el.scrollWidth + 12;
+      el.style.width = prev;
+      if (w > max) max = w;
+    });
+    setColWidths(prev => ({ ...prev, [colIdx]: max }));
+  }, []);
+
+  // Double-click to auto-fit row
+  const handleRowAutoFit = useCallback((rowIdx: number) => {
+    setRowHeights(prev => {
+      const copy = { ...prev };
+      delete copy[rowIdx];
+      return copy;
+    });
+  }, []);
+
   const colDefs: { key: string; label: string; align: string; sticky?: boolean; highlight?: boolean }[] = [
-    { key: '#', label: '#', align: 'center' },
+    { key: '#', label: '', align: 'center' },
     { key: 'cod_int', label: 'Código Interno', align: 'center', sticky: true },
     { key: 'desc', label: 'Descrição', align: 'left' },
     { key: 'cod_bar', label: 'Código de Barras', align: 'center' },
@@ -188,115 +198,184 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     ...Array.from({ length: fillerCols }).map((_, i) => ({ key: `filler_${i}`, label: '', align: 'center' })),
   ];
 
+  const renderRow = (prod: Produto | null, idx: number, isEmpty: boolean) => {
+    const lowestEmp = prod ? getLowestEmpresa(prod.codigo_interno) : null;
+    const h = rowHeights[idx] || DEFAULT_ROW_HEIGHT;
+    return (
+      <tr
+        key={isEmpty ? `empty-${idx}` : idx}
+        className="group/row"
+        style={{ height: `${h}px` }}
+      >
+        {/* Row number cell — Excel gray background */}
+        <td
+          className="border-r border-b px-0 text-center text-[11px] text-muted-foreground select-none relative"
+          style={{
+            borderColor: 'hsl(var(--border))',
+            backgroundColor: 'hsl(var(--muted))',
+            minWidth: getColWidth(0),
+            width: getColWidth(0),
+          }}
+        >
+          {prod ? idx + 1 : (produtos.length > 0 ? idx + 1 : '')}
+          {/* Row resize handle */}
+          <div
+            className={`absolute left-0 right-0 bottom-[-2px] h-[5px] cursor-row-resize z-30 ${
+              activeRowResize === idx ? 'bg-primary' : 'hover:bg-primary/40'
+            }`}
+            style={{ opacity: activeRowResize === idx ? 1 : undefined }}
+            onMouseDown={e => handleRowResizeStart(e, idx)}
+            onDoubleClick={() => handleRowAutoFit(idx)}
+          />
+        </td>
+
+        {isEmpty ? (
+          Array.from({ length: gridCols - 1 }).map((_, colIdx) => (
+            <td
+              key={`ec-${colIdx}`}
+              className={`border-r border-b px-2 ${colIdx === 0 ? 'sticky left-[36px] bg-background z-[5]' : ''}`}
+              style={{
+                borderColor: 'hsl(var(--border))',
+                minWidth: getColWidth(colIdx + 1),
+                width: getColWidth(colIdx + 1),
+              }}
+            >
+              &nbsp;
+            </td>
+          ))
+        ) : (
+          <>
+            <td
+              className="border-r border-b px-2 text-center sticky left-[36px] bg-background z-[5] whitespace-nowrap text-xs"
+              style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(1), width: getColWidth(1) }}
+            >
+              {prod!.codigo_interno}
+            </td>
+            <td
+              className="border-r border-b px-2 whitespace-nowrap overflow-hidden text-ellipsis text-xs"
+              style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(2), width: getColWidth(2) }}
+            >
+              {prod!.descricao}
+            </td>
+            <td
+              className="border-r border-b px-2 text-center whitespace-nowrap text-xs"
+              style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(3), width: getColWidth(3) }}
+            >
+              {prod!.codigo_barras}
+            </td>
+            {empresas.map((emp, empIdx) => {
+              const isLowest = lowestEmp === emp;
+              const isEditable = editableColumn === emp;
+              return (
+                <td
+                  key={emp}
+                  className={`border-r border-b px-1 text-center whitespace-nowrap text-xs ${
+                    isEditable ? 'bg-primary/5' : isLowest ? 'bg-success/10 text-success font-bold' : ''
+                  }`}
+                  style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(4 + empIdx), width: getColWidth(4 + empIdx) }}
+                >
+                  {isEditable && !readOnly ? (
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 text-center text-xs h-full"
+                      value={editPrices[idx] ?? ''}
+                      onChange={e => onPriceChange?.(idx, e.target.value)}
+                      placeholder="0,00"
+                    />
+                  ) : (() => {
+                    const raw = getPreco(emp, prod!.codigo_interno);
+                    if (raw === '' || raw === undefined || raw === null) return '';
+                    const num = parsePrice(raw as string | number);
+                    return num === Infinity ? raw : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
+                  })()}
+                </td>
+              );
+            })}
+            {editableColumn && !empresas.includes(editableColumn) && (
+              <td
+                className="border-r border-b px-1 text-center bg-primary/5 whitespace-nowrap text-xs"
+                style={{ borderColor: 'hsl(var(--border))' }}
+              >
+                {!readOnly ? (
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 text-center text-xs"
+                    value={editPrices[idx] ?? ''}
+                    onChange={e => onPriceChange?.(idx, e.target.value)}
+                    placeholder="0,00"
+                  />
+                ) : ''}
+              </td>
+            )}
+            {Array.from({ length: fillerCols }).map((_, i) => (
+              <td
+                key={`fc-${i}`}
+                className="border-r border-b px-2"
+                style={{ borderColor: 'hsl(var(--border))' }}
+              >
+                &nbsp;
+              </td>
+            ))}
+          </>
+        )}
+      </tr>
+    );
+  };
+
   return (
-    <div className="flex-1 overflow-auto border border-border">
-      <table ref={tableRef} className="border-collapse font-body text-sm w-full min-w-max" style={{ tableLayout: 'fixed' }}>
+    <div ref={containerRef} className="flex-1 overflow-auto" style={{ border: '1px solid hsl(var(--border))' }}>
+      <table
+        ref={tableRef}
+        className="border-collapse text-sm min-w-max"
+        style={{ tableLayout: 'fixed', fontFamily: 'var(--font-body)', fontSize: '12px' }}
+      >
         <colgroup>
           {colDefs.map((col, i) => (
-            <col key={col.key} style={{ width: colWidths[i] ? `${colWidths[i]}px` : (i === 0 ? '40px' : i === 2 ? '250px' : '120px') }} />
+            <col key={col.key} style={{ width: `${getColWidth(i)}px` }} />
           ))}
         </colgroup>
+
+        {/* Header — Excel-style gray */}
         <thead className="sticky top-0 z-10">
-          <tr className="bg-card">
+          <tr style={{ height: `${HEADER_HEIGHT}px` }}>
             {colDefs.map((col, i) => (
               <th
                 key={col.key}
-                className={`border border-border px-3 py-2 font-display font-bold whitespace-nowrap relative select-none ${
+                className={`border-r border-b px-2 font-semibold whitespace-nowrap relative select-none text-[11px] ${
                   col.align === 'left' ? 'text-left' : 'text-center'
-                } ${col.sticky ? 'sticky left-0 bg-card z-20' : ''} ${col.highlight ? 'bg-primary text-primary-foreground' : 'text-foreground'}`}
-                style={{ height: DEFAULT_ROW_HEIGHT }}
+                } ${col.sticky ? 'sticky left-[36px] z-20' : ''} ${
+                  col.highlight
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-foreground'
+                }`}
+                style={{
+                  borderColor: 'hsl(var(--border))',
+                  backgroundColor: col.highlight ? undefined : 'hsl(var(--muted))',
+                  height: HEADER_HEIGHT,
+                }}
               >
                 {col.label}
-                {/* Column resize handle */}
+                {/* Column resize handle — thin line, blue on hover/active */}
                 <div
-                  className="absolute right-0 top-0 bottom-0 w-[5px] cursor-col-resize hover:bg-primary/30 z-30"
+                  className={`absolute top-0 bottom-0 w-[4px] cursor-col-resize z-30 ${
+                    activeColResize === i ? 'bg-primary' : 'hover:bg-primary/50'
+                  }`}
+                  style={{ right: '-2px' }}
                   onMouseDown={e => handleColResizeStart(e, i)}
+                  onDoubleClick={() => handleColAutoFit(i)}
                 />
               </th>
             ))}
           </tr>
         </thead>
+
         <tbody>
-          {produtos.map((prod, idx) => {
-            const lowestEmp = getLowestEmpresa(prod.codigo_interno);
-            const h = rowHeights[idx] || DEFAULT_ROW_HEIGHT;
-            return (
-              <tr key={idx} className="hover:bg-muted/30 relative" style={{ height: `${h}px` }}>
-                <td className="border border-border px-3 text-center text-muted-foreground whitespace-nowrap relative">
-                  {idx + 1}
-                  {/* Row resize handle */}
-                  <div
-                    className="absolute left-0 right-0 bottom-0 h-[4px] cursor-row-resize hover:bg-primary/30 z-30"
-                    onMouseDown={e => handleRowResizeStart(e, idx)}
-                  />
-                </td>
-                <td className="border border-border px-3 text-center sticky left-0 bg-background whitespace-nowrap">{prod.codigo_interno}</td>
-                <td className="border border-border px-3 whitespace-nowrap overflow-hidden text-ellipsis">{prod.descricao}</td>
-                <td className="border border-border px-3 text-center whitespace-nowrap">{prod.codigo_barras}</td>
-                {empresas.map(emp => {
-                  const isLowest = lowestEmp === emp;
-                  const cellClass = editableColumn === emp
-                    ? 'bg-primary/5'
-                    : isLowest
-                      ? 'bg-green-100 text-green-800 font-bold'
-                      : '';
-                  return (
-                    <td key={emp} className={`border border-border px-3 text-center whitespace-nowrap ${cellClass}`}>
-                      {editableColumn === emp && !readOnly ? (
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 text-center"
-                          value={editPrices[idx] ?? ''}
-                          onChange={e => onPriceChange?.(idx, e.target.value)}
-                          placeholder="0,00"
-                        />
-                      ) : (() => {
-                        const raw = getPreco(emp, prod.codigo_interno);
-                        if (raw === '' || raw === undefined || raw === null) return '';
-                        const num = parsePrice(raw as string | number);
-                        return num === Infinity ? raw : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
-                      })()}
-                    </td>
-                  );
-                })}
-                {editableColumn && !empresas.includes(editableColumn) && (
-                  <td className="border border-border px-3 text-center bg-primary/5 whitespace-nowrap">
-                    {!readOnly ? (
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 text-center"
-                        value={editPrices[idx] ?? ''}
-                        onChange={e => onPriceChange?.(idx, e.target.value)}
-                        placeholder="0,00"
-                      />
-                    ) : ''}
-                  </td>
-                )}
-                {Array.from({ length: fillerCols }).map((_, i) => (
-                  <td key={`fc-${i}`} className="border border-border px-3">&nbsp;</td>
-                ))}
-              </tr>
-            );
-          })}
-          {Array.from({ length: produtos.length === 0 ? EMPTY_ROWS : fillerRows }).map((_, rowIdx) => {
+          {produtos.map((prod, idx) => renderRow(prod, idx, false))}
+          {Array.from({ length: fillerRows }).map((_, rowIdx) => {
             const absIdx = produtos.length + rowIdx;
-            const h = rowHeights[absIdx] || DEFAULT_ROW_HEIGHT;
-            return (
-              <tr key={`empty-${rowIdx}`} style={{ height: `${h}px` }}>
-                <td className="border border-border px-3 text-center text-muted-foreground whitespace-nowrap relative">
-                  {produtos.length > 0 ? absIdx + 1 : ''}
-                  <div
-                    className="absolute left-0 right-0 bottom-0 h-[4px] cursor-row-resize hover:bg-primary/30 z-30"
-                    onMouseDown={e => handleRowResizeStart(e, absIdx)}
-                  />
-                </td>
-                {Array.from({ length: gridCols - 1 }).map((_, colIdx) => (
-                  <td key={`ec-${colIdx}`} className={`border border-border px-3 ${colIdx === 0 ? 'sticky left-0 bg-background' : ''}`}>&nbsp;</td>
-                ))}
-              </tr>
-            );
+            return renderRow(null, absIdx, true);
           })}
         </tbody>
       </table>
