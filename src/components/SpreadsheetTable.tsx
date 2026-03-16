@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent } from 'lucide-react';
 
 interface Produto {
   codigo_interno: string;
@@ -961,7 +961,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   const raw = getPreco(emp, prod!.codigo_interno);
                   if (raw === '' || raw === undefined || raw === null) return '';
                   const num = parsePrice(raw as string | number);
-                  return num === Infinity ? raw : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
+                  if (num === Infinity) return raw;
+                  const finalPrice = getMarkedUpPrice(num, emp);
+                  return `R$ ${Number(finalPrice).toFixed(2).replace('.', ',')}`;
                 })()}
               </td>
             );
@@ -1063,6 +1065,52 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorPickerRef = useRef<HTMLDivElement>(null);
+
+  // Price markup state (per empresa)
+  const [priceMarkups, setPriceMarkups] = useState<Record<string, number>>({});
+  const [markupDialog, setMarkupDialog] = useState<{ empresa: string } | null>(null);
+  const [markupValue, setMarkupValue] = useState('');
+  const markupInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (markupDialog) {
+      setTimeout(() => markupInputRef.current?.focus(), 50);
+    }
+  }, [markupDialog]);
+
+  const applyMarkup = () => {
+    if (!markupDialog) return;
+    const pct = parseFloat(markupValue.replace(',', '.'));
+    if (isNaN(pct)) {
+      setMarkupDialog(null);
+      setMarkupValue('');
+      return;
+    }
+    setPriceMarkups(prev => ({
+      ...prev,
+      [markupDialog.empresa]: (prev[markupDialog.empresa] || 0) + pct,
+    }));
+    setMarkupDialog(null);
+    setMarkupValue('');
+  };
+
+  const getMarkedUpPrice = (rawPrice: number, empresa: string): number => {
+    const markup = priceMarkups[empresa];
+    if (!markup) return rawPrice;
+    return rawPrice * (1 + markup / 100);
+  };
+
+  // Helper to check if a context menu column is a supplier column
+  const getContextEmpresa = (): string | null => {
+    if (!contextMenu || contextMenu.colIdx === undefined) return null;
+    const colDef = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
+    if (!colDef) return null;
+    const origIdx = colDef.originalIdx;
+    if (origIdx >= 4 && origIdx < 4 + empresas.length) {
+      return empresas[origIdx - 4];
+    }
+    return null;
+  };
 
   useEffect(() => {
     if (!showColorPicker) return;
@@ -1228,6 +1276,11 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   onContextMenu={e => handleContextMenu(e, 'column', colIdx)}
                 >
                   {col.label}
+                  {col.originalIdx >= 4 && col.originalIdx < 4 + empresas.length && priceMarkups[empresas[col.originalIdx - 4]] ? (
+                    <span className="ml-1 text-[9px] opacity-70">
+                      (+{priceMarkups[empresas[col.originalIdx - 4]].toFixed(1)}%)
+                    </span>
+                  ) : null}
                   <div
                     className={`absolute top-0 bottom-0 w-[4px] cursor-col-resize z-30 ${
                       activeColResize === i ? 'bg-primary' : 'hover:bg-primary/50'
@@ -1324,6 +1377,48 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
           <div className="border-t border-border my-1" />
 
+          {/* Acrescentar % - only for supplier columns */}
+          {(() => {
+            const emp = getContextEmpresa();
+            if (!emp) return null;
+            return (
+              <>
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Preços</div>
+                <button
+                  onClick={() => {
+                    setMarkupDialog({ empresa: emp });
+                    setMarkupValue('');
+                    setContextMenu(null);
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+                >
+                  <Percent className="w-3.5 h-3.5" /> Acrescentar %
+                  {priceMarkups[emp] ? (
+                    <span className="ml-auto text-[10px] text-muted-foreground">
+                      ({priceMarkups[emp] > 0 ? '+' : ''}{priceMarkups[emp].toFixed(1)}%)
+                    </span>
+                  ) : null}
+                </button>
+                {priceMarkups[emp] ? (
+                  <button
+                    onClick={() => {
+                      setPriceMarkups(prev => {
+                        const next = { ...prev };
+                        delete next[emp];
+                        return next;
+                      });
+                      setContextMenu(null);
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-destructive"
+                  >
+                    <X className="w-3.5 h-3.5" /> Remover acréscimo
+                  </button>
+                ) : null}
+                <div className="border-t border-border my-1" />
+              </>
+            );
+          })()}
+
           {/* Move options */}
           {(contextMenu.type === 'column' || contextMenu.type === 'cell') && contextMenu.colIdx !== undefined && contextMenu.colIdx > 0 && (
             <>
@@ -1348,6 +1443,45 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               </button>
             </>
           )}
+        </div>
+      )}
+
+      {/* Markup Dialog */}
+      {markupDialog && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onClick={() => setMarkupDialog(null)}>
+          <div className="bg-popover border border-border rounded-lg shadow-xl p-4 w-72" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-foreground mb-1">Acrescentar %</h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              Fornecedor: <span className="font-bold text-foreground">{markupDialog.empresa}</span>
+              {priceMarkups[markupDialog.empresa] ? (
+                <span className="ml-1">(acréscimo atual: {priceMarkups[markupDialog.empresa]}%)</span>
+              ) : null}
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  ref={markupInputRef}
+                  type="text"
+                  inputMode="decimal"
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={markupValue}
+                  onChange={e => setMarkupValue(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') applyMarkup();
+                    if (e.key === 'Escape') setMarkupDialog(null);
+                  }}
+                  placeholder="Ex: 10"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+              </div>
+              <button
+                onClick={applyMarkup}
+                className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors"
+              >
+                Aplicar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
