@@ -4,12 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Copy, Check, Link2, UserPlus } from 'lucide-react';
+import { Copy, Check, Link2, UserPlus, MessageCircle } from 'lucide-react';
 
 interface Fornecedor {
   id: string;
   nome: string;
   contato: string | null;
+  whatsapp: string;
+}
+
+interface GeneratedLink {
+  empresa: string;
+  link: string;
+  copied: boolean;
+  whatsapp?: string;
 }
 
 interface GerarLinkPanelProps {
@@ -21,7 +29,7 @@ interface GerarLinkPanelProps {
 const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, listaId }) => {
   const [empresa, setEmpresa] = useState('');
   const [loading, setLoading] = useState(false);
-  const [generatedLinks, setGeneratedLinks] = useState<{ empresa: string; link: string; copied: boolean }[]>([]);
+  const [generatedLinks, setGeneratedLinks] = useState<GeneratedLink[]>([]);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
 
   useEffect(() => {
@@ -51,21 +59,20 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false }]);
       setEmpresa('');
       toast.success('Link gerado!');
-    } catch (err: any) {
+    } catch {
       toast.error('Erro ao gerar link.');
     }
     setLoading(false);
   };
 
   const handleGerarFromFornecedor = async (f: Fornecedor) => {
-    // Check if already generated
     if (generatedLinks.some(l => l.empresa === f.nome)) {
       toast.info('Link já gerado para este fornecedor.');
       return;
     }
     try {
       const link = await generateLink(f.nome);
-      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false }]);
+      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp }]);
       toast.success(`Link gerado para ${f.nome}!`);
     } catch {
       toast.error('Erro ao gerar link.');
@@ -83,7 +90,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     for (const f of pendentes) {
       try {
         const link = await generateLink(f.nome);
-        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false }]);
+        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp }]);
         count++;
       } catch { /* skip */ }
     }
@@ -105,6 +112,15 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     toast.success('Todos os links copiados!');
   };
 
+  const handleShareWhatsApp = (item: GeneratedLink) => {
+    const phone = item.whatsapp ? item.whatsapp.replace(/\D/g, '') : '';
+    const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
+    const message = encodeURIComponent(
+      `Olá! Segue o link para responder a cotação:\n${item.link}`
+    );
+    window.open(`https://wa.me/${fullPhone}?text=${message}`, '_blank');
+  };
+
   const handleClose = (open: boolean) => {
     if (!open) {
       setGeneratedLinks([]);
@@ -121,7 +137,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
             <SheetTitle className="font-display text-xl flex items-center gap-2">
               <Link2 className="w-5 h-5" /> Gerar Links de Cotação
             </SheetTitle>
-            <SheetDescription>Gere links únicos para fornecedores responderem.</SheetDescription>
+            <SheetDescription>Gere links únicos e compartilhe via WhatsApp.</SheetDescription>
           </SheetHeader>
         </div>
 
@@ -198,14 +214,25 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <p className="font-display font-bold text-foreground text-sm">{item.empresa}</p>
-                      <button
-                        onClick={() => handleCopy(idx)}
-                        className={`p-1.5 rounded transition-colors ${
-                          item.copied ? 'text-success' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {item.copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      </button>
+                      <div className="flex items-center gap-1">
+                        {item.whatsapp && (
+                          <button
+                            onClick={() => handleShareWhatsApp(item)}
+                            className="p-1.5 rounded transition-colors text-green-600 hover:bg-green-500/10"
+                            title="Enviar via WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleCopy(idx)}
+                          className={`p-1.5 rounded transition-colors ${
+                            item.copied ? 'text-success' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                          }`}
+                        >
+                          {item.copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
                     <p className="text-[11px] text-muted-foreground break-all font-mono">{item.link}</p>
                   </div>

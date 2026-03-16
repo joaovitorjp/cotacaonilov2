@@ -1,0 +1,1 @@
+ALTER TABLE public.fornecedores ADD COLUMN whatsapp text NOT NULL DEFAULT '';
