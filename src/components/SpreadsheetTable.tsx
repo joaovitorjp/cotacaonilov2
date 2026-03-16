@@ -855,7 +855,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               <td
                 key={col.key}
                 className={`${cellBaseClass} whitespace-nowrap overflow-hidden text-ellipsis text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
                 {...cellEvents}
               >
                 {prod!.descricao}
