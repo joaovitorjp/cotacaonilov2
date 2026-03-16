@@ -189,7 +189,7 @@ const Index = () => {
   const navItems = [
     { label: 'Início', icon: Home, action: handleBackToDashboard },
     { label: 'Importar', icon: Upload, action: () => { setImportOpen(true); setMobileMenuOpen(false); } },
-    { label: 'Carregar', icon: FolderOpen, action: () => { setCarregarOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Abertas', icon: FolderOpen, action: () => { setCarregarOpen(true); setMobileMenuOpen(false); } },
     { label: 'Gerar Link', icon: Link2, action: () => { setGerarLinkOpen(true); setMobileMenuOpen(false); }, disabled: !currentLista || isFinalized },
     { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
     { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
@@ -343,7 +343,7 @@ const Index = () => {
         onOpenChange={setCarregarOpen}
         onListaSelected={lista => handleListaSelected(lista, false)}
         statusFilter="aberta"
-        title="Carregar Lista"
+        title="Listas Abertas"
       />
       <CarregarListaPanel
         open={finalizadasOpen}
