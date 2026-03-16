@@ -886,7 +886,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 className={`${cellBaseClass} px-1 whitespace-nowrap text-xs ${
                   isEditable ? 'bg-primary/5' : isLowest ? 'bg-success/10 text-success font-bold' : ''
                 }`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
                 {...cellEvents}
               >
                 {isEditable && !readOnly ? (
