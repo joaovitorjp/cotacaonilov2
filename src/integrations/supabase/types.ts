@@ -78,6 +78,7 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          prazo: string | null
           produtos: Json
           status: string
           updated_at: string
@@ -86,6 +87,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          prazo?: string | null
           produtos?: Json
           status?: string
           updated_at?: string
@@ -94,6 +96,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          prazo?: string | null
           produtos?: Json
           status?: string
           updated_at?: string
