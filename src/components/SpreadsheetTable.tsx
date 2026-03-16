@@ -62,6 +62,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   editPrices = {},
   highlightLowest = false,
   onSave,
+  listaId,
 }) => {
   const empresas = respostas.map(r => r.empresa);
 
