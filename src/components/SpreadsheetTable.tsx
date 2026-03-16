@@ -214,6 +214,16 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return 'text-center';
   };
 
+  // Get effective formatting for a cell (cell > row > col)
+  const getCellFormatting = (colIdx: number, rowIdx: number) => {
+    const key = `${rowIdx}-${colIdx}`;
+    return {
+      bold: cellBold[key] ?? rowBold[rowIdx] ?? colBold[colIdx] ?? false,
+      italic: cellItalic[key] ?? rowItalic[rowIdx] ?? colItalic[colIdx] ?? false,
+      bgColor: cellBgColor[key] || rowBgColor[rowIdx] || colBgColor[colIdx] || '',
+    };
+  };
+
   // Selection helpers
   const getSelectionRange = useCallback((): { minRow: number; maxRow: number; minCol: number; maxCol: number } | null => {
     if (!selectionAnchor || !selectionEnd) {
