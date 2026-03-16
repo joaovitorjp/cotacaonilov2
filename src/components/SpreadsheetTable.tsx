@@ -867,7 +867,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               <td
                 key={col.key}
                 className={`${cellBaseClass} whitespace-nowrap text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
                 {...cellEvents}
               >
                 {prod!.codigo_barras}
