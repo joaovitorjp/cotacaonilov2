@@ -59,8 +59,16 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onPriceChange,
   editPrices = {},
   highlightLowest = false,
+  onSave,
 }) => {
   const empresas = respostas.map(r => r.empresa);
+
+  // Editable cell data: key = "row-origColIdx", value = edited string
+  const [cellEdits, setCellEdits] = useState<Record<string, string>>({});
+  const [editingCell, setEditingCell] = useState<{ row: number; col: number } | null>(null);
+  const [editingValue, setEditingValue] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   const getPreco = (empresa: string, codigoInterno: string) => {
     const resp = respostas.find(r => r.empresa === empresa);
