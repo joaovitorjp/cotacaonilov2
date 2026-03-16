@@ -913,7 +913,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               <td
                 key={col.key}
                 className={`${cellBaseClass} px-1 bg-primary/5 whitespace-nowrap text-xs`}
-                style={{ borderColor: 'hsl(var(--border))' }}
+                style={{ borderColor: 'hsl(var(--border))', ...cellBgStyle }}
                 {...cellEvents}
               >
                 {!readOnly ? (
