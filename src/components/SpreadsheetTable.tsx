@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 
 interface Produto {
   codigo_interno: string;
@@ -33,6 +34,16 @@ const MIN_COL_WIDTH = 40;
 const MIN_ROW_HEIGHT = 21;
 const DEFAULT_ROW_HEIGHT = 25;
 const HEADER_HEIGHT = 28;
+
+type TextAlign = 'left' | 'center' | 'right';
+
+interface ContextMenuState {
+  x: number;
+  y: number;
+  type: 'cell' | 'column' | 'row';
+  colIdx?: number;
+  rowIdx?: number;
+}
 
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   produtos,
@@ -77,8 +88,53 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [activeColResize, setActiveColResize] = useState<number | null>(null);
   const [activeRowResize, setActiveRowResize] = useState<number | null>(null);
 
+  // Alignment state
+  const [cellAligns, setCellAligns] = useState<Record<string, TextAlign>>({});
+  const [colAligns, setColAligns] = useState<Record<number, TextAlign>>({});
+  const [rowAligns, setRowAligns] = useState<Record<number, TextAlign>>({});
+
+  // Column/row order for drag-move
+  const [colOrder, setColOrder] = useState<number[]>([]);
+  const [rowOrder, setRowOrder] = useState<number[]>([]);
+
+  // Drag state
+  const [dragCol, setDragCol] = useState<number | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<number | null>(null);
+  const [dragRow, setDragRow] = useState<number | null>(null);
+  const [dragOverRow, setDragOverRow] = useState<number | null>(null);
+
+  // Context menu
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+
   const tableRef = useRef<HTMLTableElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  // Build column definitions
+  const baseColDefs: { key: string; label: string; defaultAlign: TextAlign; sticky?: boolean; highlight?: boolean; isData: boolean; originalIdx: number }[] = [
+    { key: '#', label: '', defaultAlign: 'center', isData: false, originalIdx: 0 },
+    { key: 'cod_int', label: 'Código Interno', defaultAlign: 'center', sticky: true, isData: true, originalIdx: 1 },
+    { key: 'desc', label: 'Descrição', defaultAlign: 'left', isData: true, originalIdx: 2 },
+    { key: 'cod_bar', label: 'Código de Barras', defaultAlign: 'center', isData: true, originalIdx: 3 },
+    ...empresas.map((emp, i) => ({ key: `emp_${emp}`, label: emp, defaultAlign: 'center' as TextAlign, highlight: editableColumn === emp, isData: true, originalIdx: 4 + i })),
+    ...(editableColumn && !empresas.includes(editableColumn) ? [{ key: `emp_${editableColumn}`, label: editableColumn, defaultAlign: 'center' as TextAlign, highlight: true, isData: true, originalIdx: 4 + empresas.length }] : []),
+    ...Array.from({ length: fillerCols }).map((_, i) => ({ key: `filler_${i}`, label: '', defaultAlign: 'center' as TextAlign, isData: false, originalIdx: totalCols + i })),
+  ];
+
+  // Initialize column order
+  useEffect(() => {
+    setColOrder(baseColDefs.map((_, i) => i));
+  }, [baseColDefs.length]);
+
+  // Initialize row order
+  useEffect(() => {
+    const total = produtos.length + fillerRows;
+    setRowOrder(Array.from({ length: total }, (_, i) => i));
+  }, [produtos.length, fillerRows]);
+
+  const orderedColDefs = colOrder.length === baseColDefs.length
+    ? colOrder.map(i => ({ ...baseColDefs[i], orderIdx: i }))
+    : baseColDefs.map((c, i) => ({ ...c, orderIdx: i }));
 
   // Auto-fit column widths on data change
   useEffect(() => {
@@ -87,7 +143,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       const newWidths: Record<number, number> = {};
       const colCount = gridCols;
       for (let i = 0; i < colCount; i++) {
-        if (colWidths[i]) continue; // don't override user-resized
+        if (colWidths[i]) continue;
         const cells = tableRef.current!.querySelectorAll(
           `thead th:nth-child(${i + 1}), tbody td:nth-child(${i + 1})`
         );
@@ -109,7 +165,22 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const getColWidth = (i: number) => colWidths[i] || (i === 0 ? 36 : i === 2 ? 200 : 80);
 
-  // Column resize — Excel-style: thin line appears on hover, blue indicator while dragging
+  // Get effective alignment for a cell
+  const getCellAlign = (colIdx: number, rowIdx: number, defaultAlign: TextAlign): TextAlign => {
+    const cellKey = `${rowIdx}-${colIdx}`;
+    if (cellAligns[cellKey]) return cellAligns[cellKey];
+    if (rowAligns[rowIdx]) return rowAligns[rowIdx];
+    if (colAligns[colIdx]) return colAligns[colIdx];
+    return defaultAlign;
+  };
+
+  const alignClass = (align: TextAlign) => {
+    if (align === 'left') return 'text-left';
+    if (align === 'right') return 'text-right';
+    return 'text-center';
+  };
+
+  // Column resize
   const handleColResizeStart = useCallback((e: React.MouseEvent, colIdx: number) => {
     e.preventDefault();
     e.stopPropagation();
@@ -188,36 +259,186 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     });
   }, []);
 
-  const colDefs: { key: string; label: string; align: string; sticky?: boolean; highlight?: boolean }[] = [
-    { key: '#', label: '', align: 'center' },
-    { key: 'cod_int', label: 'Código Interno', align: 'center', sticky: true },
-    { key: 'desc', label: 'Descrição', align: 'left' },
-    { key: 'cod_bar', label: 'Código de Barras', align: 'center' },
-    ...empresas.map(emp => ({ key: `emp_${emp}`, label: emp, align: 'center', highlight: editableColumn === emp })),
-    ...(editableColumn && !empresas.includes(editableColumn) ? [{ key: `emp_${editableColumn}`, label: editableColumn, align: 'center', highlight: true }] : []),
-    ...Array.from({ length: fillerCols }).map((_, i) => ({ key: `filler_${i}`, label: '', align: 'center' })),
-  ];
+  // Column drag-move (only data columns 1+)
+  const handleColDragStart = (e: React.DragEvent, colIdx: number) => {
+    if (colIdx === 0) return; // don't drag row number col
+    e.dataTransfer.effectAllowed = 'move';
+    setDragCol(colIdx);
+  };
 
-  const renderRow = (prod: Produto | null, idx: number, isEmpty: boolean) => {
+  const handleColDragOver = (e: React.DragEvent, colIdx: number) => {
+    if (dragCol === null || colIdx === 0) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverCol(colIdx);
+  };
+
+  const handleColDrop = (e: React.DragEvent, colIdx: number) => {
+    e.preventDefault();
+    if (dragCol === null || dragCol === colIdx || colIdx === 0) {
+      setDragCol(null);
+      setDragOverCol(null);
+      return;
+    }
+    setColOrder(prev => {
+      const order = [...prev];
+      const fromPos = order.indexOf(dragCol);
+      const toPos = order.indexOf(colIdx);
+      if (fromPos === -1 || toPos === -1) return order;
+      const [moved] = order.splice(fromPos, 1);
+      order.splice(toPos, 0, moved);
+      return order;
+    });
+    setDragCol(null);
+    setDragOverCol(null);
+  };
+
+  const handleColDragEnd = () => {
+    setDragCol(null);
+    setDragOverCol(null);
+  };
+
+  // Row drag-move
+  const handleRowDragStart = (e: React.DragEvent, rowIdx: number) => {
+    e.dataTransfer.effectAllowed = 'move';
+    setDragRow(rowIdx);
+  };
+
+  const handleRowDragOver = (e: React.DragEvent, rowIdx: number) => {
+    if (dragRow === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverRow(rowIdx);
+  };
+
+  const handleRowDrop = (e: React.DragEvent, rowIdx: number) => {
+    e.preventDefault();
+    if (dragRow === null || dragRow === rowIdx) {
+      setDragRow(null);
+      setDragOverRow(null);
+      return;
+    }
+    setRowOrder(prev => {
+      const order = [...prev];
+      const fromPos = order.indexOf(dragRow);
+      const toPos = order.indexOf(rowIdx);
+      if (fromPos === -1 || toPos === -1) return order;
+      const [moved] = order.splice(fromPos, 1);
+      order.splice(toPos, 0, moved);
+      return order;
+    });
+    setDragRow(null);
+    setDragOverRow(null);
+  };
+
+  const handleRowDragEnd = () => {
+    setDragRow(null);
+    setDragOverRow(null);
+  };
+
+  // Context menu
+  const handleContextMenu = (e: React.MouseEvent, type: 'cell' | 'column' | 'row', colIdx?: number, rowIdx?: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, type, colIdx, rowIdx });
+  };
+
+  const setAlignment = (align: TextAlign) => {
+    if (!contextMenu) return;
+    const { type, colIdx, rowIdx } = contextMenu;
+    if (type === 'cell' && colIdx !== undefined && rowIdx !== undefined) {
+      setCellAligns(prev => ({ ...prev, [`${rowIdx}-${colIdx}`]: align }));
+    } else if (type === 'column' && colIdx !== undefined) {
+      setColAligns(prev => ({ ...prev, [colIdx]: align }));
+    } else if (type === 'row' && rowIdx !== undefined) {
+      setRowAligns(prev => ({ ...prev, [rowIdx]: align }));
+    }
+    setContextMenu(null);
+  };
+
+  const moveColumn = (direction: 'left' | 'right') => {
+    if (!contextMenu || contextMenu.colIdx === undefined) return;
+    const colIdx = contextMenu.colIdx;
+    setColOrder(prev => {
+      const order = [...prev];
+      const pos = order.indexOf(colIdx);
+      if (pos === -1) return order;
+      const newPos = direction === 'left' ? pos - 1 : pos + 1;
+      if (newPos < 1 || newPos >= order.length) return order; // don't move past row num col
+      const [moved] = order.splice(pos, 1);
+      order.splice(newPos, 0, moved);
+      return order;
+    });
+    setContextMenu(null);
+  };
+
+  const moveRow = (direction: 'up' | 'down') => {
+    if (!contextMenu || contextMenu.rowIdx === undefined) return;
+    const rowIdx = contextMenu.rowIdx;
+    setRowOrder(prev => {
+      const order = [...prev];
+      const pos = order.indexOf(rowIdx);
+      if (pos === -1) return order;
+      const newPos = direction === 'up' ? pos - 1 : pos + 1;
+      if (newPos < 0 || newPos >= order.length) return order;
+      const [moved] = order.splice(pos, 1);
+      order.splice(newPos, 0, moved);
+      return order;
+    });
+    setContextMenu(null);
+  };
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    if (contextMenu) {
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }
+  }, [contextMenu]);
+
+  // Determine ordered rows
+  const allRows = [...produtos.map((p, i) => ({ prod: p, idx: i, isEmpty: false }))];
+  for (let i = 0; i < fillerRows; i++) {
+    allRows.push({ prod: null as any, idx: produtos.length + i, isEmpty: true });
+  }
+
+  const orderedRows = rowOrder.length === allRows.length
+    ? rowOrder.map(i => allRows[i]).filter(Boolean)
+    : allRows;
+
+  const renderRow = (prod: Produto | null, idx: number, isEmpty: boolean, displayIdx: number) => {
     const lowestEmp = prod ? getLowestEmpresa(prod.codigo_interno) : null;
     const h = rowHeights[idx] || DEFAULT_ROW_HEIGHT;
+    const isDragOver = dragOverRow === idx;
+
     return (
       <tr
         key={isEmpty ? `empty-${idx}` : idx}
-        className="group/row"
+        className={`group/row ${isDragOver ? 'border-t-2 border-t-primary' : ''}`}
         style={{ height: `${h}px` }}
       >
-        {/* Row number cell — Excel gray background */}
+        {/* Row number cell */}
         <td
-          className="border-r border-b px-0 text-center text-[11px] text-muted-foreground select-none relative"
+          className="border-r border-b px-0 text-center text-[11px] text-muted-foreground select-none relative cursor-grab active:cursor-grabbing"
           style={{
             borderColor: 'hsl(var(--border))',
-            backgroundColor: 'hsl(var(--muted))',
+            backgroundColor: dragRow === idx ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--muted))',
             minWidth: getColWidth(0),
             width: getColWidth(0),
           }}
+          draggable
+          onDragStart={e => handleRowDragStart(e, idx)}
+          onDragOver={e => handleRowDragOver(e, idx)}
+          onDrop={e => handleRowDrop(e, idx)}
+          onDragEnd={handleRowDragEnd}
+          onContextMenu={e => handleContextMenu(e, 'row', undefined, idx)}
         >
-          {prod ? idx + 1 : (produtos.length > 0 ? idx + 1 : '')}
+          {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
           {/* Row resize handle */}
           <div
             className={`absolute left-0 right-0 bottom-[-2px] h-[5px] cursor-row-resize z-30 ${
@@ -229,156 +450,318 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           />
         </td>
 
-        {isEmpty ? (
-          Array.from({ length: gridCols - 1 }).map((_, colIdx) => (
-            <td
-              key={`ec-${colIdx}`}
-              className={`border-r border-b px-2 ${colIdx === 0 ? 'sticky left-[36px] bg-background z-[5]' : ''}`}
-              style={{
-                borderColor: 'hsl(var(--border))',
-                minWidth: getColWidth(colIdx + 1),
-                width: getColWidth(colIdx + 1),
-              }}
-            >
-              &nbsp;
-            </td>
-          ))
-        ) : (
-          <>
-            <td
-              className="border-r border-b px-2 text-center sticky left-[36px] bg-background z-[5] whitespace-nowrap text-xs"
-              style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(1), width: getColWidth(1) }}
-            >
-              {prod!.codigo_interno}
-            </td>
-            <td
-              className="border-r border-b px-2 whitespace-nowrap overflow-hidden text-ellipsis text-xs"
-              style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(2), width: getColWidth(2) }}
-            >
-              {prod!.descricao}
-            </td>
-            <td
-              className="border-r border-b px-2 text-center whitespace-nowrap text-xs"
-              style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(3), width: getColWidth(3) }}
-            >
-              {prod!.codigo_barras}
-            </td>
-            {empresas.map((emp, empIdx) => {
-              const isLowest = lowestEmp === emp;
-              const isEditable = editableColumn === emp;
-              return (
-                <td
-                  key={emp}
-                  className={`border-r border-b px-1 text-center whitespace-nowrap text-xs ${
-                    isEditable ? 'bg-primary/5' : isLowest ? 'bg-success/10 text-success font-bold' : ''
-                  }`}
-                  style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(4 + empIdx), width: getColWidth(4 + empIdx) }}
-                >
-                  {isEditable && !readOnly ? (
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 text-center text-xs h-full"
-                      value={editPrices[idx] ?? ''}
-                      onChange={e => onPriceChange?.(idx, e.target.value)}
-                      placeholder="0,00"
-                    />
-                  ) : (() => {
-                    const raw = getPreco(emp, prod!.codigo_interno);
-                    if (raw === '' || raw === undefined || raw === null) return '';
-                    const num = parsePrice(raw as string | number);
-                    return num === Infinity ? raw : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
-                  })()}
-                </td>
-              );
-            })}
-            {editableColumn && !empresas.includes(editableColumn) && (
+        {/* Data cells in column order */}
+        {orderedColDefs.slice(1).map((col, renderIdx) => {
+          const colIdx = col.orderIdx;
+          const visualColIdx = renderIdx + 1;
+          const effectiveAlign = getCellAlign(colIdx, idx, col.defaultAlign);
+
+          if (isEmpty) {
+            return (
               <td
-                className="border-r border-b px-1 text-center bg-primary/5 whitespace-nowrap text-xs"
+                key={col.key}
+                className={`border-r border-b px-2 ${alignClass(effectiveAlign)} ${col.sticky ? 'sticky left-[36px] bg-background z-[5]' : ''}`}
+                style={{
+                  borderColor: 'hsl(var(--border))',
+                  minWidth: getColWidth(visualColIdx),
+                  width: getColWidth(visualColIdx),
+                }}
+                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+              >
+                &nbsp;
+              </td>
+            );
+          }
+
+          // Render data cell based on original column definition
+          const origIdx = col.originalIdx;
+          if (origIdx === 1) {
+            return (
+              <td
+                key={col.key}
+                className={`border-r border-b px-2 ${alignClass(effectiveAlign)} sticky left-[36px] bg-background z-[5] whitespace-nowrap text-xs`}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+              >
+                {prod!.codigo_interno}
+              </td>
+            );
+          }
+          if (origIdx === 2) {
+            return (
+              <td
+                key={col.key}
+                className={`border-r border-b px-2 ${alignClass(effectiveAlign)} whitespace-nowrap overflow-hidden text-ellipsis text-xs`}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+              >
+                {prod!.descricao}
+              </td>
+            );
+          }
+          if (origIdx === 3) {
+            return (
+              <td
+                key={col.key}
+                className={`border-r border-b px-2 ${alignClass(effectiveAlign)} whitespace-nowrap text-xs`}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+              >
+                {prod!.codigo_barras}
+              </td>
+            );
+          }
+          // Empresa columns
+          if (origIdx >= 4 && origIdx < 4 + empresas.length) {
+            const empIdx = origIdx - 4;
+            const emp = empresas[empIdx];
+            const isLowest = lowestEmp === emp;
+            const isEditable = editableColumn === emp;
+            return (
+              <td
+                key={col.key}
+                className={`border-r border-b px-1 ${alignClass(effectiveAlign)} whitespace-nowrap text-xs ${
+                  isEditable ? 'bg-primary/5' : isLowest ? 'bg-success/10 text-success font-bold' : ''
+                }`}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+              >
+                {isEditable && !readOnly ? (
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className={`w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 ${alignClass(effectiveAlign)} text-xs h-full`}
+                    value={editPrices[idx] ?? ''}
+                    onChange={e => onPriceChange?.(idx, e.target.value)}
+                    placeholder="0,00"
+                  />
+                ) : (() => {
+                  const raw = getPreco(emp, prod!.codigo_interno);
+                  if (raw === '' || raw === undefined || raw === null) return '';
+                  const num = parsePrice(raw as string | number);
+                  return num === Infinity ? raw : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
+                })()}
+              </td>
+            );
+          }
+          // Editable column not in empresas
+          if (editableColumn && !empresas.includes(editableColumn) && origIdx === 4 + empresas.length) {
+            return (
+              <td
+                key={col.key}
+                className={`border-r border-b px-1 ${alignClass(effectiveAlign)} bg-primary/5 whitespace-nowrap text-xs`}
                 style={{ borderColor: 'hsl(var(--border))' }}
+                onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
               >
                 {!readOnly ? (
                   <input
                     type="text"
                     inputMode="decimal"
-                    className="w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 text-center text-xs"
+                    className={`w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 ${alignClass(effectiveAlign)} text-xs`}
                     value={editPrices[idx] ?? ''}
                     onChange={e => onPriceChange?.(idx, e.target.value)}
                     placeholder="0,00"
                   />
                 ) : ''}
               </td>
-            )}
-            {Array.from({ length: fillerCols }).map((_, i) => (
-              <td
-                key={`fc-${i}`}
-                className="border-r border-b px-2"
-                style={{ borderColor: 'hsl(var(--border))' }}
-              >
-                &nbsp;
-              </td>
-            ))}
-          </>
-        )}
+            );
+          }
+          // Filler
+          return (
+            <td
+              key={col.key}
+              className="border-r border-b px-2"
+              style={{ borderColor: 'hsl(var(--border))' }}
+              onContextMenu={e => handleContextMenu(e, 'cell', colIdx, idx)}
+            >
+              &nbsp;
+            </td>
+          );
+        })}
       </tr>
     );
   };
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-auto" style={{ border: '1px solid hsl(var(--border))' }}>
+    <div ref={containerRef} className="flex-1 overflow-auto relative" style={{ border: '1px solid hsl(var(--border))' }}>
       <table
         ref={tableRef}
         className="border-collapse text-sm min-w-max"
         style={{ tableLayout: 'fixed', fontFamily: 'var(--font-body)', fontSize: '12px' }}
       >
         <colgroup>
-          {colDefs.map((col, i) => (
+          {orderedColDefs.map((col, i) => (
             <col key={col.key} style={{ width: `${getColWidth(i)}px` }} />
           ))}
         </colgroup>
 
-        {/* Header — Excel-style gray */}
+        {/* Header */}
         <thead className="sticky top-0 z-10">
           <tr style={{ height: `${HEADER_HEIGHT}px` }}>
-            {colDefs.map((col, i) => (
-              <th
-                key={col.key}
-                className={`border-r border-b px-2 font-semibold whitespace-nowrap relative select-none text-[11px] ${
-                  col.align === 'left' ? 'text-left' : 'text-center'
-                } ${col.sticky ? 'sticky left-[36px] z-20' : ''} ${
-                  col.highlight
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-foreground'
-                }`}
-                style={{
-                  borderColor: 'hsl(var(--border))',
-                  backgroundColor: col.highlight ? undefined : 'hsl(var(--muted))',
-                  height: HEADER_HEIGHT,
-                }}
-              >
-                {col.label}
-                {/* Column resize handle — thin line, blue on hover/active */}
-                <div
-                  className={`absolute top-0 bottom-0 w-[4px] cursor-col-resize z-30 ${
-                    activeColResize === i ? 'bg-primary' : 'hover:bg-primary/50'
-                  }`}
-                  style={{ right: '-2px' }}
-                  onMouseDown={e => handleColResizeStart(e, i)}
-                  onDoubleClick={() => handleColAutoFit(i)}
-                />
-              </th>
-            ))}
+            {orderedColDefs.map((col, i) => {
+              const colIdx = col.orderIdx;
+              const isDragOverCol = dragOverCol === colIdx;
+              return (
+                <th
+                  key={col.key}
+                  className={`border-r border-b px-2 font-semibold whitespace-nowrap relative select-none text-[11px] ${
+                    getCellAlign(colIdx, -1, col.defaultAlign) === 'left' ? 'text-left' : getCellAlign(colIdx, -1, col.defaultAlign) === 'right' ? 'text-right' : 'text-center'
+                  } ${col.sticky ? 'sticky left-[36px] z-20' : ''} ${
+                    col.highlight
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-foreground'
+                  } ${isDragOverCol ? 'border-l-2 border-l-primary' : ''}`}
+                  style={{
+                    borderColor: 'hsl(var(--border))',
+                    backgroundColor: col.highlight ? undefined : dragCol === colIdx ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--muted))',
+                    height: HEADER_HEIGHT,
+                    cursor: i > 0 ? 'grab' : 'default',
+                  }}
+                  draggable={i > 0}
+                  onDragStart={e => handleColDragStart(e, colIdx)}
+                  onDragOver={e => handleColDragOver(e, colIdx)}
+                  onDrop={e => handleColDrop(e, colIdx)}
+                  onDragEnd={handleColDragEnd}
+                  onContextMenu={e => handleContextMenu(e, 'column', colIdx)}
+                >
+                  {col.label}
+                  {/* Column resize handle */}
+                  <div
+                    className={`absolute top-0 bottom-0 w-[4px] cursor-col-resize z-30 ${
+                      activeColResize === i ? 'bg-primary' : 'hover:bg-primary/50'
+                    }`}
+                    style={{ right: '-2px' }}
+                    onMouseDown={e => handleColResizeStart(e, i)}
+                    onDoubleClick={() => handleColAutoFit(i)}
+                  />
+                </th>
+              );
+            })}
           </tr>
         </thead>
 
         <tbody>
-          {produtos.map((prod, idx) => renderRow(prod, idx, false))}
-          {Array.from({ length: fillerRows }).map((_, rowIdx) => {
-            const absIdx = produtos.length + rowIdx;
-            return renderRow(null, absIdx, true);
-          })}
+          {orderedRows.map((row, displayIdx) => renderRow(row.prod, row.idx, row.isEmpty, displayIdx))}
         </tbody>
       </table>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="fixed bg-popover border border-border rounded-lg shadow-lg py-1 z-50 min-w-[180px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          {/* Alignment options */}
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Alinhamento {contextMenu.type === 'column' ? 'da Coluna' : contextMenu.type === 'row' ? 'da Linha' : 'da Célula'}
+          </div>
+          <button
+            onClick={() => setAlignment('left')}
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+          >
+            <AlignLeft className="w-3.5 h-3.5" /> Alinhar à Esquerda
+          </button>
+          <button
+            onClick={() => setAlignment('center')}
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+          >
+            <AlignCenter className="w-3.5 h-3.5" /> Centralizar
+          </button>
+          <button
+            onClick={() => setAlignment('right')}
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+          >
+            <AlignRight className="w-3.5 h-3.5" /> Alinhar à Direita
+          </button>
+
+          <div className="border-t border-border my-1" />
+
+          {/* Move options */}
+          {contextMenu.type === 'column' && contextMenu.colIdx !== undefined && contextMenu.colIdx > 0 && (
+            <>
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Mover Coluna
+              </div>
+              <button
+                onClick={() => moveColumn('left')}
+                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Mover para Esquerda
+              </button>
+              <button
+                onClick={() => moveColumn('right')}
+                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+              >
+                <ArrowRight className="w-3.5 h-3.5" /> Mover para Direita
+              </button>
+            </>
+          )}
+
+          {contextMenu.type === 'row' && contextMenu.rowIdx !== undefined && (
+            <>
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Mover Linha
+              </div>
+              <button
+                onClick={() => moveRow('up')}
+                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+              >
+                <ArrowUp className="w-3.5 h-3.5" /> Mover para Cima
+              </button>
+              <button
+                onClick={() => moveRow('down')}
+                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+              >
+                <ArrowDown className="w-3.5 h-3.5" /> Mover para Baixo
+              </button>
+            </>
+          )}
+
+          {contextMenu.type === 'cell' && (
+            <>
+              {contextMenu.colIdx !== undefined && contextMenu.colIdx > 0 && (
+                <>
+                  <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Mover Coluna
+                  </div>
+                  <button
+                    onClick={() => moveColumn('left')}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" /> Mover Coluna ←
+                  </button>
+                  <button
+                    onClick={() => moveColumn('right')}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" /> Mover Coluna →
+                  </button>
+                </>
+              )}
+              {contextMenu.rowIdx !== undefined && (
+                <>
+                  <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Mover Linha
+                  </div>
+                  <button
+                    onClick={() => moveRow('up')}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" /> Mover Linha ↑
+                  </button>
+                  <button
+                    onClick={() => moveRow('down')}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" /> Mover Linha ↓
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };
