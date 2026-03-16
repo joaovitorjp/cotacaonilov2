@@ -1276,6 +1276,11 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   onContextMenu={e => handleContextMenu(e, 'column', colIdx)}
                 >
                   {col.label}
+                  {col.originalIdx >= 4 && col.originalIdx < 4 + empresas.length && priceMarkups[empresas[col.originalIdx - 4]] ? (
+                    <span className="ml-1 text-[9px] opacity-70">
+                      (+{priceMarkups[empresas[col.originalIdx - 4]].toFixed(1)}%)
+                    </span>
+                  ) : null}
                   <div
                     className={`absolute top-0 bottom-0 w-[4px] cursor-col-resize z-30 ${
                       activeColResize === i ? 'bg-primary' : 'hover:bg-primary/50'
