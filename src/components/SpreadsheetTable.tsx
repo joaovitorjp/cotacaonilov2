@@ -904,39 +904,32 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           }
 
           const origIdx = col.originalIdx;
-          if (origIdx === 1) {
+          if (origIdx >= 1 && origIdx <= 3) {
+            const displayVal = getDisplayValue(idx, origIdx);
+            const stickyClass = origIdx === 1 ? 'sticky left-[36px] bg-background z-[5]' : '';
+            const extraClass = origIdx === 2 ? 'overflow-hidden text-ellipsis' : '';
             return (
               <td
                 key={col.key}
-                className={`${cellBaseClass} sticky left-[36px] bg-background z-[5] whitespace-nowrap text-xs`}
+                className={`${cellBaseClass} ${stickyClass} whitespace-nowrap ${extraClass} text-xs`}
                 style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
                 {...cellEvents}
+                onDoubleClick={() => handleCellDoubleClick(idx, visualColIdx, origIdx)}
               >
-                {prod!.codigo_interno}
-              </td>
-            );
-          }
-          if (origIdx === 2) {
-            return (
-              <td
-                key={col.key}
-                className={`${cellBaseClass} whitespace-nowrap overflow-hidden text-ellipsis text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
-                {...cellEvents}
-              >
-                {prod!.descricao}
-              </td>
-            );
-          }
-          if (origIdx === 3) {
-            return (
-              <td
-                key={col.key}
-                className={`${cellBaseClass} whitespace-nowrap text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
-                {...cellEvents}
-              >
-                {prod!.codigo_barras}
+                {isEditing ? (
+                  <input
+                    ref={editInputRef}
+                    type="text"
+                    className={`w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 ${alignClass(effectiveAlign)} text-xs h-full`}
+                    value={editingValue}
+                    onChange={e => setEditingValue(e.target.value)}
+                    onBlur={() => commitEdit(origIdx)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') commitEdit(origIdx);
+                      if (e.key === 'Escape') cancelEdit();
+                    }}
+                  />
+                ) : displayVal}
               </td>
             );
           }
