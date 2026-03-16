@@ -318,6 +318,7 @@ const Index = () => {
           respostas={respostas}
           readOnly={isFinalized}
           highlightLowest={respostas.length > 1}
+          listaId={currentLista?.id}
           onSave={currentLista && !isFinalized ? async (updatedProdutos) => {
             const { error } = await supabase
               .from('listas')
