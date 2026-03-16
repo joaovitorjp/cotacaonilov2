@@ -828,6 +828,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   borderColor: 'hsl(var(--border))',
                   minWidth: getColWidth(visualColIdx),
                   width: getColWidth(visualColIdx),
+                  ...cellBgStyle,
                 }}
                 {...cellEvents}
               >
