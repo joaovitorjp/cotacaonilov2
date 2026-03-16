@@ -343,7 +343,7 @@ const Index = () => {
         onOpenChange={setCarregarOpen}
         onListaSelected={lista => handleListaSelected(lista, false)}
         statusFilter="aberta"
-        title="Carregar Lista"
+        title="Listas Abertas"
       />
       <CarregarListaPanel
         open={finalizadasOpen}
