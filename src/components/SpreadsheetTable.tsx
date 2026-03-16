@@ -1075,6 +1075,42 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [markupValue, setMarkupValue] = useState('');
   const markupInputRef = useRef<HTMLInputElement>(null);
 
+  // Load markups from DB
+  useEffect(() => {
+    if (!listaId) return;
+    const loadMarkups = async () => {
+      const { data } = await supabase
+        .from('price_markups')
+        .select('empresa, markup_percent')
+        .eq('lista_id', listaId);
+      if (data && data.length > 0) {
+        const loaded: Record<string, number> = {};
+        data.forEach((row: any) => { loaded[row.empresa] = Number(row.markup_percent); });
+        setPriceMarkups(loaded);
+      }
+    };
+    loadMarkups();
+  }, [listaId]);
+
+  // Save markup to DB
+  const saveMarkupToDb = async (empresa: string, percent: number) => {
+    if (!listaId) return;
+    if (percent === 0) {
+      await supabase
+        .from('price_markups')
+        .delete()
+        .eq('lista_id', listaId)
+        .eq('empresa', empresa);
+    } else {
+      await supabase
+        .from('price_markups')
+        .upsert(
+          { lista_id: listaId, empresa, markup_percent: percent, updated_at: new Date().toISOString() },
+          { onConflict: 'lista_id,empresa' }
+        );
+    }
+  };
+
   useEffect(() => {
     if (markupDialog) {
       setTimeout(() => markupInputRef.current?.focus(), 50);
@@ -1089,10 +1125,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       setMarkupValue('');
       return;
     }
+    const newVal = (priceMarkups[markupDialog.empresa] || 0) + pct;
     setPriceMarkups(prev => ({
       ...prev,
-      [markupDialog.empresa]: (prev[markupDialog.empresa] || 0) + pct,
+      [markupDialog.empresa]: newVal,
     }));
+    saveMarkupToDb(markupDialog.empresa, newVal);
     setMarkupDialog(null);
     setMarkupValue('');
   };
