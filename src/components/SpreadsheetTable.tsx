@@ -945,13 +945,170 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     );
   };
 
+  // Toolbar actions (operate on current selection)
+  const getSelectionTarget = (): { type: 'cell'; keys: string[] } | null => {
+    const range = getSelectionRange();
+    if (!range) return null;
+    const keys: string[] = [];
+    for (let r = range.minRow; r <= range.maxRow; r++) {
+      for (let c = range.minCol; c <= range.maxCol; c++) {
+        // Find the colIdx (orderIdx) for visual column c
+        const colDef = orderedColDefs[c];
+        if (colDef) keys.push(`${r}-${colDef.orderIdx}`);
+      }
+    }
+    return { type: 'cell', keys };
+  };
+
+  const toolbarToggleBold = () => {
+    const target = getSelectionTarget();
+    if (!target) return;
+    const allBold = target.keys.every(k => cellBold[k]);
+    setCellBold(prev => {
+      const next = { ...prev };
+      target.keys.forEach(k => { next[k] = !allBold; });
+      return next;
+    });
+  };
+
+  const toolbarToggleItalic = () => {
+    const target = getSelectionTarget();
+    if (!target) return;
+    const allItalic = target.keys.every(k => cellItalic[k]);
+    setCellItalic(prev => {
+      const next = { ...prev };
+      target.keys.forEach(k => { next[k] = !allItalic; });
+      return next;
+    });
+  };
+
+  const toolbarSetAlign = (align: TextAlign) => {
+    const target = getSelectionTarget();
+    if (!target) return;
+    setCellAligns(prev => {
+      const next = { ...prev };
+      target.keys.forEach(k => { next[k] = align; });
+      return next;
+    });
+  };
+
+  const toolbarSetBgColor = (color: string) => {
+    const target = getSelectionTarget();
+    if (!target) return;
+    setCellBgColor(prev => {
+      const next = { ...prev };
+      target.keys.forEach(k => { next[k] = color; });
+      return next;
+    });
+  };
+
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showColorPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setShowColorPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showColorPicker]);
+
+  const hasSelection = activeCell !== null;
+
   return (
-    <div
-      ref={containerRef}
-      className="flex-1 overflow-auto relative"
-      style={{ border: '1px solid hsl(var(--border))' }}
-      tabIndex={0}
-    >
+    <div className="flex-1 flex flex-col" style={{ border: '1px solid hsl(var(--border))' }}>
+      {/* Toolbar */}
+      <div className="flex items-center gap-1 px-2 py-1 border-b bg-muted/50" style={{ borderColor: 'hsl(var(--border))' }}>
+        <button
+          onClick={toolbarToggleBold}
+          disabled={!hasSelection}
+          className="p-1.5 rounded hover:bg-accent disabled:opacity-40 transition-colors"
+          title="Negrito"
+        >
+          <Bold className="w-4 h-4" />
+        </button>
+        <button
+          onClick={toolbarToggleItalic}
+          disabled={!hasSelection}
+          className="p-1.5 rounded hover:bg-accent disabled:opacity-40 transition-colors"
+          title="Itálico"
+        >
+          <Italic className="w-4 h-4" />
+        </button>
+
+        <div className="w-px h-5 bg-border mx-1" />
+
+        <button
+          onClick={() => toolbarSetAlign('left')}
+          disabled={!hasSelection}
+          className="p-1.5 rounded hover:bg-accent disabled:opacity-40 transition-colors"
+          title="Alinhar à Esquerda"
+        >
+          <AlignLeft className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => toolbarSetAlign('center')}
+          disabled={!hasSelection}
+          className="p-1.5 rounded hover:bg-accent disabled:opacity-40 transition-colors"
+          title="Centralizar"
+        >
+          <AlignCenter className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => toolbarSetAlign('right')}
+          disabled={!hasSelection}
+          className="p-1.5 rounded hover:bg-accent disabled:opacity-40 transition-colors"
+          title="Alinhar à Direita"
+        >
+          <AlignRight className="w-4 h-4" />
+        </button>
+
+        <div className="w-px h-5 bg-border mx-1" />
+
+        <div className="relative">
+          <button
+            onClick={() => setShowColorPicker(!showColorPicker)}
+            disabled={!hasSelection}
+            className="p-1.5 rounded hover:bg-accent disabled:opacity-40 transition-colors flex items-center gap-1"
+            title="Cor de Fundo"
+          >
+            <Paintbrush className="w-4 h-4" />
+          </button>
+          {showColorPicker && (
+            <div
+              ref={colorPickerRef}
+              className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg p-2 z-50 flex gap-1 flex-wrap w-[140px]"
+            >
+              {BG_COLORS.map(c => (
+                <button
+                  key={c.value}
+                  onClick={() => { toolbarSetBgColor(c.value); setShowColorPicker(false); }}
+                  className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform"
+                  style={{ backgroundColor: c.value }}
+                  title={c.label}
+                />
+              ))}
+              <button
+                onClick={() => { toolbarSetBgColor(''); setShowColorPicker(false); }}
+                className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform flex items-center justify-center bg-background"
+                title="Remover cor"
+              >
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Spreadsheet */}
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-auto relative"
+        tabIndex={0}
+      >
       <table
         ref={tableRef}
         className="border-collapse text-sm min-w-max"
