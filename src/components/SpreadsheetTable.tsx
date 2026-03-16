@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X } from 'lucide-react';
 
 interface Produto {
   codigo_interno: string;
@@ -97,6 +97,17 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [cellAligns, setCellAligns] = useState<Record<string, TextAlign>>({});
   const [colAligns, setColAligns] = useState<Record<number, TextAlign>>({});
   const [rowAligns, setRowAligns] = useState<Record<number, TextAlign>>({});
+
+  // Formatting state (bold, italic, bgColor)
+  const [cellBold, setCellBold] = useState<Record<string, boolean>>({});
+  const [cellItalic, setCellItalic] = useState<Record<string, boolean>>({});
+  const [cellBgColor, setCellBgColor] = useState<Record<string, string>>({});
+  const [colBold, setColBold] = useState<Record<number, boolean>>({});
+  const [colItalic, setColItalic] = useState<Record<number, boolean>>({});
+  const [colBgColor, setColBgColor] = useState<Record<number, string>>({});
+  const [rowBold, setRowBold] = useState<Record<number, boolean>>({});
+  const [rowItalic, setRowItalic] = useState<Record<number, boolean>>({});
+  const [rowBgColor, setRowBgColor] = useState<Record<number, string>>({});
 
   // Column/row order for drag-move
   const [colOrder, setColOrder] = useState<number[]>([]);
@@ -201,6 +212,16 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (align === 'left') return 'text-left';
     if (align === 'right') return 'text-right';
     return 'text-center';
+  };
+
+  // Get effective formatting for a cell (cell > row > col)
+  const getCellFormatting = (colIdx: number, rowIdx: number) => {
+    const key = `${rowIdx}-${colIdx}`;
+    return {
+      bold: cellBold[key] ?? rowBold[rowIdx] ?? colBold[colIdx] ?? false,
+      italic: cellItalic[key] ?? rowItalic[rowIdx] ?? colItalic[colIdx] ?? false,
+      bgColor: cellBgColor[key] || rowBgColor[rowIdx] || colBgColor[colIdx] || '',
+    };
   };
 
   // Selection helpers
@@ -611,6 +632,58 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setContextMenu(null);
   };
 
+  const BG_COLORS = [
+    { label: 'Amarelo', value: '#FEF9C3' },
+    { label: 'Verde', value: '#DCFCE7' },
+    { label: 'Azul', value: '#DBEAFE' },
+    { label: 'Rosa', value: '#FCE7F3' },
+    { label: 'Laranja', value: '#FED7AA' },
+    { label: 'Roxo', value: '#E9D5FF' },
+    { label: 'Cinza', value: '#F3F4F6' },
+  ];
+
+  const toggleBold = () => {
+    if (!contextMenu) return;
+    const { type, colIdx, rowIdx } = contextMenu;
+    if (type === 'cell' && colIdx !== undefined && rowIdx !== undefined) {
+      const key = `${rowIdx}-${colIdx}`;
+      setCellBold(prev => ({ ...prev, [key]: !prev[key] }));
+    } else if (type === 'column' && colIdx !== undefined) {
+      setColBold(prev => ({ ...prev, [colIdx]: !prev[colIdx] }));
+    } else if (type === 'row' && rowIdx !== undefined) {
+      setRowBold(prev => ({ ...prev, [rowIdx]: !prev[rowIdx] }));
+    }
+    setContextMenu(null);
+  };
+
+  const toggleItalic = () => {
+    if (!contextMenu) return;
+    const { type, colIdx, rowIdx } = contextMenu;
+    if (type === 'cell' && colIdx !== undefined && rowIdx !== undefined) {
+      const key = `${rowIdx}-${colIdx}`;
+      setCellItalic(prev => ({ ...prev, [key]: !prev[key] }));
+    } else if (type === 'column' && colIdx !== undefined) {
+      setColItalic(prev => ({ ...prev, [colIdx]: !prev[colIdx] }));
+    } else if (type === 'row' && rowIdx !== undefined) {
+      setRowItalic(prev => ({ ...prev, [rowIdx]: !prev[rowIdx] }));
+    }
+    setContextMenu(null);
+  };
+
+  const setBgColor = (color: string) => {
+    if (!contextMenu) return;
+    const { type, colIdx, rowIdx } = contextMenu;
+    if (type === 'cell' && colIdx !== undefined && rowIdx !== undefined) {
+      const key = `${rowIdx}-${colIdx}`;
+      setCellBgColor(prev => ({ ...prev, [key]: color }));
+    } else if (type === 'column' && colIdx !== undefined) {
+      setColBgColor(prev => ({ ...prev, [colIdx]: color }));
+    } else if (type === 'row' && rowIdx !== undefined) {
+      setRowBgColor(prev => ({ ...prev, [rowIdx]: color }));
+    }
+    setContextMenu(null);
+  };
+
   const handleCopyFromMenu = () => {
     document.execCommand('copy');
     setContextMenu(null);
@@ -728,10 +801,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           const selected = isCellSelected(idx, visualColIdx);
           const active = isCellActive(idx, visualColIdx);
           const selBorders = getSelectionBorders(idx, visualColIdx);
+          const fmt = getCellFormatting(colIdx, idx);
 
           const cellBaseClass = `border-r border-b px-2 ${alignClass(effectiveAlign)} ${
+            fmt.bold ? 'font-bold' : ''
+          } ${fmt.italic ? 'italic' : ''} ${
             selected && !active ? 'bg-primary/10' : ''
           } ${active ? 'outline outline-2 outline-primary outline-offset-[-2px]' : ''} ${selBorders}`;
+
+          const cellBgStyle = fmt.bgColor && !selected ? { backgroundColor: fmt.bgColor } : {};
 
           const cellEvents = {
             onClick: (e: React.MouseEvent) => handleCellClick(idx, visualColIdx, e),
@@ -750,6 +828,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   borderColor: 'hsl(var(--border))',
                   minWidth: getColWidth(visualColIdx),
                   width: getColWidth(visualColIdx),
+                  ...cellBgStyle,
                 }}
                 {...cellEvents}
               >
@@ -764,7 +843,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               <td
                 key={col.key}
                 className={`${cellBaseClass} sticky left-[36px] bg-background z-[5] whitespace-nowrap text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
                 {...cellEvents}
               >
                 {prod!.codigo_interno}
@@ -776,7 +855,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               <td
                 key={col.key}
                 className={`${cellBaseClass} whitespace-nowrap overflow-hidden text-ellipsis text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
                 {...cellEvents}
               >
                 {prod!.descricao}
@@ -788,7 +867,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               <td
                 key={col.key}
                 className={`${cellBaseClass} whitespace-nowrap text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
                 {...cellEvents}
               >
                 {prod!.codigo_barras}
@@ -807,7 +886,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 className={`${cellBaseClass} px-1 whitespace-nowrap text-xs ${
                   isEditable ? 'bg-primary/5' : isLowest ? 'bg-success/10 text-success font-bold' : ''
                 }`}
-                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx) }}
+                style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
                 {...cellEvents}
               >
                 {isEditable && !readOnly ? (
@@ -834,7 +913,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               <td
                 key={col.key}
                 className={`${cellBaseClass} px-1 bg-primary/5 whitespace-nowrap text-xs`}
-                style={{ borderColor: 'hsl(var(--border))' }}
+                style={{ borderColor: 'hsl(var(--border))', ...cellBgStyle }}
                 {...cellEvents}
               >
                 {!readOnly ? (
@@ -855,7 +934,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             <td
               key={col.key}
               className={`${cellBaseClass}`}
-              style={{ borderColor: 'hsl(var(--border))' }}
+              style={{ borderColor: 'hsl(var(--border))', ...cellBgStyle }}
               {...cellEvents}
             >
               &nbsp;
@@ -971,6 +1050,42 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           <button onClick={() => setAlignment('right')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
             <AlignRight className="w-3.5 h-3.5" /> Alinhar à Direita
           </button>
+
+          <div className="border-t border-border my-1" />
+
+          {/* Formatting options */}
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Formatação
+          </div>
+          <button onClick={toggleBold} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
+            <Bold className="w-3.5 h-3.5" /> Negrito
+          </button>
+          <button onClick={toggleItalic} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
+            <Italic className="w-3.5 h-3.5" /> Itálico
+          </button>
+
+          {/* Background color */}
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-1">
+            Cor de Fundo
+          </div>
+          <div className="flex gap-1 px-3 py-1 flex-wrap">
+            {BG_COLORS.map(c => (
+              <button
+                key={c.value}
+                onClick={() => setBgColor(c.value)}
+                className="w-5 h-5 rounded border border-border hover:scale-110 transition-transform"
+                style={{ backgroundColor: c.value }}
+                title={c.label}
+              />
+            ))}
+            <button
+              onClick={() => setBgColor('')}
+              className="w-5 h-5 rounded border border-border hover:scale-110 transition-transform flex items-center justify-center bg-background"
+              title="Remover cor"
+            >
+              <X className="w-3 h-3 text-muted-foreground" />
+            </button>
+          </div>
 
           <div className="border-t border-border my-1" />
 
