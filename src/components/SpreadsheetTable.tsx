@@ -1372,7 +1372,17 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         </thead>
 
         <tbody>
-          {orderedRows.map((row, displayIdx) => renderRow(row.prod, row.idx, row.isEmpty, displayIdx))}
+          {orderedRows
+            .filter(row => {
+              if (!searchTerm.trim() || row.isEmpty || !row.prod) return true;
+              const term = searchTerm.toLowerCase();
+              return (
+                row.prod.codigo_interno.toLowerCase().includes(term) ||
+                row.prod.descricao.toLowerCase().includes(term) ||
+                row.prod.codigo_barras.toLowerCase().includes(term)
+              );
+            })
+            .map((row, displayIdx) => renderRow(row.prod, row.idx, row.isEmpty, displayIdx))}
         </tbody>
       </table>
 
