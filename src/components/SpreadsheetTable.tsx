@@ -1064,6 +1064,52 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
+  // Price markup state (per empresa)
+  const [priceMarkups, setPriceMarkups] = useState<Record<string, number>>({});
+  const [markupDialog, setMarkupDialog] = useState<{ empresa: string } | null>(null);
+  const [markupValue, setMarkupValue] = useState('');
+  const markupInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (markupDialog) {
+      setTimeout(() => markupInputRef.current?.focus(), 50);
+    }
+  }, [markupDialog]);
+
+  const applyMarkup = () => {
+    if (!markupDialog) return;
+    const pct = parseFloat(markupValue.replace(',', '.'));
+    if (isNaN(pct)) {
+      setMarkupDialog(null);
+      setMarkupValue('');
+      return;
+    }
+    setPriceMarkups(prev => ({
+      ...prev,
+      [markupDialog.empresa]: (prev[markupDialog.empresa] || 0) + pct,
+    }));
+    setMarkupDialog(null);
+    setMarkupValue('');
+  };
+
+  const getMarkedUpPrice = (rawPrice: number, empresa: string): number => {
+    const markup = priceMarkups[empresa];
+    if (!markup) return rawPrice;
+    return rawPrice * (1 + markup / 100);
+  };
+
+  // Helper to check if a context menu column is a supplier column
+  const getContextEmpresa = (): string | null => {
+    if (!contextMenu || contextMenu.colIdx === undefined) return null;
+    const colDef = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
+    if (!colDef) return null;
+    const origIdx = colDef.originalIdx;
+    if (origIdx >= 4 && origIdx < 4 + empresas.length) {
+      return empresas[origIdx - 4];
+    }
+    return null;
+  };
+
   useEffect(() => {
     if (!showColorPicker) return;
     const handler = (e: MouseEvent) => {
