@@ -1053,6 +1053,42 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
           <div className="border-t border-border my-1" />
 
+          {/* Formatting options */}
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Formatação
+          </div>
+          <button onClick={toggleBold} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
+            <Bold className="w-3.5 h-3.5" /> Negrito
+          </button>
+          <button onClick={toggleItalic} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
+            <Italic className="w-3.5 h-3.5" /> Itálico
+          </button>
+
+          {/* Background color */}
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-1">
+            Cor de Fundo
+          </div>
+          <div className="flex gap-1 px-3 py-1 flex-wrap">
+            {BG_COLORS.map(c => (
+              <button
+                key={c.value}
+                onClick={() => setBgColor(c.value)}
+                className="w-5 h-5 rounded border border-border hover:scale-110 transition-transform"
+                style={{ backgroundColor: c.value }}
+                title={c.label}
+              />
+            ))}
+            <button
+              onClick={() => setBgColor('')}
+              className="w-5 h-5 rounded border border-border hover:scale-110 transition-transform flex items-center justify-center bg-background"
+              title="Remover cor"
+            >
+              <X className="w-3 h-3 text-muted-foreground" />
+            </button>
+          </div>
+
+          <div className="border-t border-border my-1" />
+
           {/* Move options */}
           {(contextMenu.type === 'column' || contextMenu.type === 'cell') && contextMenu.colIdx !== undefined && contextMenu.colIdx > 0 && (
             <>
