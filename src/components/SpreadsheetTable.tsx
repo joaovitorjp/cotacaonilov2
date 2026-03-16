@@ -1160,6 +1160,25 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             </div>
           )}
         </div>
+
+        {onSave && (
+          <>
+            <div className="w-px h-5 bg-border mx-1" />
+            <button
+              onClick={handleSave}
+              disabled={!hasUnsavedChanges}
+              className={`p-1.5 rounded transition-colors flex items-center gap-1 text-xs ${
+                hasUnsavedChanges
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'hover:bg-accent disabled:opacity-40'
+              }`}
+              title="Salvar alterações"
+            >
+              <Save className="w-4 h-4" />
+              <span className="hidden sm:inline">Salvar</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Spreadsheet */}
