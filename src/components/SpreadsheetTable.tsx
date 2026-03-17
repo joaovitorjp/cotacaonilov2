@@ -1056,6 +1056,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             const emp = empresas[empIdx];
             const isLowest = lowestEmp === emp;
             const isEditable = editableColumn === emp;
+            const editKey = `${idx}-${origIdx}`;
+            const hasEdit = cellEdits[editKey] !== undefined;
             return (
               <td
                 key={col.key}
@@ -1064,6 +1066,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 }`}
                 style={{ borderColor: 'hsl(var(--border))', minWidth: getColWidth(visualColIdx), width: getColWidth(visualColIdx), ...cellBgStyle }}
                 {...cellEvents}
+                onDoubleClick={() => handleCellDoubleClick(idx, visualColIdx, origIdx)}
               >
                 {isEditable && !readOnly ? (
                   <input
@@ -1074,7 +1077,28 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     onChange={e => onPriceChange?.(idx, e.target.value)}
                     placeholder="0,00"
                   />
+                ) : isEditing ? (
+                  <input
+                    ref={editInputRef}
+                    type="text"
+                    inputMode="decimal"
+                    className={`w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 ${alignClass(effectiveAlign)} text-xs h-full`}
+                    value={editingValue}
+                    onChange={e => setEditingValue(e.target.value)}
+                    onBlur={() => commitEdit(origIdx)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') commitEdit(origIdx);
+                      if (e.key === 'Escape') cancelEdit();
+                    }}
+                    placeholder="0,00"
+                  />
                 ) : (() => {
+                  if (hasEdit) {
+                    const editVal = cellEdits[editKey];
+                    if (!editVal || editVal === '') return 'R$ -';
+                    const num = parsePrice(editVal);
+                    return num === Infinity ? editVal : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
+                  }
                   const raw = getPreco(emp, prod!.codigo_interno);
                   if (raw === '' || raw === undefined || raw === null) return 'R$ -';
                   const num = parsePrice(raw as string | number);
