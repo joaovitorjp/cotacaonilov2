@@ -34,6 +34,16 @@ interface GerarLinkPanelProps {
   listaId: string;
 }
 
+// Use published URL so suppliers can access without Lovable project access
+const getPublicBaseUrl = () => {
+  const origin = window.location.origin;
+  // If running on preview URL, use the published domain instead
+  if (origin.includes('preview--') && origin.includes('.lovable.app')) {
+    return 'https://cotacaonilov2.lovable.app';
+  }
+  return origin;
+};
+
 const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, listaId }) => {
   const [empresa, setEmpresa] = useState('');
   const [loading, setLoading] = useState(false);
