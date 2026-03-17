@@ -1069,6 +1069,20 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
+  // Column sorting state
+  const [sortCol, setSortCol] = useState<number | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleHeaderSort = useCallback((colIdx: number, origIdx: number) => {
+    if (origIdx === 0 || origIdx > 3 + empresas.length) return; // only sort data columns
+    if (sortCol === origIdx) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(origIdx);
+      setSortDir('asc');
+    }
+  }, [sortCol, empresas.length]);
+
   // Price markup state (per empresa)
   const [priceMarkups, setPriceMarkups] = useState<Record<string, number>>({});
   const [markupDialog, setMarkupDialog] = useState<{ empresa: string } | null>(null);
