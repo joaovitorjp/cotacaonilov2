@@ -174,7 +174,56 @@ const CotacaoResposta = () => {
 
   const hasCategories = produtos.some(p => p.categoria && p.categoria.trim() !== '');
 
-  if (loading) {
+  const renderProductCard = (prod: Produto, idx: number) => {
+    const hasPrice = prices[idx] && prices[idx].trim() !== '';
+    return (
+      <div
+        key={idx}
+        className={`border rounded-lg p-3 sm:p-4 transition-colors ${
+          hasPrice ? 'border-success/30 bg-success/5' : 'border-border bg-card'
+        }`}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-2">
+              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                {prod.codigo_interno}
+              </span>
+              <p className="text-sm text-foreground font-medium leading-tight truncate">
+                {prod.descricao}
+              </p>
+            </div>
+            {prod.codigo_barras && (
+              <p className="text-xs text-muted-foreground mt-1 ml-0 sm:ml-12">
+                EAN: {prod.codigo_barras}
+              </p>
+            )}
+            {prod.observacao && (
+              <p className="text-xs text-primary/80 mt-1 ml-0 sm:ml-12 italic">
+                📝 {prod.observacao}
+              </p>
+            )}
+          </div>
+          <div className="shrink-0 w-full sm:w-36">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
+                R$
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                value={prices[idx] ?? ''}
+                onChange={e => setPrices(prev => ({ ...prev, [idx]: e.target.value }))}
+                placeholder="0,00"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center space-y-3">
