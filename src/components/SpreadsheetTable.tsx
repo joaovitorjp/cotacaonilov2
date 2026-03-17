@@ -1006,7 +1006,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   />
                 ) : (() => {
                   const raw = getPreco(emp, prod!.codigo_interno);
-                  if (raw === '' || raw === undefined || raw === null) return '';
+                  if (raw === '' || raw === undefined || raw === null) return 'R$ -';
                   const num = parsePrice(raw as string | number);
                   if (num === Infinity) return raw;
                   const finalPrice = getMarkedUpPrice(num, emp);
