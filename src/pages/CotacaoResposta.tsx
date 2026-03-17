@@ -149,16 +149,30 @@ const CotacaoResposta = () => {
     }
   };
 
-  // 3. SEARCH: Filter products
+  // Filter products
   const filteredProdutos = produtos.map((prod, idx) => ({ prod, idx })).filter(({ prod }) => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
     return (
       prod.codigo_interno.toLowerCase().includes(term) ||
       prod.descricao.toLowerCase().includes(term) ||
-      prod.codigo_barras.toLowerCase().includes(term)
+      prod.codigo_barras.toLowerCase().includes(term) ||
+      (prod.categoria || '').toLowerCase().includes(term)
     );
   });
+
+  // Group by category
+  const categories = useMemo(() => {
+    const cats: Record<string, typeof filteredProdutos> = {};
+    for (const item of filteredProdutos) {
+      const cat = item.prod.categoria || 'Geral';
+      if (!cats[cat]) cats[cat] = [];
+      cats[cat].push(item);
+    }
+    return cats;
+  }, [filteredProdutos]);
+
+  const hasCategories = produtos.some(p => p.categoria && p.categoria.trim() !== '');
 
   if (loading) {
     return (
