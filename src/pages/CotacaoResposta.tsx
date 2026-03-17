@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,8 @@ interface Produto {
   codigo_interno: string;
   descricao: string;
   codigo_barras: string;
+  categoria?: string;
+  observacao?: string;
 }
 
 const CotacaoResposta = () => {
@@ -147,16 +149,80 @@ const CotacaoResposta = () => {
     }
   };
 
-  // 3. SEARCH: Filter products
+  // Filter products
   const filteredProdutos = produtos.map((prod, idx) => ({ prod, idx })).filter(({ prod }) => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
     return (
       prod.codigo_interno.toLowerCase().includes(term) ||
       prod.descricao.toLowerCase().includes(term) ||
-      prod.codigo_barras.toLowerCase().includes(term)
+      prod.codigo_barras.toLowerCase().includes(term) ||
+      (prod.categoria || '').toLowerCase().includes(term)
     );
   });
+
+  // Group by category
+  const categories = useMemo(() => {
+    const cats: Record<string, typeof filteredProdutos> = {};
+    for (const item of filteredProdutos) {
+      const cat = item.prod.categoria || 'Geral';
+      if (!cats[cat]) cats[cat] = [];
+      cats[cat].push(item);
+    }
+    return cats;
+  }, [filteredProdutos]);
+
+  const hasCategories = produtos.some(p => p.categoria && p.categoria.trim() !== '');
+
+  const renderProductCard = (prod: Produto, idx: number) => {
+    const hasPrice = prices[idx] && prices[idx].trim() !== '';
+    return (
+      <div
+        key={idx}
+        className={`border rounded-lg p-3 sm:p-4 transition-colors ${
+          hasPrice ? 'border-success/30 bg-success/5' : 'border-border bg-card'
+        }`}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-2">
+              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                {prod.codigo_interno}
+              </span>
+              <p className="text-sm text-foreground font-medium leading-tight truncate">
+                {prod.descricao}
+              </p>
+            </div>
+            {prod.codigo_barras && (
+              <p className="text-xs text-muted-foreground mt-1 ml-0 sm:ml-12">
+                EAN: {prod.codigo_barras}
+              </p>
+            )}
+            {prod.observacao && (
+              <p className="text-xs text-primary/80 mt-1 ml-0 sm:ml-12 italic">
+                📝 {prod.observacao}
+              </p>
+            )}
+          </div>
+          <div className="shrink-0 w-full sm:w-36">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
+                R$
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                value={prices[idx] ?? ''}
+                onChange={e => setPrices(prev => ({ ...prev, [idx]: e.target.value }))}
+                placeholder="0,00"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -262,54 +328,18 @@ const CotacaoResposta = () => {
             <div className="text-center py-8 text-muted-foreground text-sm">
               Nenhum produto encontrado para "{searchTerm}"
             </div>
-          ) : (
-            filteredProdutos.map(({ prod, idx }) => {
-              const hasPrice = prices[idx] && prices[idx].trim() !== '';
-              return (
-                <div
-                  key={idx}
-                  className={`border rounded-lg p-3 sm:p-4 transition-colors ${
-                    hasPrice ? 'border-success/30 bg-success/5' : 'border-border bg-card'
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    {/* Product info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-2">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
-                          {prod.codigo_interno}
-                        </span>
-                        <p className="text-sm text-foreground font-medium leading-tight truncate">
-                          {prod.descricao}
-                        </p>
-                      </div>
-                      {prod.codigo_barras && (
-                        <p className="text-xs text-muted-foreground mt-1 ml-0 sm:ml-12">
-                          EAN: {prod.codigo_barras}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Price input */}
-                    <div className="shrink-0 w-full sm:w-36">
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
-                          R$
-                        </span>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                          value={prices[idx] ?? ''}
-                          onChange={e => setPrices(prev => ({ ...prev, [idx]: e.target.value }))}
-                          placeholder="0,00"
-                        />
-                      </div>
-                    </div>
-                  </div>
+          ) : hasCategories ? (
+            Object.entries(categories).map(([cat, items]) => (
+              <div key={cat}>
+                <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-3 py-2 rounded-lg mb-2 z-[5]">
+                  <p className="text-xs font-display font-bold text-primary uppercase tracking-wider">{cat}</p>
+                  <p className="text-[10px] text-muted-foreground">{items.length} produto(s)</p>
                 </div>
-              );
-            })
+                {items.map(({ prod, idx }) => renderProductCard(prod, idx))}
+              </div>
+            ))
+          ) : (
+            filteredProdutos.map(({ prod, idx }) => renderProductCard(prod, idx))
           )}
         </div>
       </div>

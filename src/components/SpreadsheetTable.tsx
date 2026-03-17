@@ -6,6 +6,8 @@ interface Produto {
   codigo_interno: string;
   descricao: string;
   codigo_barras: string;
+  categoria?: string;
+  observacao?: string;
 }
 
 interface RespostaEmpresa {
@@ -139,6 +141,20 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [selectionAnchor, setSelectionAnchor] = useState<CellPos | null>(null);
   const [selectionEnd, setSelectionEnd] = useState<CellPos | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
+
+  // Column sorting state
+  const [sortCol, setSortCol] = useState<number | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleHeaderSort = useCallback((colIdx: number, origIdx: number) => {
+    if (origIdx === 0 || origIdx > 3 + empresas.length) return;
+    if (sortCol === origIdx) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(origIdx);
+      setSortDir('asc');
+    }
+  }, [sortCol, empresas.length]);
 
   const tableRef = useRef<HTMLTableElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -808,6 +824,34 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     ? rowOrder.map(i => allRows[i]).filter(Boolean)
     : allRows;
 
+  // Apply sorting
+  const sortedRows = useMemo(() => {
+    if (sortCol === null) return orderedRows;
+    const dataRows = orderedRows.filter(r => !r.isEmpty);
+    const emptyRows = orderedRows.filter(r => r.isEmpty);
+
+    dataRows.sort((a, b) => {
+      if (!a.prod || !b.prod) return 0;
+      let valA = '', valB = '';
+      if (sortCol === 1) { valA = a.prod.codigo_interno; valB = b.prod.codigo_interno; }
+      else if (sortCol === 2) { valA = a.prod.descricao; valB = b.prod.descricao; }
+      else if (sortCol === 3) { valA = a.prod.codigo_barras; valB = b.prod.codigo_barras; }
+      else if (sortCol >= 4 && sortCol < 4 + empresas.length) {
+        const emp = empresas[sortCol - 4];
+        const prA = getPreco(emp, a.prod.codigo_interno);
+        const prB = getPreco(emp, b.prod.codigo_interno);
+        const numA = parsePrice(prA as string | number);
+        const numB = parsePrice(prB as string | number);
+        const cmp = numA - numB;
+        return sortDir === 'asc' ? cmp : -cmp;
+      }
+      const cmp = valA.localeCompare(valB, 'pt-BR', { numeric: true });
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+
+    return [...dataRows, ...emptyRows];
+  }, [orderedRows, sortCol, sortDir, empresas]);
+
   // Selection border helpers
   const getSelectionBorders = useCallback((row: number, col: number) => {
     const range = getSelectionRange();
@@ -1350,8 +1394,14 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   onDrop={e => handleColDrop(e, colIdx)}
                   onDragEnd={handleColDragEnd}
                   onContextMenu={e => handleContextMenu(e, 'column', colIdx)}
+                  onClick={() => i > 0 && handleHeaderSort(colIdx, col.originalIdx)}
                 >
-                  {col.label}
+                  <span className="inline-flex items-center gap-1">
+                    {col.label}
+                    {sortCol === col.originalIdx && (
+                      <span className="text-[9px]">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                    )}
+                  </span>
                   {col.originalIdx >= 4 && col.originalIdx < 4 + empresas.length && priceMarkups[empresas[col.originalIdx - 4]] ? (
                     <span className="ml-1 text-[9px] opacity-70">
                       (+{priceMarkups[empresas[col.originalIdx - 4]].toFixed(1)}%)
@@ -1372,7 +1422,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         </thead>
 
         <tbody>
-          {orderedRows
+          {sortedRows
             .filter(row => {
               if (!searchTerm.trim() || row.isEmpty || !row.prod) return true;
               const term = searchTerm.toLowerCase();

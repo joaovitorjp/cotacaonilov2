@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Plus, Trash2, Users, Phone } from 'lucide-react';
+import { Plus, Trash2, Users, Phone, Pencil, Check, X } from 'lucide-react';
 
 interface Fornecedor {
   id: string;
@@ -26,6 +26,12 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
   const [contato, setContato] = useState('');
   const [adding, setAdding] = useState(false);
 
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editNome, setEditNome] = useState('');
+  const [editWhatsapp, setEditWhatsapp] = useState('');
+  const [editContato, setEditContato] = useState('');
+
   useEffect(() => {
     if (open) fetchFornecedores();
   }, [open]);
@@ -37,10 +43,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
     setLoading(false);
   };
 
-  const formatWhatsapp = (value: string) => {
-    // Keep only digits
-    return value.replace(/\D/g, '');
-  };
+  const formatWhatsapp = (value: string) => value.replace(/\D/g, '');
 
   const handleAdd = async () => {
     if (!nome.trim() || !whatsapp.trim()) return;
@@ -76,6 +79,39 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
     }
   };
 
+  const startEdit = (f: Fornecedor) => {
+    setEditingId(f.id);
+    setEditNome(f.nome);
+    setEditWhatsapp(f.whatsapp);
+    setEditContato(f.contato || '');
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !editNome.trim() || !editWhatsapp.trim()) return;
+    const cleanWhatsapp = formatWhatsapp(editWhatsapp);
+    if (cleanWhatsapp.length < 10) {
+      toast.error('Número de WhatsApp inválido.');
+      return;
+    }
+    const { error } = await supabase.from('fornecedores').update({
+      nome: editNome.trim(),
+      whatsapp: cleanWhatsapp,
+      contato: editContato.trim() || null,
+    }).eq('id', editingId);
+
+    if (error) {
+      toast.error('Erro ao salvar.');
+    } else {
+      toast.success('Fornecedor atualizado.');
+      setFornecedores(prev => prev.map(f => f.id === editingId ? { ...f, nome: editNome.trim(), whatsapp: cleanWhatsapp, contato: editContato.trim() || null } : f));
+      setEditingId(null);
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[95vw] sm:w-[40vw] sm:min-w-[380px] sm:max-w-[500px] p-0 flex flex-col">
@@ -84,7 +120,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
             <SheetTitle className="font-display text-xl flex items-center gap-2">
               <Users className="w-5 h-5" /> Fornecedores
             </SheetTitle>
-            <SheetDescription>Cadastre fornecedores com WhatsApp para compartilhar cotações.</SheetDescription>
+            <SheetDescription>Cadastre e edite fornecedores com WhatsApp para compartilhar cotações.</SheetDescription>
           </SheetHeader>
         </div>
 
@@ -116,20 +152,44 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
             <p className="text-sm text-muted-foreground text-center py-8">Nenhum fornecedor cadastrado.</p>
           ) : (
             fornecedores.map(f => (
-              <div key={f.id} className="flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-lg">
-                <div className="flex-1 min-w-0">
-                  <p className="font-display font-bold text-foreground text-sm truncate">{f.nome}</p>
-                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                    <Phone className="w-3 h-3" /> {f.whatsapp}
-                  </p>
-                  {f.contato && <p className="text-xs text-muted-foreground truncate">{f.contato}</p>}
-                </div>
-                <button
-                  onClick={() => handleDelete(f.id)}
-                  className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+              <div key={f.id} className="px-3 py-2.5 bg-card border border-border rounded-lg">
+                {editingId === f.id ? (
+                  <div className="space-y-2">
+                    <Input value={editNome} onChange={e => setEditNome(e.target.value)} placeholder="Nome *" className="h-8 text-sm" />
+                    <Input value={editWhatsapp} onChange={e => setEditWhatsapp(e.target.value)} placeholder="WhatsApp *" className="h-8 text-sm" inputMode="tel" />
+                    <Input value={editContato} onChange={e => setEditContato(e.target.value)} placeholder="Contato (opcional)" className="h-8 text-sm" />
+                    <div className="flex gap-1 justify-end">
+                      <button onClick={cancelEdit} className="p-1.5 rounded hover:bg-muted text-muted-foreground transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                      <button onClick={saveEdit} className="p-1.5 rounded hover:bg-success/10 text-success transition-colors" disabled={!editNome.trim() || !editWhatsapp.trim()}>
+                        <Check className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display font-bold text-foreground text-sm truncate">{f.nome}</p>
+                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                        <Phone className="w-3 h-3" /> {f.whatsapp}
+                      </p>
+                      {f.contato && <p className="text-xs text-muted-foreground truncate">{f.contato}</p>}
+                    </div>
+                    <button
+                      onClick={() => startEdit(f)}
+                      className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors shrink-0"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(f.id)}
+                      className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           )}

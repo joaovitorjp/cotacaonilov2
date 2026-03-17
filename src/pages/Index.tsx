@@ -415,6 +415,7 @@ const Index = () => {
         <AnalisePrecosPanel
           produtos={currentLista?.produtos ?? []}
           respostas={respostas}
+          listaNome={currentLista?.nome}
         />
       )}
 

@@ -39,6 +39,8 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
           codigo_interno: String(row[0] ?? '').trim(),
           descricao: String(row[1] ?? '').trim(),
           codigo_barras: String(row[2] ?? '').trim(),
+          categoria: String(row[3] ?? '').trim(),
+          observacao: String(row[4] ?? '').trim(),
         }))
         .filter(p => p.codigo_interno || p.descricao);
 
@@ -86,7 +88,7 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
         <SheetHeader>
           <SheetTitle className="font-display">Importar Lista</SheetTitle>
           <SheetDescription>
-            Anexe um arquivo .xls ou .xlsx com as colunas: Código Interno (A), Descrição (B), Código de Barras (C).
+            Anexe um arquivo .xls ou .xlsx com as colunas: Código Interno (A), Descrição (B), Código de Barras (C), Categoria (D - opcional), Observação (E - opcional).
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4">
