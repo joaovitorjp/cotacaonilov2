@@ -298,7 +298,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       return num === Infinity ? String(raw) : Number(num).toFixed(2).replace('.', ',');
     }
     if (editableColumn && !empresas.includes(editableColumn) && origIdx === 4 + empresas.length) {
-      return editPrices[rowIdx] ?? '';
+      return editPrices[rowIdx] ?? 'R$ -';
     }
     return '';
   }, [produtos, orderedColDefs, empresas, editableColumn, editPrices, respostas]);
