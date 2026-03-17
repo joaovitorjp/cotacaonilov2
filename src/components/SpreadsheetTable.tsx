@@ -293,7 +293,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       const emp = empresas[origIdx - 4];
       if (editableColumn === emp && editPrices[rowIdx] !== undefined) return editPrices[rowIdx];
       const raw = getPreco(emp, prod.codigo_interno);
-      if (raw === '' || raw === undefined || raw === null) return '';
+      if (raw === '' || raw === undefined || raw === null) return 'R$ -';
       const num = parsePrice(raw as string | number);
       return num === Infinity ? String(raw) : Number(num).toFixed(2).replace('.', ',');
     }
