@@ -1420,7 +1420,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         </thead>
 
         <tbody>
-          {orderedRows
+          {sortedRows
             .filter(row => {
               if (!searchTerm.trim() || row.isEmpty || !row.prod) return true;
               const term = searchTerm.toLowerCase();
