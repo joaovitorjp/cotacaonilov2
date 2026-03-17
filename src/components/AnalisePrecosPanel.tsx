@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { BarChart3, Trophy, TrendingDown, History } from 'lucide-react';
+import { BarChart3, Trophy, TrendingDown, History, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Produto {
   codigo_interno: string;
@@ -16,6 +18,7 @@ interface RespostaEmpresa {
 interface AnalisePrecosPanelProps {
   produtos: Produto[];
   respostas: RespostaEmpresa[];
+  listaNome?: string;
 }
 
 const parsePreco = (raw: number | string): number => {
@@ -31,8 +34,7 @@ interface HistoricoItem {
   empresa: string;
 }
 
-const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respostas }) => {
-  // 2. PRICE HISTORY: Load historical prices for products
+const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respostas, listaNome }) => {
   const [historico, setHistorico] = useState<Record<string, HistoricoItem[]>>({});
   const [showHistorico, setShowHistorico] = useState(false);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
@@ -44,7 +46,6 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     }
     setLoadingHistorico(true);
     
-    // Fetch all finalized lists with their responses
     const { data: listas } = await supabase
       .from('listas')
       .select('id, nome, created_at, produtos')
@@ -154,6 +155,74 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     return { prodAnalysis, ranking, totalSavings };
   }, [produtos, respostas]);
 
+  // PDF Export
+  const exportPDF = () => {
+    if (!analysis) return;
+
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+    const empresas = respostas.map(r => r.empresa);
+
+    // Title
+    doc.setFontSize(16);
+    doc.text(`Análise de Preços${listaNome ? ` - ${listaNome}` : ''}`, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 14, 22);
+    doc.text(`${respostas.length} fornecedor(es) · ${produtos.length} produto(s)`, 14, 27);
+
+    // Summary
+    doc.setFontSize(12);
+    doc.text('Resumo', 14, 36);
+    doc.setFontSize(10);
+    doc.text(`Melhor fornecedor: ${analysis.ranking[0]?.empresa || '-'} (${analysis.ranking[0]?.wins || 0} itens com menor preço)`, 14, 42);
+    doc.text(`Economia potencial: R$ ${analysis.totalSavings.toFixed(2).replace('.', ',')}`, 14, 48);
+
+    // Ranking table
+    autoTable(doc, {
+      startY: 54,
+      head: [['#', 'Fornecedor', 'Vitórias', 'Preço Médio']],
+      body: analysis.ranking.map((r, idx) => [
+        `${idx + 1}º`,
+        r.empresa,
+        String(r.wins),
+        `R$ ${r.avgPrice.toFixed(2).replace('.', ',')}`,
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [41, 128, 185] },
+      styles: { fontSize: 9 },
+    });
+
+    // Price comparison table
+    const tableHead = ['Código', 'Descrição', ...empresas, 'Menor', 'Economia'];
+    const tableBody = analysis.prodAnalysis.map(item => {
+      const row = [
+        item.prod.codigo_interno,
+        item.prod.descricao.substring(0, 40),
+        ...empresas.map(emp => {
+          const p = item.prices.find(pr => pr.empresa === emp);
+          return p ? `R$ ${p.preco.toFixed(2).replace('.', ',')}` : '-';
+        }),
+        item.winner ? `R$ ${item.winner.preco.toFixed(2).replace('.', ',')}` : '-',
+        item.savings > 0 ? `-${item.savings.toFixed(0)}%` : '-',
+      ];
+      return row;
+    });
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable?.finalY + 10 || 80,
+      head: [tableHead],
+      body: tableBody,
+      theme: 'striped',
+      headStyles: { fillColor: [41, 128, 185], fontSize: 7 },
+      styles: { fontSize: 7, cellPadding: 2 },
+      columnStyles: {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 40 },
+      },
+    });
+
+    doc.save(`analise_precos${listaNome ? `_${listaNome}` : ''}.pdf`);
+  };
+
   if (!analysis || respostas.length < 2) {
     return (
       <div className="p-6 text-center text-muted-foreground text-sm">
@@ -194,8 +263,8 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         </div>
       </div>
 
-      {/* 2. PRICE HISTORY button */}
-      <div className="flex items-center gap-2">
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={loadHistorico}
           disabled={loadingHistorico}
@@ -204,9 +273,16 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
           <History className="w-4 h-4" />
           {loadingHistorico ? 'Carregando...' : showHistorico ? 'Ocultar Histórico' : 'Histórico de Preços'}
         </button>
+        <button
+          onClick={exportPDF}
+          className="flex items-center gap-2 px-3 py-2 text-xs font-display font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+        >
+          <FileDown className="w-4 h-4" />
+          Exportar PDF
+        </button>
       </div>
 
-      {/* 2. PRICE HISTORY section */}
+      {/* Price history section */}
       {showHistorico && (
         <div>
           <h3 className="font-display font-bold text-foreground mb-3 text-sm">Histórico de Menores Preços (Cotações Anteriores)</h3>

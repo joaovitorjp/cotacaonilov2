@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Copy, Check, Link2, UserPlus, MessageCircle } from 'lucide-react';
+import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw } from 'lucide-react';
 
 interface Fornecedor {
   id: string;
@@ -20,6 +20,14 @@ interface GeneratedLink {
   whatsapp?: string;
 }
 
+interface ExistingLink {
+  id: string;
+  token: string;
+  empresa: string;
+  respondido: boolean;
+  whatsapp?: string;
+}
+
 interface GerarLinkPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -31,14 +39,36 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [loading, setLoading] = useState(false);
   const [generatedLinks, setGeneratedLinks] = useState<GeneratedLink[]>([]);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
+  const [existingLinks, setExistingLinks] = useState<ExistingLink[]>([]);
 
   useEffect(() => {
     if (open) {
       supabase.from('fornecedores').select('*').order('nome').then(({ data }) => {
         setFornecedores((data ?? []) as Fornecedor[]);
       });
+      loadExistingLinks();
     }
   }, [open]);
+
+  const loadExistingLinks = async () => {
+    const { data: links } = await supabase
+      .from('links_cotacao')
+      .select('id, token, empresa, respondido')
+      .eq('lista_id', listaId)
+      .order('created_at', { ascending: false });
+
+    if (links) {
+      // Match whatsapp from fornecedores
+      const { data: forns } = await supabase.from('fornecedores').select('nome, whatsapp');
+      const fornMap: Record<string, string> = {};
+      (forns ?? []).forEach((f: any) => { fornMap[f.nome] = f.whatsapp; });
+
+      setExistingLinks(links.map((l: any) => ({
+        ...l,
+        whatsapp: fornMap[l.empresa],
+      })));
+    }
+  };
 
   const generateLink = async (empresaNome: string) => {
     const { data, error } = await supabase
@@ -59,6 +89,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false }]);
       setEmpresa('');
       toast.success('Link gerado!');
+      loadExistingLinks();
     } catch {
       toast.error('Erro ao gerar link.');
     }
@@ -66,7 +97,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   };
 
   const handleGerarFromFornecedor = async (f: Fornecedor) => {
-    if (generatedLinks.some(l => l.empresa === f.nome)) {
+    if (generatedLinks.some(l => l.empresa === f.nome) || existingLinks.some(l => l.empresa === f.nome)) {
       toast.info('Link já gerado para este fornecedor.');
       return;
     }
@@ -74,13 +105,15 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       const link = await generateLink(f.nome);
       setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp }]);
       toast.success(`Link gerado para ${f.nome}!`);
+      loadExistingLinks();
     } catch {
       toast.error('Erro ao gerar link.');
     }
   };
 
   const handleGerarTodos = async () => {
-    const pendentes = fornecedores.filter(f => !generatedLinks.some(l => l.empresa === f.nome));
+    const allExisting = [...generatedLinks.map(l => l.empresa), ...existingLinks.map(l => l.empresa)];
+    const pendentes = fornecedores.filter(f => !allExisting.includes(f.nome));
     if (pendentes.length === 0) {
       toast.info('Links já gerados para todos os fornecedores.');
       return;
@@ -95,6 +128,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       } catch { /* skip */ }
     }
     toast.success(`${count} link(s) gerado(s)!`);
+    loadExistingLinks();
     setLoading(false);
   };
 
@@ -112,7 +146,17 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     toast.success('Todos os links copiados!');
   };
 
-  const handleShareWhatsApp = (item: GeneratedLink) => {
+  const handleShareWhatsApp = (empresa: string, token: string, whatsapp?: string) => {
+    const phone = whatsapp ? whatsapp.replace(/\D/g, '') : '';
+    const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
+    const link = `${window.location.origin}/cotacao/${token}`;
+    const message = encodeURIComponent(
+      `Olá! Segue o link para responder a cotação:\n${link}`
+    );
+    window.open(`https://wa.me/${fullPhone}?text=${message}`, '_blank');
+  };
+
+  const handleShareWhatsAppGenerated = (item: GeneratedLink) => {
     const phone = item.whatsapp ? item.whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
     const message = encodeURIComponent(
@@ -128,6 +172,9 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     }
     onOpenChange(open);
   };
+
+  const pendingExisting = existingLinks.filter(l => !l.respondido);
+  const respondedExisting = existingLinks.filter(l => l.respondido);
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
@@ -153,7 +200,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {fornecedores.map(f => {
-                  const alreadyGenerated = generatedLinks.some(l => l.empresa === f.nome);
+                  const alreadyGenerated = generatedLinks.some(l => l.empresa === f.nome) || existingLinks.some(l => l.empresa === f.nome);
                   return (
                     <button
                       key={f.id}
@@ -191,7 +238,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
             </div>
           </div>
 
-          {/* Generated links */}
+          {/* Newly generated links */}
           {generatedLinks.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -217,7 +264,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                       <div className="flex items-center gap-1">
                         {item.whatsapp && (
                           <button
-                            onClick={() => handleShareWhatsApp(item)}
+                            onClick={() => handleShareWhatsAppGenerated(item)}
                             className="p-1.5 rounded transition-colors text-green-600 hover:bg-green-500/10"
                             title="Enviar via WhatsApp"
                           >
@@ -235,6 +282,65 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                       </div>
                     </div>
                     <p className="text-[11px] text-muted-foreground break-all font-mono">{item.link}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Existing links - pending (resend) */}
+          {pendingExisting.length > 0 && (
+            <div>
+              <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                ⏳ Aguardando resposta ({pendingExisting.length})
+              </p>
+              <div className="space-y-2">
+                {pendingExisting.map(link => (
+                  <div key={link.id} className="border border-border rounded-lg p-3 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-display font-bold text-foreground text-sm truncate">{link.empresa}</p>
+                      <p className="text-[10px] text-muted-foreground">Ainda não respondeu</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {link.whatsapp && (
+                        <button
+                          onClick={() => handleShareWhatsApp(link.empresa, link.token, link.whatsapp)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-display font-bold text-green-600 bg-green-500/10 hover:bg-green-500/20 transition-colors"
+                          title="Reenviar via WhatsApp"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <MessageCircle className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={async () => {
+                          const url = `${window.location.origin}/cotacao/${link.token}`;
+                          await navigator.clipboard.writeText(url);
+                          toast.success('Link copiado!');
+                        }}
+                        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        title="Copiar link"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Existing links - responded */}
+          {respondedExisting.length > 0 && (
+            <div>
+              <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                ✅ Respondidos ({respondedExisting.length})
+              </p>
+              <div className="space-y-1">
+                {respondedExisting.map(link => (
+                  <div key={link.id} className="border border-success/20 bg-success/5 rounded-lg px-3 py-2 flex items-center gap-2">
+                    <Check className="w-4 h-4 text-success shrink-0" />
+                    <p className="font-display font-bold text-foreground text-sm truncate">{link.empresa}</p>
                   </div>
                 ))}
               </div>
