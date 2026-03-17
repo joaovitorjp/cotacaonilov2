@@ -140,6 +140,20 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [selectionEnd, setSelectionEnd] = useState<CellPos | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
 
+  // Column sorting state
+  const [sortCol, setSortCol] = useState<number | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleHeaderSort = useCallback((colIdx: number, origIdx: number) => {
+    if (origIdx === 0 || origIdx > 3 + empresas.length) return;
+    if (sortCol === origIdx) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(origIdx);
+      setSortDir('asc');
+    }
+  }, [sortCol, empresas.length]);
+
   const tableRef = useRef<HTMLTableElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
