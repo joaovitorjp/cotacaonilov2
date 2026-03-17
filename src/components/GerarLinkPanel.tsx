@@ -34,6 +34,16 @@ interface GerarLinkPanelProps {
   listaId: string;
 }
 
+// Use published URL so suppliers can access without Lovable project access
+const getPublicBaseUrl = () => {
+  const origin = window.location.origin;
+  // If running on preview URL, use the published domain instead
+  if (origin.includes('preview--') && origin.includes('.lovable.app')) {
+    return 'https://cotacaonilov2.lovable.app';
+  }
+  return origin;
+};
+
 const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, listaId }) => {
   const [empresa, setEmpresa] = useState('');
   const [loading, setLoading] = useState(false);
@@ -78,7 +88,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       .single();
 
     if (error) throw error;
-    return `${window.location.origin}/cotacao/${data.token}`;
+    return `${getPublicBaseUrl()}/cotacao/${data.token}`;
   };
 
   const handleGerar = async () => {
@@ -149,7 +159,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const handleShareWhatsApp = (empresa: string, token: string, whatsapp?: string) => {
     const phone = whatsapp ? whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
-    const link = `${window.location.origin}/cotacao/${token}`;
+    const link = `${getPublicBaseUrl()}/cotacao/${token}`;
     const message = encodeURIComponent(
       `Olá! Segue o link para responder a cotação:\n${link}`
     );
@@ -314,7 +324,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                       )}
                       <button
                         onClick={async () => {
-                          const url = `${window.location.origin}/cotacao/${link.token}`;
+                          const url = `${getPublicBaseUrl()}/cotacao/${link.token}`;
                           await navigator.clipboard.writeText(url);
                           toast.success('Link copiado!');
                         }}
