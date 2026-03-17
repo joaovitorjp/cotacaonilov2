@@ -293,12 +293,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       const emp = empresas[origIdx - 4];
       if (editableColumn === emp && editPrices[rowIdx] !== undefined) return editPrices[rowIdx];
       const raw = getPreco(emp, prod.codigo_interno);
-      if (raw === '' || raw === undefined || raw === null) return '';
+      if (raw === '' || raw === undefined || raw === null) return 'R$ -';
       const num = parsePrice(raw as string | number);
       return num === Infinity ? String(raw) : Number(num).toFixed(2).replace('.', ',');
     }
     if (editableColumn && !empresas.includes(editableColumn) && origIdx === 4 + empresas.length) {
-      return editPrices[rowIdx] ?? '';
+      return editPrices[rowIdx] ?? 'R$ -';
     }
     return '';
   }, [produtos, orderedColDefs, empresas, editableColumn, editPrices, respostas]);
@@ -1006,7 +1006,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   />
                 ) : (() => {
                   const raw = getPreco(emp, prod!.codigo_interno);
-                  if (raw === '' || raw === undefined || raw === null) return '';
+                  if (raw === '' || raw === undefined || raw === null) return 'R$ -';
                   const num = parsePrice(raw as string | number);
                   if (num === Infinity) return raw;
                   const finalPrice = getMarkedUpPrice(num, emp);
