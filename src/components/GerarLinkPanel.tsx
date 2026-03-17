@@ -159,7 +159,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const handleShareWhatsApp = (empresa: string, token: string, whatsapp?: string) => {
     const phone = whatsapp ? whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
-    const link = `${window.location.origin}/cotacao/${token}`;
+    const link = `${getPublicBaseUrl()}/cotacao/${token}`;
     const message = encodeURIComponent(
       `Olá! Segue o link para responder a cotação:\n${link}`
     );
