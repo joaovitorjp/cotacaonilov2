@@ -1392,8 +1392,14 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   onDrop={e => handleColDrop(e, colIdx)}
                   onDragEnd={handleColDragEnd}
                   onContextMenu={e => handleContextMenu(e, 'column', colIdx)}
+                  onClick={() => i > 0 && handleHeaderSort(colIdx, col.originalIdx)}
                 >
-                  {col.label}
+                  <span className="inline-flex items-center gap-1">
+                    {col.label}
+                    {sortCol === col.originalIdx && (
+                      <span className="text-[9px]">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                    )}
+                  </span>
                   {col.originalIdx >= 4 && col.originalIdx < 4 + empresas.length && priceMarkups[empresas[col.originalIdx - 4]] ? (
                     <span className="ml-1 text-[9px] opacity-70">
                       (+{priceMarkups[empresas[col.originalIdx - 4]].toFixed(1)}%)
