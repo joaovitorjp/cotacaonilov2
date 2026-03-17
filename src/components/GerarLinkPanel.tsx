@@ -88,7 +88,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       .single();
 
     if (error) throw error;
-    return `${window.location.origin}/cotacao/${data.token}`;
+    return `${getPublicBaseUrl()}/cotacao/${data.token}`;
   };
 
   const handleGerar = async () => {
