@@ -39,6 +39,8 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
           codigo_interno: String(row[0] ?? '').trim(),
           descricao: String(row[1] ?? '').trim(),
           codigo_barras: String(row[2] ?? '').trim(),
+          categoria: String(row[3] ?? '').trim(),
+          observacao: String(row[4] ?? '').trim(),
         }))
         .filter(p => p.codigo_interno || p.descricao);
 
