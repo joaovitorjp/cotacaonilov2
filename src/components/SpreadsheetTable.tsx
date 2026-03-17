@@ -6,6 +6,8 @@ interface Produto {
   codigo_interno: string;
   descricao: string;
   codigo_barras: string;
+  categoria?: string;
+  observacao?: string;
 }
 
 interface RespostaEmpresa {
