@@ -224,6 +224,7 @@ const CotacaoResposta = () => {
     );
   };
 
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center space-y-3">
