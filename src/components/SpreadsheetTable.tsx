@@ -328,12 +328,23 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (origIdx === 1) currentVal = prod.codigo_interno;
       else if (origIdx === 2) currentVal = prod.descricao;
       else if (origIdx === 3) currentVal = prod.codigo_barras;
-      else currentVal = '';
+      else if (origIdx >= 4 && origIdx < 4 + empresas.length) {
+        const emp = empresas[origIdx - 4];
+        const raw = getPreco(emp, prod.codigo_interno);
+        if (raw === '' || raw === undefined || raw === null) {
+          currentVal = '';
+        } else {
+          const num = parsePrice(raw as string | number);
+          currentVal = num === Infinity ? String(raw) : Number(num).toFixed(2).replace('.', ',');
+        }
+      } else {
+        currentVal = '';
+      }
     }
     setEditingCell({ row, col: visualCol });
     setEditingValue(currentVal ?? '');
     setTimeout(() => editInputRef.current?.focus(), 0);
-  }, [readOnly, cellEdits, produtos]);
+  }, [readOnly, cellEdits, produtos, empresas, respostas]);
 
   const commitEdit = useCallback((origIdx: number) => {
     if (!editingCell) return;
@@ -356,21 +367,80 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (origIdx === 1) return prod.codigo_interno;
     if (origIdx === 2) return prod.descricao;
     if (origIdx === 3) return prod.codigo_barras;
+    if (origIdx >= 4 && origIdx < 4 + empresas.length) {
+      const emp = empresas[origIdx - 4];
+      const raw = getPreco(emp, prod.codigo_interno);
+      if (raw === '' || raw === undefined || raw === null) return '';
+      const num = parsePrice(raw as string | number);
+      return num === Infinity ? String(raw) : Number(num).toFixed(2).replace('.', ',');
+    }
     return '';
-  }, [cellEdits, produtos]);
+  }, [cellEdits, produtos, empresas, respostas]);
 
-  // Save handler
-  const handleSave = useCallback(() => {
-    if (!onSave) return;
+  // Save handler - saves product edits AND price edits
+  const handleSave = useCallback(async () => {
     const updated = produtos.map((prod, rowIdx) => ({
       codigo_interno: cellEdits[`${rowIdx}-1`] ?? prod.codigo_interno,
       descricao: cellEdits[`${rowIdx}-2`] ?? prod.descricao,
       codigo_barras: cellEdits[`${rowIdx}-3`] ?? prod.codigo_barras,
     }));
-    onSave(updated);
+
+    // Save product changes
+    if (onSave) {
+      onSave(updated);
+    }
+
+    // Save price edits to respostas table
+    if (listaId) {
+      // Group price edits by empresa
+      const priceEditsByEmpresa: Record<string, { rowIdx: number; value: string }[]> = {};
+      for (const [key, value] of Object.entries(cellEdits)) {
+        const [rowStr, origIdxStr] = key.split('-');
+        const rowIdx = parseInt(rowStr);
+        const origIdx = parseInt(origIdxStr);
+        if (origIdx >= 4 && origIdx < 4 + empresas.length && rowIdx < produtos.length) {
+          const emp = empresas[origIdx - 4];
+          if (!priceEditsByEmpresa[emp]) priceEditsByEmpresa[emp] = [];
+          priceEditsByEmpresa[emp].push({ rowIdx, value });
+        }
+      }
+
+      for (const [emp, edits] of Object.entries(priceEditsByEmpresa)) {
+        // Get existing resposta for this empresa
+        const existingResp = respostas.find(r => r.empresa === emp);
+        const currentItems = existingResp ? [...existingResp.resposta] : [];
+
+        for (const edit of edits) {
+          const prod = produtos[edit.rowIdx];
+          const normalized = edit.value.replace(/\./g, '').replace(',', '.');
+          const numVal = parseFloat(normalized);
+          const preco = isNaN(numVal) ? 0 : numVal;
+
+          const existingIdx = currentItems.findIndex((i: any) => i.codigo_interno === prod.codigo_interno);
+          if (existingIdx >= 0) {
+            currentItems[existingIdx] = { codigo_interno: prod.codigo_interno, preco };
+          } else {
+            currentItems.push({ codigo_interno: prod.codigo_interno, preco });
+          }
+        }
+
+        if (existingResp) {
+          await supabase
+            .from('respostas')
+            .update({ resposta: currentItems as any })
+            .eq('lista_id', listaId)
+            .eq('empresa', emp);
+        } else {
+          await supabase
+            .from('respostas')
+            .insert({ lista_id: listaId, empresa: emp, resposta: currentItems as any });
+        }
+      }
+    }
+
     setCellEdits({});
     setHasUnsavedChanges(false);
-  }, [onSave, produtos, cellEdits]);
+  }, [onSave, produtos, cellEdits, empresas, respostas, listaId]);
 
   // Mouse down for drag selection
   const handleCellMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
