@@ -324,7 +324,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                       )}
                       <button
                         onClick={async () => {
-                          const url = `${window.location.origin}/cotacao/${link.token}`;
+                          const url = `${getPublicBaseUrl()}/cotacao/${link.token}`;
                           await navigator.clipboard.writeText(url);
                           toast.success('Link copiado!');
                         }}
