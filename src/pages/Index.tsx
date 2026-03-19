@@ -201,7 +201,7 @@ const Index = () => {
       for (const resp of resps) {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
         if (item) {
-          const raw = item.preco;
+          const raw = item.preco_mt ?? item.preco;
           let num: number;
           if (typeof raw === 'number') {
             num = raw;
