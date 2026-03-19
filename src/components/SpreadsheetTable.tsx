@@ -95,7 +95,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   };
 
   const EMPTY_ROWS = 30;
-  const EMPTY_COLS = 8;
+  const EMPTY_COLS = 20;
 
   const totalCols = 4 + empresas.length + (editableColumn && !empresas.includes(editableColumn) ? 1 : 0);
   const gridCols = Math.max(totalCols, EMPTY_COLS);
@@ -1451,13 +1451,16 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       >
       <table
         ref={tableRef}
-        className="border-collapse text-sm min-w-max"
-        style={{ tableLayout: 'fixed', fontFamily: 'var(--font-body)', fontSize: '12px' }}
+        className="border-collapse text-sm w-full"
+        style={{ tableLayout: 'fixed', fontFamily: 'var(--font-body)', fontSize: '12px', minWidth: '100%' }}
       >
         <colgroup>
-          {orderedColDefs.map((col, i) => (
-            <col key={col.key} style={{ width: `${getColWidth(i)}px` }} />
-          ))}
+          {orderedColDefs.map((col, i) => {
+            const isLastFiller = i === orderedColDefs.length - 1 && col.key.startsWith('filler_');
+            return (
+              <col key={col.key} style={isLastFiller ? { width: 'auto' } : { width: `${getColWidth(i)}px` }} />
+            );
+          })}
         </colgroup>
 
         {/* Header */}
