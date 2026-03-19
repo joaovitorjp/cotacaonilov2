@@ -384,16 +384,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (origIdx === 1) return prod.codigo_interno;
     if (origIdx === 2) return prod.descricao;
     if (origIdx === 3) return prod.codigo_barras;
-    if (origIdx >= 4 && origIdx < 4 + empresas.length) {
-      const emp = empresas[origIdx - 4];
+    if (colDef.state && colDef.empresa) {
+      const emp = colDef.empresa;
       if (editableColumn === emp && editPrices[rowIdx] !== undefined) return editPrices[rowIdx];
-      const raw = getPreco(emp, prod.codigo_interno);
+      const raw = getPreco(emp, colDef.state, prod.codigo_interno);
       if (raw === '' || raw === undefined || raw === null) return 'R$ -';
       const num = parsePrice(raw as string | number);
       return num === Infinity ? String(raw) : Number(num).toFixed(2).replace('.', ',');
-    }
-    if (editableColumn && !empresas.includes(editableColumn) && origIdx === 4 + empresas.length) {
-      return editPrices[rowIdx] ?? 'R$ -';
     }
     return '';
   }, [produtos, orderedColDefs, empresas, editableColumn, editPrices, respostas]);
