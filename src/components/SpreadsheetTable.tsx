@@ -1151,10 +1151,23 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               </td>
             );
           }
-          // Empresa columns
-          if (origIdx >= 4 && origIdx < 4 + empresas.length) {
-            const empIdx = origIdx - 4;
-            const emp = empresas[empIdx];
+          // Separator column
+          if (col.isSeparator) {
+            return (
+              <td
+                key={col.key}
+                className="border-r border-b bg-muted/30"
+                style={{ borderColor: 'hsl(var(--border))', width: '8px', minWidth: '8px', maxWidth: '8px' }}
+              >
+                &nbsp;
+              </td>
+            );
+          }
+          // Empresa columns (MT or GO)
+          if (col.state && col.empresa) {
+            const emp = col.empresa;
+            const state = col.state;
+            const lowestEmp = state === 'MT' ? lowestEmpMT : lowestEmpGO;
             const isLowest = lowestEmp === emp;
             const isEditable = editableColumn === emp;
             const editKey = `${idx}-${origIdx}`;
@@ -1200,35 +1213,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     const num = parsePrice(editVal);
                     return num === Infinity ? editVal : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
                   }
-                  const raw = getPreco(emp, prod!.codigo_interno);
+                  const raw = getPreco(emp, state, prod!.codigo_interno);
                   if (raw === '' || raw === undefined || raw === null) return 'R$ -';
                   const num = parsePrice(raw as string | number);
                   if (num === Infinity) return raw;
                   const finalPrice = getMarkedUpPrice(num, emp);
                   return `R$ ${Number(finalPrice).toFixed(2).replace('.', ',')}`;
                 })()}
-              </td>
-            );
-          }
-          // Editable column not in empresas
-          if (editableColumn && !empresas.includes(editableColumn) && origIdx === 4 + empresas.length) {
-            return (
-              <td
-                key={col.key}
-                className={`${cellBaseClass} px-1 bg-primary/5 whitespace-nowrap text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', ...cellBgStyle }}
-                {...cellEvents}
-              >
-                {!readOnly ? (
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    className={`w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 ${alignClass(effectiveAlign)} text-xs`}
-                    value={editPrices[idx] ?? ''}
-                    onChange={e => onPriceChange?.(idx, e.target.value)}
-                    placeholder="0,00"
-                  />
-                ) : ''}
               </td>
             );
           }
