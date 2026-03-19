@@ -66,7 +66,20 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onSave,
   listaId,
 }) => {
-  const empresas = respostas.map(r => r.empresa);
+  const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
+
+  // Build a fast lookup map: empresa -> codigo_interno -> preco
+  const precoMap = useMemo(() => {
+    const map: Record<string, Record<string, number | string>> = {};
+    for (const r of respostas) {
+      const inner: Record<string, number | string> = {};
+      for (const item of r.resposta) {
+        inner[item.codigo_interno] = item.preco;
+      }
+      map[r.empresa] = inner;
+    }
+    return map;
+  }, [respostas]);
 
   // Editable cell data: key = "row-origColIdx", value = edited string
   const [cellEdits, setCellEdits] = useState<Record<string, string>>({});
@@ -75,12 +88,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  const getPreco = (empresa: string, codigoInterno: string) => {
-    const resp = respostas.find(r => r.empresa === empresa);
-    if (!resp) return '';
-    const item = resp.resposta.find(i => i.codigo_interno === codigoInterno);
-    return item ? item.preco : '';
-  };
+  const getPreco = useCallback((empresa: string, codigoInterno: string) => {
+    return precoMap[empresa]?.[codigoInterno] ?? '';
+  }, [precoMap]);
 
   const getLowestEmpresa = (codigoInterno: string): string | null => {
     if (!highlightLowest || empresas.length === 0) return null;
@@ -95,7 +105,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   };
 
   const EMPTY_ROWS = 30;
-  const EMPTY_COLS = 20;
+  const EMPTY_COLS = 8;
 
   const totalCols = 4 + empresas.length + (editableColumn && !empresas.includes(editableColumn) ? 1 : 0);
   const gridCols = Math.max(totalCols, EMPTY_COLS);
@@ -192,19 +202,23 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setRowOrder(Array.from({ length: total }, (_, i) => i));
   }, [produtos.length, fillerRows]);
 
-  const orderedColDefs = colOrder.length === baseColDefs.length
-    ? colOrder.map(i => ({ ...baseColDefs[i], orderIdx: i }))
-    : baseColDefs.map((c, i) => ({ ...c, orderIdx: i }));
+  const orderedColDefs = useMemo(() => 
+    colOrder.length === baseColDefs.length
+      ? colOrder.map(i => ({ ...baseColDefs[i], orderIdx: i }))
+      : baseColDefs.map((c, i) => ({ ...c, orderIdx: i })),
+    [colOrder, baseColDefs]
+  );
 
   // Total data rows
   const totalRows = produtos.length + fillerRows;
 
-  // Auto-fit column widths on data change
+  // Auto-fit column widths on data change (skip filler columns)
   useEffect(() => {
     if (!tableRef.current) return;
     const timer = setTimeout(() => {
       const newWidths: Record<number, number> = {};
-      for (let i = 0; i < gridCols; i++) {
+      const dataCols = Math.min(totalCols, gridCols);
+      for (let i = 0; i < dataCols; i++) {
         if (colWidths[i]) continue;
         const cells = tableRef.current!.querySelectorAll(
           `thead th:nth-child(${i + 1}), tbody td:nth-child(${i + 1})`
@@ -223,7 +237,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       setColWidths(prev => ({ ...newWidths, ...prev }));
     }, 50);
     return () => clearTimeout(timer);
-  }, [produtos, respostas, empresas.length, gridCols]);
+  }, [produtos, respostas, empresas.length, gridCols, totalCols]);
 
   const getColWidth = (i: number) => colWidths[i] || (i === 0 ? 36 : i === 2 ? 200 : 80);
 
@@ -890,9 +904,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return rows;
   }, [produtos, fillerRows]);
 
-  const orderedRows = rowOrder.length === allRows.length
-    ? rowOrder.map(i => allRows[i]).filter(Boolean)
-    : allRows;
+  const orderedRows = useMemo(() => 
+    rowOrder.length === allRows.length
+      ? rowOrder.map(i => allRows[i]).filter(Boolean)
+      : allRows,
+    [rowOrder, allRows]
+  );
 
   // Apply sorting
   const sortedRows = useMemo(() => {
