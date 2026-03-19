@@ -1562,6 +1562,18 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             {orderedColDefs.map((col, i) => {
               const colIdx = col.orderIdx;
               const isDragOverCol = dragOverCol === colIdx;
+              
+              // Separator header
+              if (col.isSeparator) {
+                return (
+                  <th
+                    key={col.key}
+                    className="border-r border-b bg-muted/30"
+                    style={{ borderColor: 'hsl(var(--border))', width: '8px', minWidth: '8px', maxWidth: '8px', height: HEADER_HEIGHT }}
+                  />
+                );
+              }
+              
               return (
                 <th
                   key={col.key}
@@ -1576,9 +1588,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     borderColor: 'hsl(var(--border))',
                     backgroundColor: col.highlight ? undefined : dragCol === colIdx ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--muted))',
                     height: HEADER_HEIGHT,
-                    cursor: i > 0 ? 'grab' : 'default',
+                    cursor: i > 0 && !col.isSeparator ? 'grab' : 'default',
                   }}
-                  draggable={i > 0}
+                  draggable={i > 0 && !col.isSeparator}
                   onDragStart={e => handleColDragStart(e, colIdx)}
                   onDragOver={e => handleColDragOver(e, colIdx)}
                   onDrop={e => handleColDrop(e, colIdx)}
@@ -1592,9 +1604,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       <span className="text-[9px]">{sortDir === 'asc' ? '▲' : '▼'}</span>
                     )}
                   </span>
-                  {col.originalIdx >= 4 && col.originalIdx < 4 + empresas.length && priceMarkups[empresas[col.originalIdx - 4]] ? (
+                  {col.empresa && priceMarkups[col.empresa] ? (
                     <span className="ml-1 text-[9px] opacity-70">
-                      (+{priceMarkups[empresas[col.originalIdx - 4]].toFixed(1)}%)
+                      (+{priceMarkups[col.empresa].toFixed(1)}%)
                     </span>
                   ) : null}
                   <div
