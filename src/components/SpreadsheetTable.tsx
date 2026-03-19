@@ -202,9 +202,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setRowOrder(Array.from({ length: total }, (_, i) => i));
   }, [produtos.length, fillerRows]);
 
-  const orderedColDefs = colOrder.length === baseColDefs.length
-    ? colOrder.map(i => ({ ...baseColDefs[i], orderIdx: i }))
-    : baseColDefs.map((c, i) => ({ ...c, orderIdx: i }));
+  const orderedColDefs = useMemo(() => 
+    colOrder.length === baseColDefs.length
+      ? colOrder.map(i => ({ ...baseColDefs[i], orderIdx: i }))
+      : baseColDefs.map((c, i) => ({ ...c, orderIdx: i })),
+    [colOrder, baseColDefs]
+  );
 
   // Total data rows
   const totalRows = produtos.length + fillerRows;
