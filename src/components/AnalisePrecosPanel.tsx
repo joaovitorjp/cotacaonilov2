@@ -118,7 +118,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       for (const resp of respostas) {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
         if (item) {
-          const num = parsePreco(item.preco);
+          const num = parsePreco(item.preco_mt ?? item.preco);
           if (!isNaN(num) && num > 0) {
             prices.push({ empresa: resp.empresa, preco: num });
             totalByEmpresa[resp.empresa].total += num;
