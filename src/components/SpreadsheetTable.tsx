@@ -417,12 +417,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     let currentVal = cellEdits[editKey];
     if (currentVal === undefined && row < produtos.length) {
       const prod = produtos[row];
+      const colDef = orderedColDefs.find(c => c.originalIdx === origIdx);
       if (origIdx === 1) currentVal = prod.codigo_interno;
       else if (origIdx === 2) currentVal = prod.descricao;
       else if (origIdx === 3) currentVal = prod.codigo_barras;
-      else if (origIdx >= 4 && origIdx < 4 + empresas.length) {
-        const emp = empresas[origIdx - 4];
-        const raw = getPreco(emp, prod.codigo_interno);
+      else if (colDef?.state && colDef?.empresa) {
+        const raw = getPreco(colDef.empresa, colDef.state, prod.codigo_interno);
         if (raw === '' || raw === undefined || raw === null) {
           currentVal = '';
         } else {
@@ -436,7 +436,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setEditingCell({ row, col: visualCol });
     setEditingValue(currentVal ?? '');
     setTimeout(() => editInputRef.current?.focus(), 0);
-  }, [readOnly, cellEdits, produtos, empresas, respostas]);
+  }, [readOnly, cellEdits, produtos, empresas, respostas, orderedColDefs]);
 
   const commitEdit = useCallback((origIdx: number) => {
     if (!editingCell) return;
