@@ -68,15 +68,26 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 }) => {
   const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
 
-  // Build a fast lookup map: empresa -> codigo_interno -> preco
+  // Build a fast lookup map: "empresa_state" -> codigo_interno -> preco
   const precoMap = useMemo(() => {
     const map: Record<string, Record<string, number | string>> = {};
     for (const r of respostas) {
-      const inner: Record<string, number | string> = {};
+      const innerMT: Record<string, number | string> = {};
+      const innerGO: Record<string, number | string> = {};
       for (const item of r.resposta) {
-        inner[item.codigo_interno] = item.preco;
+        // Support new format (preco_mt/preco_go) and legacy (preco)
+        if (item.preco_mt !== undefined && item.preco_mt !== '') {
+          innerMT[item.codigo_interno] = item.preco_mt;
+        } else if (item.preco !== undefined && item.preco !== '' && item.preco_go === undefined) {
+          // Legacy: single preco goes to MT
+          innerMT[item.codigo_interno] = item.preco;
+        }
+        if (item.preco_go !== undefined && item.preco_go !== '') {
+          innerGO[item.codigo_interno] = item.preco_go;
+        }
       }
-      map[r.empresa] = inner;
+      map[`${r.empresa}_MT`] = innerMT;
+      map[`${r.empresa}_GO`] = innerGO;
     }
     return map;
   }, [respostas]);
@@ -88,8 +99,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  const getPreco = useCallback((empresa: string, codigoInterno: string) => {
-    return precoMap[empresa]?.[codigoInterno] ?? '';
+  const getPreco = useCallback((empresa: string, state: 'MT' | 'GO', codigoInterno: string) => {
+    return precoMap[`${empresa}_${state}`]?.[codigoInterno] ?? '';
   }, [precoMap]);
 
   const getLowestEmpresa = (codigoInterno: string): string | null => {
