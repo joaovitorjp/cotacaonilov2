@@ -298,7 +298,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (!tableRef.current) return;
     const timer = setTimeout(() => {
       const newWidths: Record<number, number> = {};
-      const dataCols = Math.min(totalCols, gridCols);
+      const dataCols = Math.min(totalDataCols, gridCols);
       for (let i = 0; i < dataCols; i++) {
         if (colWidths[i]) continue;
         const cells = tableRef.current!.querySelectorAll(
@@ -318,7 +318,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       setColWidths(prev => ({ ...newWidths, ...prev }));
     }, 50);
     return () => clearTimeout(timer);
-  }, [produtos, respostas, empresas.length, gridCols, totalCols]);
+  }, [produtos, respostas, empresas.length, gridCols, totalDataCols]);
 
   const getColWidth = (i: number) => colWidths[i] || (i === 0 ? 36 : i === 2 ? 200 : 80);
 
