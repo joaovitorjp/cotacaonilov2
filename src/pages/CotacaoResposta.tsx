@@ -21,7 +21,8 @@ const CotacaoResposta = () => {
   const [listaId, setListaId] = useState('');
   const [listaNome, setListaNome] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [prices, setPrices] = useState<Record<number, string>>({});
+  const [pricesMT, setPricesMT] = useState<Record<number, string>>({});
+  const [pricesGO, setPricesGO] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [linkRespondido, setLinkRespondido] = useState(false);
