@@ -28,7 +28,7 @@ interface Lista {
 
 interface RespostaEmpresa {
   empresa: string;
-  resposta: { codigo_interno: string; preco: number | string }[];
+  resposta: { codigo_interno: string; preco?: number | string; preco_mt?: number | string; preco_go?: number | string }[];
 }
 
 const Index = () => {
@@ -168,7 +168,8 @@ const Index = () => {
       for (const emp of empresas) {
         const resp = resps.find(r => r.empresa === emp);
         const item = resp?.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
-        row[emp] = item?.preco ?? '';
+        row[`${emp} MT`] = item?.preco_mt ?? item?.preco ?? '';
+        row[`${emp} GO`] = item?.preco_go ?? '';
       }
       return row;
     });
@@ -200,7 +201,7 @@ const Index = () => {
       for (const resp of resps) {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
         if (item) {
-          const raw = item.preco;
+          const raw = item.preco_mt ?? item.preco;
           let num: number;
           if (typeof raw === 'number') {
             num = raw;

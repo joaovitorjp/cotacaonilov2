@@ -14,7 +14,7 @@ interface Produto {
 
 interface RespostaEmpresa {
   empresa: string;
-  resposta: { codigo_interno: string; preco: number | string }[];
+  resposta: { codigo_interno: string; preco?: number | string; preco_mt?: number | string; preco_go?: number | string }[];
 }
 
 interface AnalisePrecosPanelProps {
@@ -81,7 +81,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
           const items = resp.resposta as any[];
           const item = items.find((i: any) => i.codigo_interno === prod.codigo_interno);
           if (item) {
-            const num = parsePreco(item.preco);
+            const num = parsePreco(item.preco_mt ?? item.preco);
             if (!isNaN(num) && num > 0 && num < lowestPrice) {
               lowestPrice = num;
               lowestEmpresa = resp.empresa;
@@ -118,7 +118,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       for (const resp of respostas) {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
         if (item) {
-          const num = parsePreco(item.preco);
+          const num = parsePreco(item.preco_mt ?? item.preco);
           if (!isNaN(num) && num > 0) {
             prices.push({ empresa: resp.empresa, preco: num });
             totalByEmpresa[resp.empresa].total += num;

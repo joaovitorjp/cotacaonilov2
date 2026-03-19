@@ -21,12 +21,12 @@ const CotacaoResposta = () => {
   const [listaId, setListaId] = useState('');
   const [listaNome, setListaNome] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [prices, setPrices] = useState<Record<number, string>>({});
+  const [pricesMT, setPricesMT] = useState<Record<number, string>>({});
+  const [pricesGO, setPricesGO] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [linkRespondido, setLinkRespondido] = useState(false);
   const [filledCount, setFilledCount] = useState(0);
-  // 3. SEARCH: filter products in supplier view
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -34,9 +34,10 @@ const CotacaoResposta = () => {
   }, [token]);
 
   useEffect(() => {
-    const count = Object.values(prices).filter(v => v && v.trim() !== '').length;
-    setFilledCount(count);
-  }, [prices]);
+    const countMT = Object.values(pricesMT).filter(v => v && v.trim() !== '').length;
+    const countGO = Object.values(pricesGO).filter(v => v && v.trim() !== '').length;
+    setFilledCount(countMT + countGO);
+  }, [pricesMT, pricesGO]);
 
   const loadData = async () => {
     if (!token) { setError('Link inválido.'); setLoading(false); return; }
@@ -78,7 +79,6 @@ const CotacaoResposta = () => {
       return;
     }
 
-    // 5. DEADLINE: Check if expired
     if ((lista as any).prazo && new Date((lista as any).prazo) < new Date()) {
       setError('O prazo para responder esta cotação expirou.');
       setLoading(false);
@@ -98,12 +98,21 @@ const CotacaoResposta = () => {
 
     const myResp = (resps ?? [])[0];
     if (myResp) {
-      const prefilled: Record<number, string> = {};
+      const prefilledMT: Record<number, string> = {};
+      const prefilledGO: Record<number, string> = {};
       prods.forEach((p, idx) => {
         const item = (myResp.resposta as any[]).find((i: any) => i.codigo_interno === p.codigo_interno);
-        if (item && item.preco) prefilled[idx] = String(item.preco);
+        if (item) {
+          if (item.preco_mt) prefilledMT[idx] = String(item.preco_mt);
+          if (item.preco_go) prefilledGO[idx] = String(item.preco_go);
+          // Backward compat: old single preco → MT
+          if (!item.preco_mt && !item.preco_go && item.preco) {
+            prefilledMT[idx] = String(item.preco);
+          }
+        }
       });
-      setPrices(prefilled);
+      setPricesMT(prefilledMT);
+      setPricesGO(prefilledGO);
     }
 
     setLoading(false);
@@ -114,7 +123,8 @@ const CotacaoResposta = () => {
     try {
       const resposta = produtos.map((p, idx) => ({
         codigo_interno: p.codigo_interno,
-        preco: (prices[idx] && prices[idx].trim() !== '') ? prices[idx] : 'R$ - ',
+        preco_mt: (pricesMT[idx] && pricesMT[idx].trim() !== '') ? pricesMT[idx] : '',
+        preco_go: (pricesGO[idx] && pricesGO[idx].trim() !== '') ? pricesGO[idx] : '',
       }));
 
       const { data: existing } = await supabase
@@ -149,7 +159,6 @@ const CotacaoResposta = () => {
     }
   };
 
-  // Filter products
   const filteredProdutos = produtos.map((prod, idx) => ({ prod, idx })).filter(({ prod }) => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
@@ -161,7 +170,6 @@ const CotacaoResposta = () => {
     );
   });
 
-  // Group by category
   const categories = useMemo(() => {
     const cats: Record<string, typeof filteredProdutos> = {};
     for (const item of filteredProdutos) {
@@ -175,15 +183,17 @@ const CotacaoResposta = () => {
   const hasCategories = produtos.some(p => p.categoria && p.categoria.trim() !== '');
 
   const renderProductCard = (prod: Produto, idx: number) => {
-    const hasPrice = prices[idx] && prices[idx].trim() !== '';
+    const hasPriceMT = pricesMT[idx] && pricesMT[idx].trim() !== '';
+    const hasPriceGO = pricesGO[idx] && pricesGO[idx].trim() !== '';
+    const hasAnyPrice = hasPriceMT || hasPriceGO;
     return (
       <div
         key={idx}
         className={`border rounded-lg p-3 sm:p-4 transition-colors ${
-          hasPrice ? 'border-success/30 bg-success/5' : 'border-border bg-card'
+          hasAnyPrice ? 'border-success/30 bg-success/5' : 'border-border bg-card'
         }`}
       >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+        <div className="flex flex-col gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-2">
               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
@@ -204,19 +214,44 @@ const CotacaoResposta = () => {
               </p>
             )}
           </div>
-          <div className="shrink-0 w-full sm:w-36">
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
-                R$
-              </span>
-              <input
-                type="text"
-                inputMode="decimal"
-                className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                value={prices[idx] ?? ''}
-                onChange={e => setPrices(prev => ({ ...prev, [idx]: e.target.value }))}
-                placeholder="0,00"
-              />
+          <div className="flex gap-2 sm:gap-3">
+            {/* MT Price */}
+            <div className="flex-1">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
+                MT (Mato Grosso)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
+                  R$
+                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                  value={pricesMT[idx] ?? ''}
+                  onChange={e => setPricesMT(prev => ({ ...prev, [idx]: e.target.value }))}
+                  placeholder="0,00"
+                />
+              </div>
+            </div>
+            {/* GO Price */}
+            <div className="flex-1">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
+                GO (Goiás)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
+                  R$
+                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                  value={pricesGO[idx] ?? ''}
+                  onChange={e => setPricesGO(prev => ({ ...prev, [idx]: e.target.value }))}
+                  placeholder="0,00"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -263,7 +298,8 @@ const CotacaoResposta = () => {
     );
   }
 
-  const progress = produtos.length > 0 ? Math.round((filledCount / produtos.length) * 100) : 0;
+  const totalFields = produtos.length * 2;
+  const progress = totalFields > 0 ? Math.round((filledCount / totalFields) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -292,7 +328,7 @@ const CotacaoResposta = () => {
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{filledCount}/{produtos.length} preços preenchidos</span>
+            <span>{filledCount}/{totalFields} preços preenchidos</span>
             <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full transition-all duration-300"
@@ -303,7 +339,7 @@ const CotacaoResposta = () => {
         </div>
       </div>
 
-      {/* 3. SEARCH BAR */}
+      {/* Search */}
       {produtos.length > 10 && (
         <div className="bg-card border-b border-border px-4 sm:px-6 py-2 shrink-0">
           <div className="max-w-3xl mx-auto">
@@ -324,6 +360,12 @@ const CotacaoResposta = () => {
       {/* Product list */}
       <div className="flex-1 overflow-auto px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto space-y-2">
+          {/* Instructions */}
+          <div className="bg-muted/50 border border-border rounded-lg p-3 mb-3">
+            <p className="text-xs text-muted-foreground">
+              Preencha os preços para cada estado. <span className="font-bold text-foreground">MT</span> = Mato Grosso, <span className="font-bold text-foreground">GO</span> = Goiás.
+            </p>
+          </div>
           {filteredProdutos.length === 0 && searchTerm.trim() ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
               Nenhum produto encontrado para "{searchTerm}"
@@ -362,7 +404,7 @@ const CotacaoResposta = () => {
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                Enviar Resposta ({filledCount}/{produtos.length})
+                Enviar Resposta ({filledCount}/{totalFields})
               </>
             )}
           </Button>

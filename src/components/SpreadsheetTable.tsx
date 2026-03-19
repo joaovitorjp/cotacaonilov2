@@ -12,7 +12,7 @@ interface Produto {
 
 interface RespostaEmpresa {
   empresa: string;
-  resposta: { codigo_interno: string; preco: number | string }[];
+  resposta: { codigo_interno: string; preco?: number | string; preco_mt?: number | string; preco_go?: number | string }[];
 }
 
 interface SpreadsheetTableProps {
@@ -68,15 +68,26 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 }) => {
   const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
 
-  // Build a fast lookup map: empresa -> codigo_interno -> preco
+  // Build a fast lookup map: "empresa_state" -> codigo_interno -> preco
   const precoMap = useMemo(() => {
     const map: Record<string, Record<string, number | string>> = {};
     for (const r of respostas) {
-      const inner: Record<string, number | string> = {};
+      const innerMT: Record<string, number | string> = {};
+      const innerGO: Record<string, number | string> = {};
       for (const item of r.resposta) {
-        inner[item.codigo_interno] = item.preco;
+        // Support new format (preco_mt/preco_go) and legacy (preco)
+        if (item.preco_mt !== undefined && item.preco_mt !== '') {
+          innerMT[item.codigo_interno] = item.preco_mt;
+        } else if (item.preco !== undefined && item.preco !== '' && item.preco_go === undefined) {
+          // Legacy: single preco goes to MT
+          innerMT[item.codigo_interno] = item.preco;
+        }
+        if (item.preco_go !== undefined && item.preco_go !== '') {
+          innerGO[item.codigo_interno] = item.preco_go;
+        }
       }
-      map[r.empresa] = inner;
+      map[`${r.empresa}_MT`] = innerMT;
+      map[`${r.empresa}_GO`] = innerGO;
     }
     return map;
   }, [respostas]);
@@ -88,16 +99,16 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  const getPreco = useCallback((empresa: string, codigoInterno: string) => {
-    return precoMap[empresa]?.[codigoInterno] ?? '';
+  const getPreco = useCallback((empresa: string, state: 'MT' | 'GO', codigoInterno: string) => {
+    return precoMap[`${empresa}_${state}`]?.[codigoInterno] ?? '';
   }, [precoMap]);
 
-  const getLowestEmpresa = (codigoInterno: string): string | null => {
+  const getLowestEmpresa = (codigoInterno: string, state: 'MT' | 'GO'): string | null => {
     if (!highlightLowest || empresas.length === 0) return null;
     let lowest = Infinity;
     let lowestEmp: string | null = null;
     for (const emp of empresas) {
-      const raw = getPreco(emp, codigoInterno);
+      const raw = getPreco(emp, state, codigoInterno);
       const val = parsePrice(raw as string | number);
       if (val < lowest && val > 0) { lowest = val; lowestEmp = emp; }
     }
@@ -107,10 +118,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const EMPTY_ROWS = 30;
   const EMPTY_COLS = 8;
 
-  const totalCols = 4 + empresas.length + (editableColumn && !empresas.includes(editableColumn) ? 1 : 0);
-  const gridCols = Math.max(totalCols, EMPTY_COLS);
-  const fillerCols = gridCols - totalCols;
-  const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : EMPTY_ROWS;
+  // (totalCols, gridCols, fillerCols, fillerRows defined below with baseColDefs)
 
   const [colWidths, setColWidths] = useState<Record<number, number>>({});
   const [rowHeights, setRowHeights] = useState<Record<number, number>>({});
@@ -178,18 +186,91 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     originalIdx: number;
     sticky?: boolean;
     highlight?: boolean;
+    isSeparator?: boolean;
+    state?: 'MT' | 'GO';
+    empresa?: string;
   }
 
+  // Column layout: # | CodInt | Desc | EAN | [emp1 MT] [emp2 MT] ... | SEP | [emp1 GO] [emp2 GO] ... | fillers
+  const totalDataCols = 4 + empresas.length * 2 + 1 + (editableColumn && !empresas.includes(editableColumn) ? 2 : 0); // +1 for separator
+  const gridCols = Math.max(totalDataCols, EMPTY_COLS);
+  const fillerCols = Math.max(0, gridCols - totalDataCols);
+  const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : EMPTY_ROWS;
+
   // Build column definitions
-  const baseColDefs = useMemo((): ColDef[] => [
-    { key: '#', label: '', defaultAlign: 'center', isData: false, originalIdx: 0 },
-    { key: 'cod_int', label: 'Código Interno', defaultAlign: 'center', sticky: true, isData: true, originalIdx: 1 },
-    { key: 'desc', label: 'Descrição', defaultAlign: 'left', isData: true, originalIdx: 2 },
-    { key: 'cod_bar', label: 'Código de Barras', defaultAlign: 'center', isData: true, originalIdx: 3 },
-    ...empresas.map((emp, i) => ({ key: `emp_${emp}`, label: emp, defaultAlign: 'center' as TextAlign, highlight: editableColumn === emp, isData: true, originalIdx: 4 + i })),
-    ...(editableColumn && !empresas.includes(editableColumn) ? [{ key: `emp_${editableColumn}`, label: editableColumn, defaultAlign: 'center' as TextAlign, highlight: true, isData: true, originalIdx: 4 + empresas.length }] : []),
-    ...Array.from({ length: fillerCols }).map((_, i) => ({ key: `filler_${i}`, label: '', defaultAlign: 'center' as TextAlign, isData: false, originalIdx: totalCols + i })),
-  ], [empresas.length, editableColumn, fillerCols, totalCols]);
+  const baseColDefs = useMemo((): ColDef[] => {
+    const cols: ColDef[] = [
+      { key: '#', label: '', defaultAlign: 'center', isData: false, originalIdx: 0 },
+      { key: 'cod_int', label: 'Código Interno', defaultAlign: 'center', sticky: true, isData: true, originalIdx: 1 },
+      { key: 'desc', label: 'Descrição', defaultAlign: 'left', isData: true, originalIdx: 2 },
+      { key: 'cod_bar', label: 'Código de Barras', defaultAlign: 'center', isData: true, originalIdx: 3 },
+    ];
+    let idx = 4;
+    // MT columns
+    for (let i = 0; i < empresas.length; i++) {
+      cols.push({
+        key: `emp_${empresas[i]}_MT`,
+        label: `${empresas[i]} MT`,
+        defaultAlign: 'center',
+        highlight: editableColumn === empresas[i],
+        isData: true,
+        originalIdx: idx++,
+        state: 'MT',
+        empresa: empresas[i],
+      });
+    }
+    if (editableColumn && !empresas.includes(editableColumn)) {
+      cols.push({
+        key: `emp_${editableColumn}_MT`,
+        label: `${editableColumn} MT`,
+        defaultAlign: 'center',
+        highlight: true,
+        isData: true,
+        originalIdx: idx++,
+        state: 'MT',
+        empresa: editableColumn,
+      });
+    }
+    // Separator column
+    cols.push({
+      key: 'separator',
+      label: '',
+      defaultAlign: 'center',
+      isData: false,
+      isSeparator: true,
+      originalIdx: idx++,
+    });
+    // GO columns
+    for (let i = 0; i < empresas.length; i++) {
+      cols.push({
+        key: `emp_${empresas[i]}_GO`,
+        label: `${empresas[i]} GO`,
+        defaultAlign: 'center',
+        highlight: editableColumn === empresas[i],
+        isData: true,
+        originalIdx: idx++,
+        state: 'GO',
+        empresa: empresas[i],
+      });
+    }
+    if (editableColumn && !empresas.includes(editableColumn)) {
+      cols.push({
+        key: `emp_${editableColumn}_GO`,
+        label: `${editableColumn} GO`,
+        defaultAlign: 'center',
+        highlight: true,
+        isData: true,
+        originalIdx: idx++,
+        state: 'GO',
+        empresa: editableColumn,
+      });
+    }
+    // Fillers
+    for (let i = 0; i < fillerCols; i++) {
+      cols.push({ key: `filler_${i}`, label: '', defaultAlign: 'center', isData: false, originalIdx: idx++ });
+    }
+    return cols;
+  }, [empresas.length, editableColumn, fillerCols]);
 
   // Initialize column order
   useEffect(() => {
@@ -217,7 +298,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (!tableRef.current) return;
     const timer = setTimeout(() => {
       const newWidths: Record<number, number> = {};
-      const dataCols = Math.min(totalCols, gridCols);
+      const dataCols = Math.min(totalDataCols, gridCols);
       for (let i = 0; i < dataCols; i++) {
         if (colWidths[i]) continue;
         const cells = tableRef.current!.querySelectorAll(
@@ -237,7 +318,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       setColWidths(prev => ({ ...newWidths, ...prev }));
     }, 50);
     return () => clearTimeout(timer);
-  }, [produtos, respostas, empresas.length, gridCols, totalCols]);
+  }, [produtos, respostas, empresas.length, gridCols, totalDataCols]);
 
   const getColWidth = (i: number) => colWidths[i] || (i === 0 ? 36 : i === 2 ? 200 : 80);
 
@@ -303,16 +384,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (origIdx === 1) return prod.codigo_interno;
     if (origIdx === 2) return prod.descricao;
     if (origIdx === 3) return prod.codigo_barras;
-    if (origIdx >= 4 && origIdx < 4 + empresas.length) {
-      const emp = empresas[origIdx - 4];
+    if (colDef.state && colDef.empresa) {
+      const emp = colDef.empresa;
       if (editableColumn === emp && editPrices[rowIdx] !== undefined) return editPrices[rowIdx];
-      const raw = getPreco(emp, prod.codigo_interno);
+      const raw = getPreco(emp, colDef.state, prod.codigo_interno);
       if (raw === '' || raw === undefined || raw === null) return 'R$ -';
       const num = parsePrice(raw as string | number);
       return num === Infinity ? String(raw) : Number(num).toFixed(2).replace('.', ',');
-    }
-    if (editableColumn && !empresas.includes(editableColumn) && origIdx === 4 + empresas.length) {
-      return editPrices[rowIdx] ?? 'R$ -';
     }
     return '';
   }, [produtos, orderedColDefs, empresas, editableColumn, editPrices, respostas]);
@@ -339,12 +417,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     let currentVal = cellEdits[editKey];
     if (currentVal === undefined && row < produtos.length) {
       const prod = produtos[row];
+      const colDef = orderedColDefs.find(c => c.originalIdx === origIdx);
       if (origIdx === 1) currentVal = prod.codigo_interno;
       else if (origIdx === 2) currentVal = prod.descricao;
       else if (origIdx === 3) currentVal = prod.codigo_barras;
-      else if (origIdx >= 4 && origIdx < 4 + empresas.length) {
-        const emp = empresas[origIdx - 4];
-        const raw = getPreco(emp, prod.codigo_interno);
+      else if (colDef?.state && colDef?.empresa) {
+        const raw = getPreco(colDef.empresa, colDef.state, prod.codigo_interno);
         if (raw === '' || raw === undefined || raw === null) {
           currentVal = '';
         } else {
@@ -358,7 +436,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setEditingCell({ row, col: visualCol });
     setEditingValue(currentVal ?? '');
     setTimeout(() => editInputRef.current?.focus(), 0);
-  }, [readOnly, cellEdits, produtos, empresas, respostas]);
+  }, [readOnly, cellEdits, produtos, empresas, respostas, orderedColDefs]);
 
   const commitEdit = useCallback((origIdx: number) => {
     if (!editingCell) return;
@@ -381,15 +459,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (origIdx === 1) return prod.codigo_interno;
     if (origIdx === 2) return prod.descricao;
     if (origIdx === 3) return prod.codigo_barras;
-    if (origIdx >= 4 && origIdx < 4 + empresas.length) {
-      const emp = empresas[origIdx - 4];
-      const raw = getPreco(emp, prod.codigo_interno);
+    const colDef = baseColDefs.find(c => c.originalIdx === origIdx);
+    if (colDef?.state && colDef?.empresa) {
+      const raw = getPreco(colDef.empresa, colDef.state, prod.codigo_interno);
       if (raw === '' || raw === undefined || raw === null) return '';
       const num = parsePrice(raw as string | number);
       return num === Infinity ? String(raw) : Number(num).toFixed(2).replace('.', ',');
     }
     return '';
-  }, [cellEdits, produtos, empresas, respostas]);
+  }, [cellEdits, produtos, empresas, respostas, baseColDefs]);
 
   // Save handler - saves product edits AND price edits
   const handleSave = useCallback(async () => {
@@ -406,35 +484,37 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
     // Save price edits to respostas table
     if (listaId) {
-      // Group price edits by empresa
-      const priceEditsByEmpresa: Record<string, { rowIdx: number; value: string }[]> = {};
+      // Group price edits by empresa+state
+      const priceEditsByEmpresa: Record<string, { rowIdx: number; value: string; state: 'MT' | 'GO' }[]> = {};
       for (const [key, value] of Object.entries(cellEdits)) {
         const [rowStr, origIdxStr] = key.split('-');
         const rowIdx = parseInt(rowStr);
         const origIdx = parseInt(origIdxStr);
-        if (origIdx >= 4 && origIdx < 4 + empresas.length && rowIdx < produtos.length) {
-          const emp = empresas[origIdx - 4];
+        if (rowIdx >= produtos.length) continue;
+        const colDef = baseColDefs.find(c => c.originalIdx === origIdx);
+        if (colDef?.state && colDef?.empresa) {
+          const emp = colDef.empresa;
           if (!priceEditsByEmpresa[emp]) priceEditsByEmpresa[emp] = [];
-          priceEditsByEmpresa[emp].push({ rowIdx, value });
+          priceEditsByEmpresa[emp].push({ rowIdx, value, state: colDef.state });
         }
       }
 
       for (const [emp, edits] of Object.entries(priceEditsByEmpresa)) {
-        // Get existing resposta for this empresa
         const existingResp = respostas.find(r => r.empresa === emp);
-        const currentItems = existingResp ? [...existingResp.resposta] : [];
+        const currentItems: any[] = existingResp ? [...existingResp.resposta] : [];
 
         for (const edit of edits) {
           const prod = produtos[edit.rowIdx];
           const normalized = edit.value.replace(/\./g, '').replace(',', '.');
           const numVal = parseFloat(normalized);
           const preco = isNaN(numVal) ? 0 : numVal;
+          const field = edit.state === 'MT' ? 'preco_mt' : 'preco_go';
 
           const existingIdx = currentItems.findIndex((i: any) => i.codigo_interno === prod.codigo_interno);
           if (existingIdx >= 0) {
-            currentItems[existingIdx] = { codigo_interno: prod.codigo_interno, preco };
+            currentItems[existingIdx] = { ...currentItems[existingIdx], [field]: preco };
           } else {
-            currentItems.push({ codigo_interno: prod.codigo_interno, preco });
+            currentItems.push({ codigo_interno: prod.codigo_interno, [field]: preco });
           }
         }
 
@@ -923,21 +1003,24 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (sortCol === 1) { valA = a.prod.codigo_interno; valB = b.prod.codigo_interno; }
       else if (sortCol === 2) { valA = a.prod.descricao; valB = b.prod.descricao; }
       else if (sortCol === 3) { valA = a.prod.codigo_barras; valB = b.prod.codigo_barras; }
-      else if (sortCol >= 4 && sortCol < 4 + empresas.length) {
-        const emp = empresas[sortCol - 4];
-        const prA = getPreco(emp, a.prod.codigo_interno);
-        const prB = getPreco(emp, b.prod.codigo_interno);
-        const numA = parsePrice(prA as string | number);
-        const numB = parsePrice(prB as string | number);
-        const cmp = numA - numB;
-        return sortDir === 'asc' ? cmp : -cmp;
+      else {
+        // Find column def for sortCol
+        const sortColDef = baseColDefs.find(c => c.originalIdx === sortCol);
+        if (sortColDef?.state && sortColDef?.empresa) {
+          const prA = getPreco(sortColDef.empresa, sortColDef.state, a.prod.codigo_interno);
+          const prB = getPreco(sortColDef.empresa, sortColDef.state, b.prod.codigo_interno);
+          const numA = parsePrice(prA as string | number);
+          const numB = parsePrice(prB as string | number);
+          const cmp = numA - numB;
+          return sortDir === 'asc' ? cmp : -cmp;
+        }
       }
       const cmp = valA.localeCompare(valB, 'pt-BR', { numeric: true });
       return sortDir === 'asc' ? cmp : -cmp;
     });
 
     return [...dataRows, ...emptyRows];
-  }, [orderedRows, sortCol, sortDir, empresas]);
+  }, [orderedRows, sortCol, sortDir, empresas, baseColDefs]);
 
   // Selection border helpers
   const getSelectionBorders = useCallback((row: number, col: number) => {
@@ -954,7 +1037,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   }, [getSelectionRange]);
 
   const renderRow = (prod: Produto | null, idx: number, isEmpty: boolean, displayIdx: number) => {
-    const lowestEmp = prod ? getLowestEmpresa(prod.codigo_interno) : null;
+    const lowestEmpMT = prod ? getLowestEmpresa(prod.codigo_interno, 'MT') : null;
+    const lowestEmpGO = prod ? getLowestEmpresa(prod.codigo_interno, 'GO') : null;
     const h = rowHeights[idx] || DEFAULT_ROW_HEIGHT;
     const isDragOver = dragOverRow === idx;
 
@@ -1067,10 +1151,23 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               </td>
             );
           }
-          // Empresa columns
-          if (origIdx >= 4 && origIdx < 4 + empresas.length) {
-            const empIdx = origIdx - 4;
-            const emp = empresas[empIdx];
+          // Separator column
+          if (col.isSeparator) {
+            return (
+              <td
+                key={col.key}
+                className="border-r border-b bg-muted/30"
+                style={{ borderColor: 'hsl(var(--border))', width: '8px', minWidth: '8px', maxWidth: '8px' }}
+              >
+                &nbsp;
+              </td>
+            );
+          }
+          // Empresa columns (MT or GO)
+          if (col.state && col.empresa) {
+            const emp = col.empresa;
+            const state = col.state;
+            const lowestEmp = state === 'MT' ? lowestEmpMT : lowestEmpGO;
             const isLowest = lowestEmp === emp;
             const isEditable = editableColumn === emp;
             const editKey = `${idx}-${origIdx}`;
@@ -1116,35 +1213,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     const num = parsePrice(editVal);
                     return num === Infinity ? editVal : `R$ ${Number(num).toFixed(2).replace('.', ',')}`;
                   }
-                  const raw = getPreco(emp, prod!.codigo_interno);
+                  const raw = getPreco(emp, state, prod!.codigo_interno);
                   if (raw === '' || raw === undefined || raw === null) return 'R$ -';
                   const num = parsePrice(raw as string | number);
                   if (num === Infinity) return raw;
                   const finalPrice = getMarkedUpPrice(num, emp);
                   return `R$ ${Number(finalPrice).toFixed(2).replace('.', ',')}`;
                 })()}
-              </td>
-            );
-          }
-          // Editable column not in empresas
-          if (editableColumn && !empresas.includes(editableColumn) && origIdx === 4 + empresas.length) {
-            return (
-              <td
-                key={col.key}
-                className={`${cellBaseClass} px-1 bg-primary/5 whitespace-nowrap text-xs`}
-                style={{ borderColor: 'hsl(var(--border))', ...cellBgStyle }}
-                {...cellEvents}
-              >
-                {!readOnly ? (
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    className={`w-full bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1 ${alignClass(effectiveAlign)} text-xs`}
-                    value={editPrices[idx] ?? ''}
-                    onChange={e => onPriceChange?.(idx, e.target.value)}
-                    placeholder="0,00"
-                  />
-                ) : ''}
               </td>
             );
           }
@@ -1301,11 +1376,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (!contextMenu || contextMenu.colIdx === undefined) return null;
     const colDef = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
     if (!colDef) return null;
-    const origIdx = colDef.originalIdx;
-    if (origIdx >= 4 && origIdx < 4 + empresas.length) {
-      return empresas[origIdx - 4];
-    }
-    return null;
+    return colDef.empresa || null;
   };
 
   useEffect(() => {
@@ -1474,6 +1545,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         <colgroup>
           {orderedColDefs.map((col, i) => {
             const isLastFiller = i === orderedColDefs.length - 1 && col.key.startsWith('filler_');
+            if (col.isSeparator) return <col key={col.key} style={{ width: '8px' }} />;
             return (
               <col key={col.key} style={isLastFiller ? { width: 'auto' } : { width: `${getColWidth(i)}px` }} />
             );
@@ -1486,6 +1558,18 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             {orderedColDefs.map((col, i) => {
               const colIdx = col.orderIdx;
               const isDragOverCol = dragOverCol === colIdx;
+              
+              // Separator header
+              if (col.isSeparator) {
+                return (
+                  <th
+                    key={col.key}
+                    className="border-r border-b bg-muted/30"
+                    style={{ borderColor: 'hsl(var(--border))', width: '8px', minWidth: '8px', maxWidth: '8px', height: HEADER_HEIGHT }}
+                  />
+                );
+              }
+              
               return (
                 <th
                   key={col.key}
@@ -1500,9 +1584,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     borderColor: 'hsl(var(--border))',
                     backgroundColor: col.highlight ? undefined : dragCol === colIdx ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--muted))',
                     height: HEADER_HEIGHT,
-                    cursor: i > 0 ? 'grab' : 'default',
+                    cursor: i > 0 && !col.isSeparator ? 'grab' : 'default',
                   }}
-                  draggable={i > 0}
+                  draggable={i > 0 && !col.isSeparator}
                   onDragStart={e => handleColDragStart(e, colIdx)}
                   onDragOver={e => handleColDragOver(e, colIdx)}
                   onDrop={e => handleColDrop(e, colIdx)}
@@ -1516,9 +1600,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       <span className="text-[9px]">{sortDir === 'asc' ? '▲' : '▼'}</span>
                     )}
                   </span>
-                  {col.originalIdx >= 4 && col.originalIdx < 4 + empresas.length && priceMarkups[empresas[col.originalIdx - 4]] ? (
+                  {col.empresa && priceMarkups[col.empresa] ? (
                     <span className="ml-1 text-[9px] opacity-70">
-                      (+{priceMarkups[empresas[col.originalIdx - 4]].toFixed(1)}%)
+                      (+{priceMarkups[col.empresa].toFixed(1)}%)
                     </span>
                   ) : null}
                   <div
