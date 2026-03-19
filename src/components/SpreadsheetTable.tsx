@@ -95,7 +95,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   };
 
   const EMPTY_ROWS = 30;
-  const EMPTY_COLS = 8;
+  const EMPTY_COLS = 20;
 
   const totalCols = 4 + empresas.length + (editableColumn && !empresas.includes(editableColumn) ? 1 : 0);
   const gridCols = Math.max(totalCols, EMPTY_COLS);
