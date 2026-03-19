@@ -81,7 +81,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
           const items = resp.resposta as any[];
           const item = items.find((i: any) => i.codigo_interno === prod.codigo_interno);
           if (item) {
-            const num = parsePreco(item.preco);
+            const num = parsePreco(item.preco_mt ?? item.preco);
             if (!isNaN(num) && num > 0 && num < lowestPrice) {
               lowestPrice = num;
               lowestEmpresa = resp.empresa;
