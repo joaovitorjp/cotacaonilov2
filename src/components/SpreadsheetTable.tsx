@@ -459,15 +459,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (origIdx === 1) return prod.codigo_interno;
     if (origIdx === 2) return prod.descricao;
     if (origIdx === 3) return prod.codigo_barras;
-    if (origIdx >= 4 && origIdx < 4 + empresas.length) {
-      const emp = empresas[origIdx - 4];
-      const raw = getPreco(emp, prod.codigo_interno);
+    const colDef = baseColDefs.find(c => c.originalIdx === origIdx);
+    if (colDef?.state && colDef?.empresa) {
+      const raw = getPreco(colDef.empresa, colDef.state, prod.codigo_interno);
       if (raw === '' || raw === undefined || raw === null) return '';
       const num = parsePrice(raw as string | number);
       return num === Infinity ? String(raw) : Number(num).toFixed(2).replace('.', ',');
     }
     return '';
-  }, [cellEdits, produtos, empresas, respostas]);
+  }, [cellEdits, produtos, empresas, respostas, baseColDefs]);
 
   // Save handler - saves product edits AND price edits
   const handleSave = useCallback(async () => {
