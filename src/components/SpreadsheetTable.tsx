@@ -484,35 +484,37 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
     // Save price edits to respostas table
     if (listaId) {
-      // Group price edits by empresa
-      const priceEditsByEmpresa: Record<string, { rowIdx: number; value: string }[]> = {};
+      // Group price edits by empresa+state
+      const priceEditsByEmpresa: Record<string, { rowIdx: number; value: string; state: 'MT' | 'GO' }[]> = {};
       for (const [key, value] of Object.entries(cellEdits)) {
         const [rowStr, origIdxStr] = key.split('-');
         const rowIdx = parseInt(rowStr);
         const origIdx = parseInt(origIdxStr);
-        if (origIdx >= 4 && origIdx < 4 + empresas.length && rowIdx < produtos.length) {
-          const emp = empresas[origIdx - 4];
+        if (rowIdx >= produtos.length) continue;
+        const colDef = baseColDefs.find(c => c.originalIdx === origIdx);
+        if (colDef?.state && colDef?.empresa) {
+          const emp = colDef.empresa;
           if (!priceEditsByEmpresa[emp]) priceEditsByEmpresa[emp] = [];
-          priceEditsByEmpresa[emp].push({ rowIdx, value });
+          priceEditsByEmpresa[emp].push({ rowIdx, value, state: colDef.state });
         }
       }
 
       for (const [emp, edits] of Object.entries(priceEditsByEmpresa)) {
-        // Get existing resposta for this empresa
         const existingResp = respostas.find(r => r.empresa === emp);
-        const currentItems = existingResp ? [...existingResp.resposta] : [];
+        const currentItems: any[] = existingResp ? [...existingResp.resposta] : [];
 
         for (const edit of edits) {
           const prod = produtos[edit.rowIdx];
           const normalized = edit.value.replace(/\./g, '').replace(',', '.');
           const numVal = parseFloat(normalized);
           const preco = isNaN(numVal) ? 0 : numVal;
+          const field = edit.state === 'MT' ? 'preco_mt' : 'preco_go';
 
           const existingIdx = currentItems.findIndex((i: any) => i.codigo_interno === prod.codigo_interno);
           if (existingIdx >= 0) {
-            currentItems[existingIdx] = { codigo_interno: prod.codigo_interno, preco };
+            currentItems[existingIdx] = { ...currentItems[existingIdx], [field]: preco };
           } else {
-            currentItems.push({ codigo_interno: prod.codigo_interno, preco });
+            currentItems.push({ codigo_interno: prod.codigo_interno, [field]: preco });
           }
         }
 
