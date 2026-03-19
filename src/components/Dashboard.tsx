@@ -29,21 +29,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     ]);
 
     const listas = (listasRes.data ?? []) as any[];
-    const allListas = listas;
 
-    // Get full counts
-    const [abertasRes, finalizadasRes] = await Promise.all([
-      supabase.from('listas').select('id', { count: 'exact', head: true }).eq('status', 'aberta'),
-      supabase.from('listas').select('id', { count: 'exact', head: true }).eq('status', 'finalizada'),
-    ]);
+    const abertas = listas.filter(l => l.status === 'aberta').length;
+    const finalizadas = listas.filter(l => l.status === 'finalizada').length;
 
     setStats({
-      abertas: abertasRes.count ?? 0,
-      finalizadas: finalizadasRes.count ?? 0,
-      totalProdutos: allListas.reduce((sum, l) => sum + (Array.isArray(l.produtos) ? l.produtos.length : 0), 0),
+      abertas,
+      finalizadas,
+      totalProdutos: listas.reduce((sum, l) => sum + (Array.isArray(l.produtos) ? l.produtos.length : 0), 0),
       totalRespostas: respostasRes.count ?? 0,
     });
-    setRecentes(allListas.slice(0, 5));
+    setRecentes(listas.slice(0, 5));
     setLoading(false);
   };
 
