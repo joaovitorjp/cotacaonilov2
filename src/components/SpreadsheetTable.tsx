@@ -904,9 +904,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return rows;
   }, [produtos, fillerRows]);
 
-  const orderedRows = rowOrder.length === allRows.length
-    ? rowOrder.map(i => allRows[i]).filter(Boolean)
-    : allRows;
+  const orderedRows = useMemo(() => 
+    rowOrder.length === allRows.length
+      ? rowOrder.map(i => allRows[i]).filter(Boolean)
+      : allRows,
+    [rowOrder, allRows]
+  );
 
   // Apply sorting
   const sortedRows = useMemo(() => {
