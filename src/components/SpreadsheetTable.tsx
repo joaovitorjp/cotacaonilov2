@@ -1549,6 +1549,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         <colgroup>
           {orderedColDefs.map((col, i) => {
             const isLastFiller = i === orderedColDefs.length - 1 && col.key.startsWith('filler_');
+            if (col.isSeparator) return <col key={col.key} style={{ width: '8px' }} />;
             return (
               <col key={col.key} style={isLastFiller ? { width: 'auto' } : { width: `${getColWidth(i)}px` }} />
             );
