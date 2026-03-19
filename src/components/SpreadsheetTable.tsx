@@ -103,12 +103,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return precoMap[`${empresa}_${state}`]?.[codigoInterno] ?? '';
   }, [precoMap]);
 
-  const getLowestEmpresa = (codigoInterno: string): string | null => {
+  const getLowestEmpresa = (codigoInterno: string, state: 'MT' | 'GO'): string | null => {
     if (!highlightLowest || empresas.length === 0) return null;
     let lowest = Infinity;
     let lowestEmp: string | null = null;
     for (const emp of empresas) {
-      const raw = getPreco(emp, codigoInterno);
+      const raw = getPreco(emp, state, codigoInterno);
       const val = parsePrice(raw as string | number);
       if (val < lowest && val > 0) { lowest = val; lowestEmp = emp; }
     }
