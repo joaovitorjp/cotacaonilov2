@@ -1376,11 +1376,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     if (!contextMenu || contextMenu.colIdx === undefined) return null;
     const colDef = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
     if (!colDef) return null;
-    const origIdx = colDef.originalIdx;
-    if (origIdx >= 4 && origIdx < 4 + empresas.length) {
-      return empresas[origIdx - 4];
-    }
-    return null;
+    return colDef.empresa || null;
   };
 
   useEffect(() => {
