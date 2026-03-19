@@ -1003,21 +1003,24 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (sortCol === 1) { valA = a.prod.codigo_interno; valB = b.prod.codigo_interno; }
       else if (sortCol === 2) { valA = a.prod.descricao; valB = b.prod.descricao; }
       else if (sortCol === 3) { valA = a.prod.codigo_barras; valB = b.prod.codigo_barras; }
-      else if (sortCol >= 4 && sortCol < 4 + empresas.length) {
-        const emp = empresas[sortCol - 4];
-        const prA = getPreco(emp, a.prod.codigo_interno);
-        const prB = getPreco(emp, b.prod.codigo_interno);
-        const numA = parsePrice(prA as string | number);
-        const numB = parsePrice(prB as string | number);
-        const cmp = numA - numB;
-        return sortDir === 'asc' ? cmp : -cmp;
+      else {
+        // Find column def for sortCol
+        const sortColDef = baseColDefs.find(c => c.originalIdx === sortCol);
+        if (sortColDef?.state && sortColDef?.empresa) {
+          const prA = getPreco(sortColDef.empresa, sortColDef.state, a.prod.codigo_interno);
+          const prB = getPreco(sortColDef.empresa, sortColDef.state, b.prod.codigo_interno);
+          const numA = parsePrice(prA as string | number);
+          const numB = parsePrice(prB as string | number);
+          const cmp = numA - numB;
+          return sortDir === 'asc' ? cmp : -cmp;
+        }
       }
       const cmp = valA.localeCompare(valB, 'pt-BR', { numeric: true });
       return sortDir === 'asc' ? cmp : -cmp;
     });
 
     return [...dataRows, ...emptyRows];
-  }, [orderedRows, sortCol, sortDir, empresas]);
+  }, [orderedRows, sortCol, sortDir, empresas, baseColDefs]);
 
   // Selection border helpers
   const getSelectionBorders = useCallback((row: number, col: number) => {
