@@ -118,10 +118,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const EMPTY_ROWS = 30;
   const EMPTY_COLS = 8;
 
-  const totalCols = 4 + empresas.length + (editableColumn && !empresas.includes(editableColumn) ? 1 : 0);
-  const gridCols = Math.max(totalCols, EMPTY_COLS);
-  const fillerCols = gridCols - totalCols;
-  const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : EMPTY_ROWS;
+  // (totalCols, gridCols, fillerCols, fillerRows defined below with baseColDefs)
 
   const [colWidths, setColWidths] = useState<Record<number, number>>({});
   const [rowHeights, setRowHeights] = useState<Record<number, number>>({});
