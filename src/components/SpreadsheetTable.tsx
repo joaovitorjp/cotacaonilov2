@@ -1037,7 +1037,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   }, [getSelectionRange]);
 
   const renderRow = (prod: Produto | null, idx: number, isEmpty: boolean, displayIdx: number) => {
-    const lowestEmp = prod ? getLowestEmpresa(prod.codigo_interno) : null;
+    const lowestEmpMT = prod ? getLowestEmpresa(prod.codigo_interno, 'MT') : null;
+    const lowestEmpGO = prod ? getLowestEmpresa(prod.codigo_interno, 'GO') : null;
     const h = rowHeights[idx] || DEFAULT_ROW_HEIGHT;
     const isDragOver = dragOverRow === idx;
 
