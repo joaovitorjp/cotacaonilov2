@@ -168,7 +168,8 @@ const Index = () => {
       for (const emp of empresas) {
         const resp = resps.find(r => r.empresa === emp);
         const item = resp?.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
-        row[emp] = item?.preco ?? '';
+        row[`${emp} MT`] = item?.preco_mt ?? item?.preco ?? '';
+        row[`${emp} GO`] = item?.preco_go ?? '';
       }
       return row;
     });
