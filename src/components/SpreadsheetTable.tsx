@@ -66,7 +66,20 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onSave,
   listaId,
 }) => {
-  const empresas = respostas.map(r => r.empresa);
+  const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
+
+  // Build a fast lookup map: empresa -> codigo_interno -> preco
+  const precoMap = useMemo(() => {
+    const map: Record<string, Record<string, number | string>> = {};
+    for (const r of respostas) {
+      const inner: Record<string, number | string> = {};
+      for (const item of r.resposta) {
+        inner[item.codigo_interno] = item.preco;
+      }
+      map[r.empresa] = inner;
+    }
+    return map;
+  }, [respostas]);
 
   // Editable cell data: key = "row-origColIdx", value = edited string
   const [cellEdits, setCellEdits] = useState<Record<string, string>>({});
@@ -75,12 +88,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  const getPreco = (empresa: string, codigoInterno: string) => {
-    const resp = respostas.find(r => r.empresa === empresa);
-    if (!resp) return '';
-    const item = resp.resposta.find(i => i.codigo_interno === codigoInterno);
-    return item ? item.preco : '';
-  };
+  const getPreco = useCallback((empresa: string, codigoInterno: string) => {
+    return precoMap[empresa]?.[codigoInterno] ?? '';
+  }, [precoMap]);
 
   const getLowestEmpresa = (codigoInterno: string): string | null => {
     if (!highlightLowest || empresas.length === 0) return null;
