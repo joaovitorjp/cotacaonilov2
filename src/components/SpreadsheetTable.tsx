@@ -212,12 +212,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   // Total data rows
   const totalRows = produtos.length + fillerRows;
 
-  // Auto-fit column widths on data change
+  // Auto-fit column widths on data change (skip filler columns)
   useEffect(() => {
     if (!tableRef.current) return;
     const timer = setTimeout(() => {
       const newWidths: Record<number, number> = {};
-      for (let i = 0; i < gridCols; i++) {
+      const dataCols = Math.min(totalCols, gridCols);
+      for (let i = 0; i < dataCols; i++) {
         if (colWidths[i]) continue;
         const cells = tableRef.current!.querySelectorAll(
           `thead th:nth-child(${i + 1}), tbody td:nth-child(${i + 1})`
@@ -236,7 +237,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       setColWidths(prev => ({ ...newWidths, ...prev }));
     }, 50);
     return () => clearTimeout(timer);
-  }, [produtos, respostas, empresas.length, gridCols]);
+  }, [produtos, respostas, empresas.length, gridCols, totalCols]);
 
   const getColWidth = (i: number) => colWidths[i] || (i === 0 ? 36 : i === 2 ? 200 : 80);
 
