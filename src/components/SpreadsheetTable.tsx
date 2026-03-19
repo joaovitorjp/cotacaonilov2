@@ -189,18 +189,91 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     originalIdx: number;
     sticky?: boolean;
     highlight?: boolean;
+    isSeparator?: boolean;
+    state?: 'MT' | 'GO';
+    empresa?: string;
   }
 
+  // Column layout: # | CodInt | Desc | EAN | [emp1 MT] [emp2 MT] ... | SEP | [emp1 GO] [emp2 GO] ... | fillers
+  const totalDataCols = 4 + empresas.length * 2 + 1 + (editableColumn && !empresas.includes(editableColumn) ? 2 : 0); // +1 for separator
+  const gridCols = Math.max(totalDataCols, EMPTY_COLS);
+  const fillerCols = Math.max(0, gridCols - totalDataCols);
+  const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : EMPTY_ROWS;
+
   // Build column definitions
-  const baseColDefs = useMemo((): ColDef[] => [
-    { key: '#', label: '', defaultAlign: 'center', isData: false, originalIdx: 0 },
-    { key: 'cod_int', label: 'Código Interno', defaultAlign: 'center', sticky: true, isData: true, originalIdx: 1 },
-    { key: 'desc', label: 'Descrição', defaultAlign: 'left', isData: true, originalIdx: 2 },
-    { key: 'cod_bar', label: 'Código de Barras', defaultAlign: 'center', isData: true, originalIdx: 3 },
-    ...empresas.map((emp, i) => ({ key: `emp_${emp}`, label: emp, defaultAlign: 'center' as TextAlign, highlight: editableColumn === emp, isData: true, originalIdx: 4 + i })),
-    ...(editableColumn && !empresas.includes(editableColumn) ? [{ key: `emp_${editableColumn}`, label: editableColumn, defaultAlign: 'center' as TextAlign, highlight: true, isData: true, originalIdx: 4 + empresas.length }] : []),
-    ...Array.from({ length: fillerCols }).map((_, i) => ({ key: `filler_${i}`, label: '', defaultAlign: 'center' as TextAlign, isData: false, originalIdx: totalCols + i })),
-  ], [empresas.length, editableColumn, fillerCols, totalCols]);
+  const baseColDefs = useMemo((): ColDef[] => {
+    const cols: ColDef[] = [
+      { key: '#', label: '', defaultAlign: 'center', isData: false, originalIdx: 0 },
+      { key: 'cod_int', label: 'Código Interno', defaultAlign: 'center', sticky: true, isData: true, originalIdx: 1 },
+      { key: 'desc', label: 'Descrição', defaultAlign: 'left', isData: true, originalIdx: 2 },
+      { key: 'cod_bar', label: 'Código de Barras', defaultAlign: 'center', isData: true, originalIdx: 3 },
+    ];
+    let idx = 4;
+    // MT columns
+    for (let i = 0; i < empresas.length; i++) {
+      cols.push({
+        key: `emp_${empresas[i]}_MT`,
+        label: `${empresas[i]} MT`,
+        defaultAlign: 'center',
+        highlight: editableColumn === empresas[i],
+        isData: true,
+        originalIdx: idx++,
+        state: 'MT',
+        empresa: empresas[i],
+      });
+    }
+    if (editableColumn && !empresas.includes(editableColumn)) {
+      cols.push({
+        key: `emp_${editableColumn}_MT`,
+        label: `${editableColumn} MT`,
+        defaultAlign: 'center',
+        highlight: true,
+        isData: true,
+        originalIdx: idx++,
+        state: 'MT',
+        empresa: editableColumn,
+      });
+    }
+    // Separator column
+    cols.push({
+      key: 'separator',
+      label: '',
+      defaultAlign: 'center',
+      isData: false,
+      isSeparator: true,
+      originalIdx: idx++,
+    });
+    // GO columns
+    for (let i = 0; i < empresas.length; i++) {
+      cols.push({
+        key: `emp_${empresas[i]}_GO`,
+        label: `${empresas[i]} GO`,
+        defaultAlign: 'center',
+        highlight: editableColumn === empresas[i],
+        isData: true,
+        originalIdx: idx++,
+        state: 'GO',
+        empresa: empresas[i],
+      });
+    }
+    if (editableColumn && !empresas.includes(editableColumn)) {
+      cols.push({
+        key: `emp_${editableColumn}_GO`,
+        label: `${editableColumn} GO`,
+        defaultAlign: 'center',
+        highlight: true,
+        isData: true,
+        originalIdx: idx++,
+        state: 'GO',
+        empresa: editableColumn,
+      });
+    }
+    // Fillers
+    for (let i = 0; i < fillerCols; i++) {
+      cols.push({ key: `filler_${i}`, label: '', defaultAlign: 'center', isData: false, originalIdx: idx++ });
+    }
+    return cols;
+  }, [empresas.length, editableColumn, fillerCols]);
 
   // Initialize column order
   useEffect(() => {
