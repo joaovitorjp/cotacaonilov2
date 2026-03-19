@@ -14,7 +14,7 @@ interface Produto {
 
 interface RespostaEmpresa {
   empresa: string;
-  resposta: { codigo_interno: string; preco: number | string }[];
+  resposta: { codigo_interno: string; preco?: number | string; preco_mt?: number | string; preco_go?: number | string }[];
 }
 
 interface AnalisePrecosPanelProps {
