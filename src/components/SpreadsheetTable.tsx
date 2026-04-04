@@ -74,6 +74,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // State filter
   const [stateFilter, setStateFilter] = useState<StateFilter>('BOTH');
+  // Hidden columns (by key)
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
 
   // Build a fast lookup map
   const precoMap = useMemo(() => {
