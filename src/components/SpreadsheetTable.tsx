@@ -279,7 +279,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         if (col.key.startsWith('filler_')) continue;
 
         // Measure header text width
-        const headerText = col.label + (col.empresa && priceMarkups[col.empresa] ? ` (+${priceMarkups[col.empresa].toFixed(1)}%)` : '');
+        const headerText = col.label;
         const headerW = ctx.measureText(headerText).width + 28; // padding + sort icon space
 
         // Measure content via DOM (sample first 50 rows for performance)
