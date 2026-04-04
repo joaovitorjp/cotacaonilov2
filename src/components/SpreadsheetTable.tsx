@@ -325,7 +325,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       setColWidths(newWidths);
     }, 120);
     return () => clearTimeout(timer);
-  }, [baseColDefs, produtos, respostas, orderedColDefs, priceMarkups]);
+  }, [baseColDefs, produtos, respostas, orderedColDefs]);
 
   const getColWidth = useCallback((i: number) => colWidths[i] || (i === 0 ? 36 : i === 2 ? 180 : 70), [colWidths]);
 
