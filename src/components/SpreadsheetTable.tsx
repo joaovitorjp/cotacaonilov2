@@ -630,8 +630,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     const startX = e.clientX;
     const startW = getColWidth(colIdx);
     setActiveColResize(colIdx);
+    const minW = headerMinWidths.current[colIdx] || MIN_COL_WIDTH;
     const onMouseMove = (ev: MouseEvent) => {
-      setColWidths(prev => ({ ...prev, [colIdx]: Math.max(MIN_COL_WIDTH, startW + ev.clientX - startX) }));
+      setColWidths(prev => ({ ...prev, [colIdx]: Math.max(minW, startW + ev.clientX - startX) }));
     };
     const onMouseUp = () => {
       setActiveColResize(null);
