@@ -211,11 +211,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       filtered = allColDefs;
     } else {
       filtered = allColDefs.filter(c => {
-        if (c.isSeparator) return false; // No separator when showing single state
+        if (c.isSeparator) return false;
         if (c.state && c.state !== stateFilter) return false;
         return true;
       });
     }
+    // Remove hidden columns
+    filtered = filtered.filter(c => !hiddenColumns.has(c.key));
     // Add filler columns
     const totalDataCols = filtered.length;
     const gridCols = Math.max(totalDataCols, EMPTY_COLS);
@@ -226,7 +228,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       fillers.push({ key: `filler_${i}`, label: '', defaultAlign: 'center', isData: false, originalIdx: ++maxIdx });
     }
     return [...filtered, ...fillers];
-  }, [allColDefs, stateFilter]);
+  }, [allColDefs, stateFilter, hiddenColumns]);
 
   const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : EMPTY_ROWS;
 
