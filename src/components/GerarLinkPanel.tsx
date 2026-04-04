@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw } from 'lucide-react';
+import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin } from 'lucide-react';
 
 interface Fornecedor {
   id: string;
@@ -18,6 +18,7 @@ interface GeneratedLink {
   link: string;
   copied: boolean;
   whatsapp?: string;
+  estados?: string;
 }
 
 interface ExistingLink {
@@ -26,7 +27,10 @@ interface ExistingLink {
   empresa: string;
   respondido: boolean;
   whatsapp?: string;
+  estados?: string;
 }
+
+type EstadoOption = 'AMBOS' | 'MT' | 'GO';
 
 interface GerarLinkPanelProps {
   open: boolean;
@@ -34,14 +38,18 @@ interface GerarLinkPanelProps {
   listaId: string;
 }
 
-// Use published URL so suppliers can access without Lovable project access
 const getPublicBaseUrl = () => {
   const origin = window.location.origin;
-  // If running on preview URL, use the published domain instead
   if (origin.includes('preview--') && origin.includes('.lovable.app')) {
     return 'https://cotacaonilov2.lovable.app';
   }
   return origin;
+};
+
+const ESTADO_LABELS: Record<EstadoOption, string> = {
+  'AMBOS': 'MT + GO',
+  'MT': 'Apenas MT',
+  'GO': 'Apenas GO',
 };
 
 const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, listaId }) => {
@@ -50,6 +58,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [generatedLinks, setGeneratedLinks] = useState<GeneratedLink[]>([]);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [existingLinks, setExistingLinks] = useState<ExistingLink[]>([]);
+  const [selectedEstado, setSelectedEstado] = useState<EstadoOption>('AMBOS');
 
   useEffect(() => {
     if (open) {
@@ -63,12 +72,11 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const loadExistingLinks = async () => {
     const { data: links } = await supabase
       .from('links_cotacao')
-      .select('id, token, empresa, respondido')
+      .select('id, token, empresa, respondido, estados')
       .eq('lista_id', listaId)
       .order('created_at', { ascending: false });
 
     if (links) {
-      // Match whatsapp from fornecedores
       const { data: forns } = await supabase.from('fornecedores').select('nome, whatsapp');
       const fornMap: Record<string, string> = {};
       (forns ?? []).forEach((f: any) => { fornMap[f.nome] = f.whatsapp; });
@@ -80,10 +88,10 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     }
   };
 
-  const generateLink = async (empresaNome: string) => {
+  const generateLink = async (empresaNome: string, estados: EstadoOption) => {
     const { data, error } = await supabase
       .from('links_cotacao')
-      .insert({ lista_id: listaId, empresa: empresaNome })
+      .insert({ lista_id: listaId, empresa: empresaNome, estados })
       .select()
       .single();
 
@@ -95,8 +103,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     if (!empresa.trim()) return;
     setLoading(true);
     try {
-      const link = await generateLink(empresa.trim());
-      setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false }]);
+      const link = await generateLink(empresa.trim(), selectedEstado);
+      setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false, estados: selectedEstado }]);
       setEmpresa('');
       toast.success('Link gerado!');
       loadExistingLinks();
@@ -112,8 +120,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       return;
     }
     try {
-      const link = await generateLink(f.nome);
-      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp }]);
+      const link = await generateLink(f.nome, selectedEstado);
+      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado }]);
       toast.success(`Link gerado para ${f.nome}!`);
       loadExistingLinks();
     } catch {
@@ -132,8 +140,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     let count = 0;
     for (const f of pendentes) {
       try {
-        const link = await generateLink(f.nome);
-        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp }]);
+        const link = await generateLink(f.nome, selectedEstado);
+        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado }]);
         count++;
       } catch { /* skip */ }
     }
@@ -199,6 +207,32 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
         </div>
 
         <div className="flex-1 overflow-auto p-6 pt-4 space-y-4">
+          {/* State selector */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+              <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">Estados para cotação</p>
+            </div>
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+              {(['AMBOS', 'MT', 'GO'] as EstadoOption[]).map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setSelectedEstado(opt)}
+                  className={`flex-1 px-3 py-2 rounded-md text-xs font-display font-bold transition-colors ${
+                    selectedEstado === opt
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  }`}
+                >
+                  {ESTADO_LABELS[opt]}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              O fornecedor verá apenas os campos de preço do(s) estado(s) selecionado(s).
+            </p>
+          </div>
+
           {/* Quick add from saved fornecedores */}
           {fornecedores.length > 0 && (
             <div>
@@ -270,7 +304,14 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="font-display font-bold text-foreground text-sm">{item.empresa}</p>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="font-display font-bold text-foreground text-sm truncate">{item.empresa}</p>
+                        {item.estados && item.estados !== 'AMBOS' && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold shrink-0">
+                            {item.estados}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1">
                         {item.whatsapp && (
                           <button
@@ -308,7 +349,14 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                 {pendingExisting.map(link => (
                   <div key={link.id} className="border border-border rounded-lg p-3 flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-display font-bold text-foreground text-sm truncate">{link.empresa}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-display font-bold text-foreground text-sm truncate">{link.empresa}</p>
+                        {link.estados && link.estados !== 'AMBOS' && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-bold shrink-0">
+                            {link.estados}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[10px] text-muted-foreground">Ainda não respondeu</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -351,6 +399,11 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                   <div key={link.id} className="border border-success/20 bg-success/5 rounded-lg px-3 py-2 flex items-center gap-2">
                     <Check className="w-4 h-4 text-success shrink-0" />
                     <p className="font-display font-bold text-foreground text-sm truncate">{link.empresa}</p>
+                    {link.estados && link.estados !== 'AMBOS' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-bold shrink-0">
+                        {link.estados}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

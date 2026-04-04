@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Produto {
@@ -74,6 +74,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // State filter
   const [stateFilter, setStateFilter] = useState<StateFilter>('BOTH');
+  // Hidden columns (by key)
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
 
   // Build a fast lookup map
   const precoMap = useMemo(() => {
@@ -209,11 +211,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       filtered = allColDefs;
     } else {
       filtered = allColDefs.filter(c => {
-        if (c.isSeparator) return false; // No separator when showing single state
+        if (c.isSeparator) return false;
         if (c.state && c.state !== stateFilter) return false;
         return true;
       });
     }
+    // Remove hidden columns
+    filtered = filtered.filter(c => !hiddenColumns.has(c.key));
     // Add filler columns
     const totalDataCols = filtered.length;
     const gridCols = Math.max(totalDataCols, EMPTY_COLS);
@@ -224,7 +228,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       fillers.push({ key: `filler_${i}`, label: '', defaultAlign: 'center', isData: false, originalIdx: ++maxIdx });
     }
     return [...filtered, ...fillers];
-  }, [allColDefs, stateFilter]);
+  }, [allColDefs, stateFilter, hiddenColumns]);
 
   const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : EMPTY_ROWS;
 
@@ -1195,6 +1199,21 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </>
         )}
 
+        {/* Hidden columns indicator */}
+        {hiddenColumns.size > 0 && (
+          <>
+            <div className="w-px h-5 bg-border mx-1" />
+            <button
+              onClick={() => setHiddenColumns(new Set())}
+              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+              title="Mostrar todas as colunas ocultas"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>{hiddenColumns.size} oculta(s)</span>
+            </button>
+          </>
+        )}
+
         {/* Search */}
         <div className="w-px h-5 bg-border mx-1" />
         <button onClick={() => setShowSearch(!showSearch)}
@@ -1348,13 +1367,30 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
             {(contextMenu.type === 'column' || contextMenu.type === 'cell') && contextMenu.colIdx !== undefined && contextMenu.colIdx > 0 && (
               <>
-                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mover Coluna</div>
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Coluna</div>
                 <button onClick={() => moveColumn('left')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowLeft className="w-3.5 h-3.5" /> Mover para Esquerda
                 </button>
                 <button onClick={() => moveColumn('right')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowRight className="w-3.5 h-3.5" /> Mover para Direita
                 </button>
+                {(() => {
+                  const colDef = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
+                  if (colDef && colDef.isData && colDef.key !== 'cod_int' && colDef.key !== 'desc' && colDef.key !== 'cod_bar') {
+                    return (
+                      <button
+                        onClick={() => {
+                          setHiddenColumns(prev => new Set([...prev, colDef.key]));
+                          setContextMenu(null);
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-destructive"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Excluir Coluna
+                      </button>
+                    );
+                  }
+                  return null;
+                })()}
               </>
             )}
 
