@@ -249,6 +249,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const totalRows = produtos.length + fillerRows;
 
+  // Measure header text widths to enforce as minimums
+  const headerMinWidths = useRef<Record<number, number>>({});
+
   // Auto-fit column widths - debounced, runs once after data settles
   const autoFitRan = useRef(false);
   useEffect(() => {
@@ -256,37 +259,75 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   }, [stateFilter, empresas.length, produtos.length]);
 
   useEffect(() => {
-    if (!tableRef.current || autoFitRan.current) return;
+    if (!tableRef.current || !containerRef.current || autoFitRan.current) return;
     const timer = setTimeout(() => {
-      if (!tableRef.current) return;
+      if (!tableRef.current || !containerRef.current) return;
       autoFitRan.current = true;
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.font = '600 11px system-ui, sans-serif'; // matches header font
+
       const newWidths: Record<number, number> = {};
-      const dataCols = baseColDefs.filter(c => !c.key.startsWith('filler_') && !c.isSeparator).length;
-      for (let i = 0; i < dataCols; i++) {
-        const cells = tableRef.current.querySelectorAll(
-          `thead th:nth-child(${i + 1}), tbody td:nth-child(${i + 1})`
-        );
-        let max = i === 0 ? 36 : MIN_COL_WIDTH;
-        // Only measure first 20 rows for performance
+      const newHeaderMins: Record<number, number> = {};
+      const totalCols = orderedColDefs.length;
+
+      for (let i = 0; i < totalCols; i++) {
+        const col = orderedColDefs[i];
+        if (col.isSeparator) { newWidths[i] = 8; newHeaderMins[i] = 8; continue; }
+        if (col.key.startsWith('filler_')) continue;
+
+        // Measure header text width
+        const headerText = col.label;
+        const headerW = ctx.measureText(headerText).width + 28; // padding + sort icon space
+
+        // Measure content via DOM (sample first 50 rows for performance)
+        let maxContentW = 0;
+        const cells = tableRef.current!.querySelectorAll(`tbody td:nth-child(${i + 1})`);
         let measured = 0;
         cells.forEach(cell => {
-          if (measured > 20) return;
+          if (measured >= 50) return;
           measured++;
           const el = cell as HTMLElement;
-          const prev = el.style.width;
-          el.style.width = 'auto';
-          const w = el.scrollWidth + 8;
-          el.style.width = prev;
-          if (w > max) max = w;
+          const text = el.textContent || '';
+          if (!text.trim()) return;
+          ctx.font = '12px system-ui, sans-serif';
+          const w = ctx.measureText(text).width + 20; // padding
+          if (w > maxContentW) maxContentW = w;
         });
-        newWidths[i] = Math.max(max, i === 2 ? 200 : i === 0 ? 36 : 80);
-      }
-      setColWidths(newWidths);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [baseColDefs, produtos, respostas]);
 
-  const getColWidth = useCallback((i: number) => colWidths[i] || (i === 0 ? 36 : i === 2 ? 200 : 80), [colWidths]);
+        const minW = i === 0 ? 36 : Math.max(MIN_COL_WIDTH, headerW);
+        newHeaderMins[i] = minW;
+        newWidths[i] = Math.max(minW, maxContentW, i === 2 ? 180 : i === 0 ? 36 : 70);
+      }
+
+      // Scale columns to fit container width (no horizontal scroll)
+      const containerW = containerRef.current!.clientWidth - 2; // border
+      const dataColIndices = Object.keys(newWidths).map(Number);
+      const totalNatural = dataColIndices.reduce((s, i) => s + (newWidths[i] || 0), 0);
+
+      if (totalNatural > containerW && containerW > 200) {
+        // Shrink proportionally but never below header minimum
+        const excess = totalNatural - containerW;
+        const shrinkable = dataColIndices.filter(i => (newWidths[i] || 0) > (newHeaderMins[i] || MIN_COL_WIDTH));
+        const shrinkTotal = shrinkable.reduce((s, i) => s + ((newWidths[i] || 0) - (newHeaderMins[i] || MIN_COL_WIDTH)), 0);
+        if (shrinkTotal > 0) {
+          const ratio = Math.min(1, excess / shrinkTotal);
+          for (const i of shrinkable) {
+            const min = newHeaderMins[i] || MIN_COL_WIDTH;
+            newWidths[i] = Math.max(min, (newWidths[i] || 0) - ratio * ((newWidths[i] || 0) - min));
+          }
+        }
+      }
+
+      headerMinWidths.current = newHeaderMins;
+      setColWidths(newWidths);
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [baseColDefs, produtos, respostas, orderedColDefs]);
+
+  const getColWidth = useCallback((i: number) => colWidths[i] || (i === 0 ? 36 : i === 2 ? 180 : 70), [colWidths]);
 
   const getCellAlign = (colIdx: number, rowIdx: number, defaultAlign: TextAlign): TextAlign => {
     const cellKey = `${rowIdx}-${colIdx}`;
@@ -589,8 +630,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     const startX = e.clientX;
     const startW = getColWidth(colIdx);
     setActiveColResize(colIdx);
+    const minW = headerMinWidths.current[colIdx] || MIN_COL_WIDTH;
     const onMouseMove = (ev: MouseEvent) => {
-      setColWidths(prev => ({ ...prev, [colIdx]: Math.max(MIN_COL_WIDTH, startW + ev.clientX - startX) }));
+      setColWidths(prev => ({ ...prev, [colIdx]: Math.max(minW, startW + ev.clientX - startX) }));
     };
     const onMouseUp = () => {
       setActiveColResize(null);
@@ -1175,12 +1217,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       {/* Spreadsheet */}
       <div ref={containerRef} className="flex-1 overflow-auto relative" tabIndex={0}>
         <table ref={tableRef} className="border-collapse text-sm w-full"
-          style={{ tableLayout: 'fixed', fontFamily: 'var(--font-body)', fontSize: '12px', minWidth: '100%' }}>
+          style={{ tableLayout: 'fixed', fontFamily: 'var(--font-body)', fontSize: '12px' }}>
           <colgroup>
             {orderedColDefs.map((col, i) => {
-              const isLastFiller = i === orderedColDefs.length - 1 && col.key.startsWith('filler_');
               if (col.isSeparator) return <col key={col.key} style={{ width: '8px' }} />;
-              return <col key={col.key} style={isLastFiller ? { width: 'auto' } : { width: `${getColWidth(i)}px` }} />;
+              const isLastCol = i === orderedColDefs.length - 1;
+              return <col key={col.key} style={isLastCol ? { width: 'auto' } : { width: `${getColWidth(i)}px` }} />;
             })}
           </colgroup>
 
