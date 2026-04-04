@@ -1217,7 +1217,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       {/* Spreadsheet */}
       <div ref={containerRef} className="flex-1 overflow-auto relative" tabIndex={0}>
         <table ref={tableRef} className="border-collapse text-sm w-full"
-          style={{ tableLayout: 'fixed', fontFamily: 'var(--font-body)', fontSize: '12px', minWidth: '100%' }}>
+          style={{ tableLayout: 'fixed', fontFamily: 'var(--font-body)', fontSize: '12px' }}>
           <colgroup>
             {orderedColDefs.map((col, i) => {
               const isLastFiller = i === orderedColDefs.length - 1 && col.key.startsWith('filler_');
