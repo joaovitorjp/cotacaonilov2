@@ -1352,13 +1352,30 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
             {(contextMenu.type === 'column' || contextMenu.type === 'cell') && contextMenu.colIdx !== undefined && contextMenu.colIdx > 0 && (
               <>
-                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mover Coluna</div>
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Coluna</div>
                 <button onClick={() => moveColumn('left')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowLeft className="w-3.5 h-3.5" /> Mover para Esquerda
                 </button>
                 <button onClick={() => moveColumn('right')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowRight className="w-3.5 h-3.5" /> Mover para Direita
                 </button>
+                {(() => {
+                  const colDef = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
+                  if (colDef && colDef.isData && colDef.key !== 'cod_int' && colDef.key !== 'desc' && colDef.key !== 'cod_bar') {
+                    return (
+                      <button
+                        onClick={() => {
+                          setHiddenColumns(prev => new Set([...prev, colDef.key]));
+                          setContextMenu(null);
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-destructive"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Excluir Coluna
+                      </button>
+                    );
+                  }
+                  return null;
+                })()}
               </>
             )}
 
