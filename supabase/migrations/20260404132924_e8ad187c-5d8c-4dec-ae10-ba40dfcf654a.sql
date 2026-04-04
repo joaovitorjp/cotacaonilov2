@@ -1,0 +1,1 @@
+ALTER TABLE public.links_cotacao ADD COLUMN estados text NOT NULL DEFAULT 'AMBOS';

@@ -42,6 +42,7 @@ export type Database = {
         Row: {
           created_at: string
           empresa: string
+          estados: string
           id: string
           lista_id: string
           respondido: boolean
@@ -50,6 +51,7 @@ export type Database = {
         Insert: {
           created_at?: string
           empresa: string
+          estados?: string
           id?: string
           lista_id: string
           respondido?: boolean
@@ -58,6 +60,7 @@ export type Database = {
         Update: {
           created_at?: string
           empresa?: string
+          estados?: string
           id?: string
           lista_id?: string
           respondido?: boolean
