@@ -28,16 +28,20 @@ const CotacaoResposta = () => {
   const [linkRespondido, setLinkRespondido] = useState(false);
   const [filledCount, setFilledCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [estados, setEstados] = useState<string>('AMBOS');
+
+  const showMT = estados === 'AMBOS' || estados === 'MT';
+  const showGO = estados === 'AMBOS' || estados === 'GO';
 
   useEffect(() => {
     loadData();
   }, [token]);
 
   useEffect(() => {
-    const countMT = Object.values(pricesMT).filter(v => v && v.trim() !== '').length;
-    const countGO = Object.values(pricesGO).filter(v => v && v.trim() !== '').length;
+    const countMT = showMT ? Object.values(pricesMT).filter(v => v && v.trim() !== '').length : 0;
+    const countGO = showGO ? Object.values(pricesGO).filter(v => v && v.trim() !== '').length : 0;
     setFilledCount(countMT + countGO);
-  }, [pricesMT, pricesGO]);
+  }, [pricesMT, pricesGO, showMT, showGO]);
 
   const loadData = async () => {
     if (!token) { setError('Link inválido.'); setLoading(false); return; }
@@ -54,12 +58,10 @@ const CotacaoResposta = () => {
       return;
     }
 
-    if (linkData.respondido) {
-      setLinkRespondido(true);
-    }
-
+    if (linkData.respondido) setLinkRespondido(true);
     setEmpresa(linkData.empresa);
     setListaId(linkData.lista_id);
+    setEstados((linkData as any).estados || 'AMBOS');
 
     const { data: lista } = await supabase
       .from('listas')
@@ -67,29 +69,16 @@ const CotacaoResposta = () => {
       .eq('id', linkData.lista_id)
       .maybeSingle();
 
-    if (!lista) {
-      setError('Lista não encontrada.');
-      setLoading(false);
-      return;
-    }
-
-    if (lista.status === 'finalizada') {
-      setError('Esta cotação já foi encerrada.');
-      setLoading(false);
-      return;
-    }
-
+    if (!lista) { setError('Lista não encontrada.'); setLoading(false); return; }
+    if (lista.status === 'finalizada') { setError('Esta cotação já foi encerrada.'); setLoading(false); return; }
     if ((lista as any).prazo && new Date((lista as any).prazo) < new Date()) {
-      setError('O prazo para responder esta cotação expirou.');
-      setLoading(false);
-      return;
+      setError('O prazo para responder esta cotação expirou.'); setLoading(false); return;
     }
 
     setListaNome(lista.nome);
     const prods = lista.produtos as any as Produto[];
     setProdutos(prods);
 
-    // Pre-fill prices if already responded
     const { data: resps } = await supabase
       .from('respostas')
       .select('empresa, resposta')
@@ -105,10 +94,7 @@ const CotacaoResposta = () => {
         if (item) {
           if (item.preco_mt) prefilledMT[idx] = String(item.preco_mt);
           if (item.preco_go) prefilledGO[idx] = String(item.preco_go);
-          // Backward compat: old single preco → MT
-          if (!item.preco_mt && !item.preco_go && item.preco) {
-            prefilledMT[idx] = String(item.preco);
-          }
+          if (!item.preco_mt && !item.preco_go && item.preco) prefilledMT[idx] = String(item.preco);
         }
       });
       setPricesMT(prefilledMT);
@@ -123,8 +109,8 @@ const CotacaoResposta = () => {
     try {
       const resposta = produtos.map((p, idx) => ({
         codigo_interno: p.codigo_interno,
-        preco_mt: (pricesMT[idx] && pricesMT[idx].trim() !== '') ? pricesMT[idx] : '',
-        preco_go: (pricesGO[idx] && pricesGO[idx].trim() !== '') ? pricesGO[idx] : '',
+        ...(showMT ? { preco_mt: (pricesMT[idx] && pricesMT[idx].trim() !== '') ? pricesMT[idx] : '' } : {}),
+        ...(showGO ? { preco_go: (pricesGO[idx] && pricesGO[idx].trim() !== '') ? pricesGO[idx] : '' } : {}),
       }));
 
       const { data: existing } = await supabase
@@ -135,24 +121,15 @@ const CotacaoResposta = () => {
         .maybeSingle();
 
       if (existing) {
-        await supabase
-          .from('respostas')
-          .update({ resposta })
-          .eq('id', existing.id);
+        await supabase.from('respostas').update({ resposta }).eq('id', existing.id);
       } else {
-        await supabase
-          .from('respostas')
-          .insert({ lista_id: listaId, empresa, resposta });
+        await supabase.from('respostas').insert({ lista_id: listaId, empresa, resposta });
       }
 
-      await supabase
-        .from('links_cotacao')
-        .update({ respondido: true })
-        .eq('token', token);
-
+      await supabase.from('links_cotacao').update({ respondido: true }).eq('token', token);
       setSubmitted(true);
       toast.success('Resposta enviada com sucesso!');
-    } catch (err: any) {
+    } catch {
       toast.error('Erro ao enviar resposta.');
     } finally {
       setSubmitting(false);
@@ -183,8 +160,8 @@ const CotacaoResposta = () => {
   const hasCategories = produtos.some(p => p.categoria && p.categoria.trim() !== '');
 
   const renderProductCard = (prod: Produto, idx: number) => {
-    const hasPriceMT = pricesMT[idx] && pricesMT[idx].trim() !== '';
-    const hasPriceGO = pricesGO[idx] && pricesGO[idx].trim() !== '';
+    const hasPriceMT = showMT && pricesMT[idx] && pricesMT[idx].trim() !== '';
+    const hasPriceGO = showGO && pricesGO[idx] && pricesGO[idx].trim() !== '';
     const hasAnyPrice = hasPriceMT || hasPriceGO;
     return (
       <div
@@ -215,44 +192,42 @@ const CotacaoResposta = () => {
             )}
           </div>
           <div className="flex gap-2 sm:gap-3">
-            {/* MT Price */}
-            <div className="flex-1">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
-                MT (Mato Grosso)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
-                  R$
-                </span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                  value={pricesMT[idx] ?? ''}
-                  onChange={e => setPricesMT(prev => ({ ...prev, [idx]: e.target.value }))}
-                  placeholder="0,00"
-                />
+            {showMT && (
+              <div className="flex-1">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
+                  MT (Mato Grosso)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">R$</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                    value={pricesMT[idx] ?? ''}
+                    onChange={e => setPricesMT(prev => ({ ...prev, [idx]: e.target.value }))}
+                    placeholder="0,00"
+                  />
+                </div>
               </div>
-            </div>
-            {/* GO Price */}
-            <div className="flex-1">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
-                GO (Goiás)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
-                  R$
-                </span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                  value={pricesGO[idx] ?? ''}
-                  onChange={e => setPricesGO(prev => ({ ...prev, [idx]: e.target.value }))}
-                  placeholder="0,00"
-                />
+            )}
+            {showGO && (
+              <div className="flex-1">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
+                  GO (Goiás)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">R$</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                    value={pricesGO[idx] ?? ''}
+                    onChange={e => setPricesGO(prev => ({ ...prev, [idx]: e.target.value }))}
+                    placeholder="0,00"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -298,12 +273,14 @@ const CotacaoResposta = () => {
     );
   }
 
-  const totalFields = produtos.length * 2;
+  const stateCount = (showMT ? 1 : 0) + (showGO ? 1 : 0);
+  const totalFields = produtos.length * stateCount;
   const progress = totalFields > 0 ? Math.round((filledCount / totalFields) * 100) : 0;
+
+  const estadoLabel = estados === 'AMBOS' ? 'MT + GO' : estados;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
       <header className="bg-primary text-primary-foreground px-4 sm:px-6 py-4 shrink-0 shadow-md">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-lg sm:text-xl font-bold tracking-tight">Nilo Atacadista</h1>
@@ -313,13 +290,15 @@ const CotacaoResposta = () => {
         </div>
       </header>
 
-      {/* Info bar */}
       <div className="bg-card border-b border-border px-4 sm:px-6 py-3 shrink-0">
         <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2">
             <Package className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-foreground">
               Fornecedor: <span className="font-bold">{empresa}</span>
+            </span>
+            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
+              {estadoLabel}
             </span>
             {linkRespondido && (
               <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full font-medium">
@@ -330,16 +309,12 @@ const CotacaoResposta = () => {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>{filledCount}/{totalFields} preços preenchidos</span>
             <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Search */}
       {produtos.length > 10 && (
         <div className="bg-card border-b border-border px-4 sm:px-6 py-2 shrink-0">
           <div className="max-w-3xl mx-auto">
@@ -357,13 +332,17 @@ const CotacaoResposta = () => {
         </div>
       )}
 
-      {/* Product list */}
       <div className="flex-1 overflow-auto px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto space-y-2">
-          {/* Instructions */}
           <div className="bg-muted/50 border border-border rounded-lg p-3 mb-3">
             <p className="text-xs text-muted-foreground">
-              Preencha os preços para cada estado. <span className="font-bold text-foreground">MT</span> = Mato Grosso, <span className="font-bold text-foreground">GO</span> = Goiás.
+              {estados === 'AMBOS' ? (
+                <>Preencha os preços para cada estado. <span className="font-bold text-foreground">MT</span> = Mato Grosso, <span className="font-bold text-foreground">GO</span> = Goiás.</>
+              ) : estados === 'MT' ? (
+                <>Preencha os preços para <span className="font-bold text-foreground">Mato Grosso (MT)</span>.</>
+              ) : (
+                <>Preencha os preços para <span className="font-bold text-foreground">Goiás (GO)</span>.</>
+              )}
             </p>
           </div>
           {filteredProdutos.length === 0 && searchTerm.trim() ? (
@@ -386,7 +365,6 @@ const CotacaoResposta = () => {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="shrink-0 border-t border-border bg-card px-4 sm:px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         <div className="max-w-3xl mx-auto">
           <Button
@@ -397,15 +375,9 @@ const CotacaoResposta = () => {
             className="w-full gap-2"
           >
             {submitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Enviando...
-              </>
+              <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>
             ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Enviar Resposta ({filledCount}/{totalFields})
-              </>
+              <><Send className="w-4 h-4" /> Enviar Resposta ({filledCount}/{totalFields})</>
             )}
           </Button>
           {filledCount === 0 && (
