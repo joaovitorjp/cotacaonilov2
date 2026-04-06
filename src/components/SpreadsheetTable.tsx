@@ -216,7 +216,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return cols;
   }, [empresas, editableColumn]);
 
-  // Filter columns based on state filter, then add fillers
+  // Filter columns based on state filter and remove empty empresa columns, then add fillers
   const baseColDefs = useMemo((): ColDef[] => {
     let filtered: ColDef[];
     if (stateFilter === 'BOTH') {
@@ -228,9 +228,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         return true;
       });
     }
-    // Remove hidden columns
-    filtered = filtered.filter(c => !hiddenColumns.has(c.key));
-    // Add filler columns
+    // Remove empresa columns that have NO data at all
+    filtered = filtered.filter(c => {
+      if (!c.empresa || !c.state) return true;
+      return empresaHasData(c.empresa, c.state);
+    });
+    // Add filler columns with a fixed standard width
+    const FILLER_WIDTH = 80;
     const totalDataCols = filtered.length;
     const gridCols = Math.max(totalDataCols, EMPTY_COLS);
     const fillerCount = Math.max(0, gridCols - totalDataCols);
@@ -240,7 +244,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       fillers.push({ key: `filler_${i}`, label: '', defaultAlign: 'center', isData: false, originalIdx: ++maxIdx });
     }
     return [...filtered, ...fillers];
-  }, [allColDefs, stateFilter, hiddenColumns]);
+  }, [allColDefs, stateFilter, empresaHasData]);
 
   const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : EMPTY_ROWS;
 
