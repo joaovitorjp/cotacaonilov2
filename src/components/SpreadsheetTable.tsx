@@ -25,6 +25,7 @@ interface SpreadsheetTableProps {
   highlightLowest?: boolean;
   onSave?: (produtos: Produto[]) => void;
   listaId?: string;
+  onDeleteResposta?: (empresa: string) => Promise<void>;
 }
 
 const parsePrice = (val: string | number): number => {
