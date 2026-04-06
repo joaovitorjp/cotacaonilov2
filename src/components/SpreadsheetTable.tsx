@@ -1231,8 +1231,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           <colgroup>
             {orderedColDefs.map((col, i) => {
               if (col.isSeparator) return <col key={col.key} style={{ width: '8px' }} />;
-              const isLastCol = i === orderedColDefs.length - 1;
-              return <col key={col.key} style={isLastCol ? { width: 'auto' } : { width: `${getColWidth(i)}px` }} />;
+              return <col key={col.key} style={{ width: `${getColWidth(i)}px` }} />;
             })}
           </colgroup>
 
