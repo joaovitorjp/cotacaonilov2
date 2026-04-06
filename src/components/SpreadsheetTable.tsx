@@ -1215,21 +1215,6 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </>
         )}
 
-        {/* Hidden columns indicator */}
-        {hiddenColumns.size > 0 && (
-          <>
-            <div className="w-px h-5 bg-border mx-1" />
-            <button
-              onClick={() => setHiddenColumns(new Set())}
-              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-              title="Mostrar todas as colunas ocultas"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>{hiddenColumns.size} oculta(s)</span>
-            </button>
-          </>
-        )}
-
         {/* Search */}
         <div className="w-px h-5 bg-border mx-1" />
         <button onClick={() => setShowSearch(!showSearch)}
