@@ -233,11 +233,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (!c.empresa || !c.state) return true;
       return empresaHasData(c.empresa, c.state);
     });
-    // Add filler columns with a fixed standard width
+    // Add filler columns to fill remaining container space
     const FILLER_WIDTH = 80;
-    const totalDataCols = filtered.length;
-    const gridCols = Math.max(totalDataCols, EMPTY_COLS);
-    const fillerCount = Math.max(0, gridCols - totalDataCols);
+    // Use generous filler count to always fill viewport; extra fillers beyond viewport are harmless
+    const fillerCount = Math.max(EMPTY_COLS, 20);
     let maxIdx = filtered.reduce((m, c) => Math.max(m, c.originalIdx), 0);
     const fillers: ColDef[] = [];
     for (let i = 0; i < fillerCount; i++) {
@@ -1226,13 +1225,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
       {/* Spreadsheet */}
       <div ref={containerRef} className="flex-1 overflow-auto relative" tabIndex={0}>
-        <table ref={tableRef} className="border-collapse text-sm w-full"
+        <table ref={tableRef} className="border-collapse text-sm"
           style={{ tableLayout: 'fixed', fontFamily: 'var(--font-body)', fontSize: '12px' }}>
           <colgroup>
             {orderedColDefs.map((col, i) => {
               if (col.isSeparator) return <col key={col.key} style={{ width: '8px' }} />;
-              const isLastCol = i === orderedColDefs.length - 1;
-              return <col key={col.key} style={isLastCol ? { width: 'auto' } : { width: `${getColWidth(i)}px` }} />;
+              return <col key={col.key} style={{ width: `${getColWidth(i)}px` }} />;
             })}
           </colgroup>
 
