@@ -322,22 +322,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         newWidths[i] = Math.max(minW, maxContentW, i === 2 ? 180 : i === 0 ? 36 : 70);
       }
 
-      // Scale columns to fit container width (no horizontal scroll)
-      const containerW = containerRef.current!.clientWidth - 2; // border
-      const dataColIndices = Object.keys(newWidths).map(Number);
-      const totalNatural = dataColIndices.reduce((s, i) => s + (newWidths[i] || 0), 0);
-
-      if (totalNatural > containerW && containerW > 200) {
-        // Shrink proportionally but never below header minimum
-        const excess = totalNatural - containerW;
-        const shrinkable = dataColIndices.filter(i => (newWidths[i] || 0) > (newHeaderMins[i] || MIN_COL_WIDTH));
-        const shrinkTotal = shrinkable.reduce((s, i) => s + ((newWidths[i] || 0) - (newHeaderMins[i] || MIN_COL_WIDTH)), 0);
-        if (shrinkTotal > 0) {
-          const ratio = Math.min(1, excess / shrinkTotal);
-          for (const i of shrinkable) {
-            const min = newHeaderMins[i] || MIN_COL_WIDTH;
-            newWidths[i] = Math.max(min, (newWidths[i] || 0) - ratio * ((newWidths[i] || 0) - min));
-          }
+      // Set filler columns to standard width
+      for (let i = 0; i < totalCols; i++) {
+        const col = orderedColDefs[i];
+        if (col.key.startsWith('filler_')) {
+          newWidths[i] = 80;
+          newHeaderMins[i] = 80;
         }
       }
 
