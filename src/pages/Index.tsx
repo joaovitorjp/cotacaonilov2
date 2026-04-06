@@ -399,6 +399,19 @@ const Index = () => {
           readOnly={isFinalized}
           highlightLowest={respostas.length > 1}
           listaId={currentLista?.id}
+          onDeleteResposta={currentLista ? async (empresa: string) => {
+            const { error } = await supabase
+              .from('respostas')
+              .delete()
+              .eq('lista_id', currentLista.id)
+              .eq('empresa', empresa);
+            if (error) {
+              toast.error('Erro ao excluir dados do fornecedor.');
+            } else {
+              setRespostas(prev => prev.filter(r => r.empresa !== empresa));
+              toast.success(`Dados de "${empresa}" excluídos com sucesso.`);
+            }
+          } : undefined}
           onSave={currentLista && !isFinalized ? async (updatedProdutos) => {
             const { error } = await supabase
               .from('listas')

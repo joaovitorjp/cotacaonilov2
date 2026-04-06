@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2, Eye } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Produto {
@@ -25,6 +25,7 @@ interface SpreadsheetTableProps {
   highlightLowest?: boolean;
   onSave?: (produtos: Produto[]) => void;
   listaId?: string;
+  onDeleteResposta?: (empresa: string) => Promise<void>;
 }
 
 const parsePrice = (val: string | number): number => {
@@ -68,14 +69,25 @@ interface ColDef {
 
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   produtos, respostas, readOnly = false, editableColumn, onPriceChange,
-  editPrices = {}, highlightLowest = false, onSave, listaId,
+  editPrices = {}, highlightLowest = false, onSave, listaId, onDeleteResposta,
 }) => {
   const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
 
   // State filter
   const [stateFilter, setStateFilter] = useState<StateFilter>('BOTH');
-  // Hidden columns (by key)
-  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
+
+  // Check if an empresa has ANY data for a given state
+  const empresaHasData = useCallback((empresa: string, state: 'MT' | 'GO'): boolean => {
+    const resp = respostas.find(r => r.empresa === empresa);
+    if (!resp) return false;
+    return resp.resposta.some(item => {
+      if (state === 'MT') {
+        return (item.preco_mt !== undefined && item.preco_mt !== '' && item.preco_mt !== 0) ||
+               (item.preco !== undefined && item.preco !== '' && item.preco !== 0 && item.preco_go === undefined);
+      }
+      return item.preco_go !== undefined && item.preco_go !== '' && item.preco_go !== 0;
+    });
+  }, [respostas]);
 
   // Build a fast lookup map
   const precoMap = useMemo(() => {
@@ -204,7 +216,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return cols;
   }, [empresas, editableColumn]);
 
-  // Filter columns based on state filter, then add fillers
+  // Filter columns based on state filter and remove empty empresa columns, then add fillers
   const baseColDefs = useMemo((): ColDef[] => {
     let filtered: ColDef[];
     if (stateFilter === 'BOTH') {
@@ -216,9 +228,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         return true;
       });
     }
-    // Remove hidden columns
-    filtered = filtered.filter(c => !hiddenColumns.has(c.key));
-    // Add filler columns
+    // Remove empresa columns that have NO data at all
+    filtered = filtered.filter(c => {
+      if (!c.empresa || !c.state) return true;
+      return empresaHasData(c.empresa, c.state);
+    });
+    // Add filler columns with a fixed standard width
+    const FILLER_WIDTH = 80;
     const totalDataCols = filtered.length;
     const gridCols = Math.max(totalDataCols, EMPTY_COLS);
     const fillerCount = Math.max(0, gridCols - totalDataCols);
@@ -228,7 +244,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       fillers.push({ key: `filler_${i}`, label: '', defaultAlign: 'center', isData: false, originalIdx: ++maxIdx });
     }
     return [...filtered, ...fillers];
-  }, [allColDefs, stateFilter, hiddenColumns]);
+  }, [allColDefs, stateFilter, empresaHasData]);
 
   const fillerRows = produtos.length > 0 ? Math.max(0, EMPTY_ROWS - produtos.length) : EMPTY_ROWS;
 
@@ -306,22 +322,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         newWidths[i] = Math.max(minW, maxContentW, i === 2 ? 180 : i === 0 ? 36 : 70);
       }
 
-      // Scale columns to fit container width (no horizontal scroll)
-      const containerW = containerRef.current!.clientWidth - 2; // border
-      const dataColIndices = Object.keys(newWidths).map(Number);
-      const totalNatural = dataColIndices.reduce((s, i) => s + (newWidths[i] || 0), 0);
-
-      if (totalNatural > containerW && containerW > 200) {
-        // Shrink proportionally but never below header minimum
-        const excess = totalNatural - containerW;
-        const shrinkable = dataColIndices.filter(i => (newWidths[i] || 0) > (newHeaderMins[i] || MIN_COL_WIDTH));
-        const shrinkTotal = shrinkable.reduce((s, i) => s + ((newWidths[i] || 0) - (newHeaderMins[i] || MIN_COL_WIDTH)), 0);
-        if (shrinkTotal > 0) {
-          const ratio = Math.min(1, excess / shrinkTotal);
-          for (const i of shrinkable) {
-            const min = newHeaderMins[i] || MIN_COL_WIDTH;
-            newWidths[i] = Math.max(min, (newWidths[i] || 0) - ratio * ((newWidths[i] || 0) - min));
-          }
+      // Set filler columns to standard width
+      for (let i = 0; i < totalCols; i++) {
+        const col = orderedColDefs[i];
+        if (col.key.startsWith('filler_')) {
+          newWidths[i] = 80;
+          newHeaderMins[i] = 80;
         }
       }
 
@@ -1199,21 +1205,6 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </>
         )}
 
-        {/* Hidden columns indicator */}
-        {hiddenColumns.size > 0 && (
-          <>
-            <div className="w-px h-5 bg-border mx-1" />
-            <button
-              onClick={() => setHiddenColumns(new Set())}
-              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-              title="Mostrar todas as colunas ocultas"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>{hiddenColumns.size} oculta(s)</span>
-            </button>
-          </>
-        )}
-
         {/* Search */}
         <div className="w-px h-5 bg-border mx-1" />
         <button onClick={() => setShowSearch(!showSearch)}
@@ -1376,11 +1367,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 </button>
                 {(() => {
                   const colDef = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
-                  if (colDef && colDef.isData && colDef.key !== 'cod_int' && colDef.key !== 'desc' && colDef.key !== 'cod_bar') {
+                  if (colDef && colDef.empresa && colDef.isData && colDef.key !== 'cod_int' && colDef.key !== 'desc' && colDef.key !== 'cod_bar') {
                     return (
                       <button
-                        onClick={() => {
-                          setHiddenColumns(prev => new Set([...prev, colDef.key]));
+                        onClick={async () => {
+                          if (onDeleteResposta && colDef.empresa) {
+                            if (window.confirm(`Excluir permanentemente os dados de "${colDef.empresa}"?`)) {
+                              await onDeleteResposta(colDef.empresa);
+                            }
+                          }
                           setContextMenu(null);
                         }}
                         className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-destructive"
