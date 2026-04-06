@@ -1377,11 +1377,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 </button>
                 {(() => {
                   const colDef = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
-                  if (colDef && colDef.isData && colDef.key !== 'cod_int' && colDef.key !== 'desc' && colDef.key !== 'cod_bar') {
+                  if (colDef && colDef.empresa && colDef.isData && colDef.key !== 'cod_int' && colDef.key !== 'desc' && colDef.key !== 'cod_bar') {
                     return (
                       <button
-                        onClick={() => {
-                          setHiddenColumns(prev => new Set([...prev, colDef.key]));
+                        onClick={async () => {
+                          if (onDeleteResposta && colDef.empresa) {
+                            if (window.confirm(`Excluir permanentemente os dados de "${colDef.empresa}"?`)) {
+                              await onDeleteResposta(colDef.empresa);
+                            }
+                          }
                           setContextMenu(null);
                         }}
                         className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-destructive"
