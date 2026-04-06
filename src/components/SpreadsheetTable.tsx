@@ -75,8 +75,19 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // State filter
   const [stateFilter, setStateFilter] = useState<StateFilter>('BOTH');
-  // Hidden columns (by key)
-  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
+
+  // Check if an empresa has ANY data for a given state
+  const empresaHasData = useCallback((empresa: string, state: 'MT' | 'GO'): boolean => {
+    const resp = respostas.find(r => r.empresa === empresa);
+    if (!resp) return false;
+    return resp.resposta.some(item => {
+      if (state === 'MT') {
+        return (item.preco_mt !== undefined && item.preco_mt !== '' && item.preco_mt !== 0) ||
+               (item.preco !== undefined && item.preco !== '' && item.preco !== 0 && item.preco_go === undefined);
+      }
+      return item.preco_go !== undefined && item.preco_go !== '' && item.preco_go !== 0;
+    });
+  }, [respostas]);
 
   // Build a fast lookup map
   const precoMap = useMemo(() => {
