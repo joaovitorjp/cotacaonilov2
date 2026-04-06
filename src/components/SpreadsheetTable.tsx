@@ -233,11 +233,19 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (!c.empresa || !c.state) return true;
       return empresaHasData(c.empresa, c.state);
     });
-    // Add filler columns with a fixed standard width
+    // Add filler columns to fill remaining container space
     const FILLER_WIDTH = 80;
-    const totalDataCols = filtered.length;
-    const gridCols = Math.max(totalDataCols, EMPTY_COLS);
-    const fillerCount = Math.max(0, gridCols - totalDataCols);
+    const containerW = containerRef.current?.clientWidth || 1200;
+    // Estimate used width by data columns
+    let usedWidth = 0;
+    for (let i = 0; i < filtered.length; i++) {
+      const col = filtered[i];
+      if (col.isSeparator) { usedWidth += 8; continue; }
+      usedWidth += (colWidths[i] || 100);
+    }
+    const remainingW = Math.max(0, containerW - usedWidth);
+    const dynamicFillerCount = Math.max(EMPTY_COLS - filtered.length, Math.ceil(remainingW / FILLER_WIDTH));
+    const fillerCount = Math.max(0, dynamicFillerCount);
     let maxIdx = filtered.reduce((m, c) => Math.max(m, c.originalIdx), 0);
     const fillers: ColDef[] = [];
     for (let i = 0; i < fillerCount; i++) {
