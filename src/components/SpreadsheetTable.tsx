@@ -1225,7 +1225,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
       {/* Spreadsheet */}
       <div ref={containerRef} className="flex-1 overflow-auto relative" tabIndex={0}>
-        <table ref={tableRef} className="border-collapse text-sm w-full"
+        <table ref={tableRef} className="border-collapse text-sm"
           style={{ tableLayout: 'fixed', fontFamily: 'var(--font-body)', fontSize: '12px' }}>
           <colgroup>
             {orderedColDefs.map((col, i) => {
