@@ -354,7 +354,38 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
           <FileDown className="w-4 h-4" />
           Exportar PDF
         </button>
+        <button
+          onClick={() => setShowComparativoDialog(true)}
+          className="flex items-center gap-2 px-3 py-2 text-xs font-display font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+        >
+          <Send className="w-4 h-4" />
+          Comparativo p/ Fornecedor
+        </button>
       </div>
+
+      {/* Supplier selection dialog for comparative PDF */}
+      <Dialog open={showComparativoDialog} onOpenChange={setShowComparativoDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Gerar Comparativo de Preços</DialogTitle>
+            <DialogDescription>
+              Selecione o fornecedor para quem deseja gerar o PDF comparativo. Os nomes dos concorrentes serão anonimizados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[300px] overflow-auto">
+            {respostas.map(r => (
+              <Button
+                key={r.empresa}
+                variant="outline"
+                className="w-full justify-start font-display"
+                onClick={() => exportComparativoPDF(r.empresa)}
+              >
+                {r.empresa}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Price history section */}
       {showHistorico && (
