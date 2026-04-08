@@ -154,7 +154,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     autoTable(doc, {
       startY: 46,
       head: [colHeaders],
-      body: rowData.map(r => r.row),
+      body: allRowData.map(r => r.row),
       theme: 'grid',
       headStyles: {
         fillColor: [41, 128, 185],
