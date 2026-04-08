@@ -120,10 +120,11 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       const validConc = concPrices.filter(v => !isNaN(v) && v > 0);
       const minConc = validConc.length > 0 ? Math.min(...validConc) : NaN;
 
-      // Skip if supplier has no price or already has the best/equal price
+      // Skip if supplier has no price, already has the best/equal price, or no competitors have a price
       const hasPrice = !isNaN(selPrice) && selPrice > 0;
+      const noConcurrents = validConc.length === 0;
       const alreadyWon = hasPrice && !isNaN(minConc) && selPrice <= minConc;
-      if (!hasPrice || alreadyWon) return null;
+      if (!hasPrice || noConcurrents || alreadyWon) return null;
 
       let diffStr = '-';
       if (!isNaN(minConc)) {
