@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { BarChart3, Trophy, TrendingDown, History, FileDown } from 'lucide-react';
+import { BarChart3, Trophy, TrendingDown, History, FileDown, Send } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface Produto {
   codigo_interno: string;
