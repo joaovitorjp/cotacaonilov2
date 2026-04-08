@@ -179,7 +179,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       didParseCell: (data: any) => {
         if (data.section !== 'body') return;
         const rowIdx = data.row.index;
-        const rd = rowData[rowIdx];
+        const rd = allRowData[rowIdx];
         if (!rd) return;
 
         const selColIdx = 3; // supplier column index
