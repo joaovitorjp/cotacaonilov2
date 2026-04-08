@@ -48,66 +48,178 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
 
   const exportComparativoPDF = (empresaSelecionada: string) => {
     const doc = new jsPDF('landscape', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
     const outrasEmpresas = respostas.filter(r => r.empresa !== empresaSelecionada);
-    
-    // Build anonymized names map
+
+    // Anonymized names
     const nomesConcorrentes: Record<string, string> = {};
     outrasEmpresas.forEach((r, idx) => {
       nomesConcorrentes[r.empresa] = `Concorrente ${idx + 1}`;
     });
 
-    // Title
-    doc.setFontSize(16);
-    doc.text(`Comparativo de Preços`, 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Cotação: ${listaNome || 'Sem nome'}`, 14, 22);
-    doc.text(`Fornecedor: ${empresaSelecionada}`, 14, 28);
-    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 14, 34);
+    // --- Header bar ---
+    doc.setFillColor(41, 128, 185);
+    doc.rect(0, 0, pageWidth, 28, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.text('Comparativo de Preços', 14, 12);
+    doc.setFontSize(9);
+    doc.text(`Cotação: ${listaNome || 'Sem nome'}`, 14, 19);
+    doc.text(`Fornecedor: ${empresaSelecionada}`, 14, 24);
+    const dataStr = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
+    doc.text(dataStr, pageWidth - 14 - doc.getTextWidth(dataStr), 24);
 
-    const colHeaders = ['Código', 'Descrição', empresaSelecionada, ...outrasEmpresas.map(r => nomesConcorrentes[r.empresa])];
+    // Reset text color
+    doc.setTextColor(0, 0, 0);
 
-    const tableBody = produtos.map(prod => {
-      const getPreco = (resp: RespostaEmpresa) => {
+    // --- Summary box ---
+    const totalProdutos = produtos.length;
+    const totalConcorrentes = outrasEmpresas.length;
+
+    // Count how many items the selected supplier has the best price
+    let winsCount = 0;
+    let lossesCount = 0;
+    produtos.forEach(prod => {
+      const getNum = (resp: RespostaEmpresa) => {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
-        if (!item) return '-';
-        const val = parsePreco(item.preco_mt ?? item.preco);
-        return !isNaN(val) && val > 0 ? `R$ ${val.toFixed(2).replace('.', ',')}` : '-';
+        if (!item) return NaN;
+        return parsePreco(item.preco_mt ?? item.preco);
       };
+      const selPrice = getNum(respostas.find(r => r.empresa === empresaSelecionada)!);
+      if (isNaN(selPrice) || selPrice <= 0) return;
+      const concPrices = outrasEmpresas.map(r => getNum(r)).filter(v => !isNaN(v) && v > 0);
+      if (concPrices.length === 0) return;
+      const minConc = Math.min(...concPrices);
+      if (selPrice <= minConc) winsCount++;
+      else lossesCount++;
+    });
 
-      const respSelecionada = respostas.find(r => r.empresa === empresaSelecionada);
-      return [
-        prod.codigo_interno,
-        prod.descricao.substring(0, 45),
-        respSelecionada ? getPreco(respSelecionada) : '-',
-        ...outrasEmpresas.map(r => getPreco(r)),
-      ];
+    doc.setFontSize(8);
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(14, 32, pageWidth - 28, 10, 2, 2, 'F');
+    doc.setTextColor(80, 80, 80);
+    doc.text(`${totalProdutos} produtos  ·  ${totalConcorrentes} concorrente(s)  ·  ✅ Menor preço em ${winsCount} itens  ·  ⚠️ Preço maior em ${lossesCount} itens`, 18, 38.5);
+    doc.setTextColor(0, 0, 0);
+
+    // --- Table ---
+    const colHeaders = ['#', 'Código', 'Descrição', empresaSelecionada, ...outrasEmpresas.map(r => nomesConcorrentes[r.empresa]), 'Diferença'];
+
+    // Pre-compute numeric prices for highlighting
+    const rowData = produtos.map((prod, idx) => {
+      const getNum = (resp: RespostaEmpresa) => {
+        const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+        if (!item) return NaN;
+        return parsePreco(item.preco_mt ?? item.preco);
+      };
+      const fmt = (v: number) => !isNaN(v) && v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '-';
+
+      const selResp = respostas.find(r => r.empresa === empresaSelecionada);
+      const selPrice = selResp ? getNum(selResp) : NaN;
+      const concPrices = outrasEmpresas.map(r => getNum(r));
+
+      // Difference column
+      const validConc = concPrices.filter(v => !isNaN(v) && v > 0);
+      const minConc = validConc.length > 0 ? Math.min(...validConc) : NaN;
+      let diffStr = '-';
+      if (!isNaN(selPrice) && selPrice > 0 && !isNaN(minConc)) {
+        const diffPct = ((selPrice - minConc) / selPrice) * 100;
+        if (diffPct > 0) diffStr = `+${diffPct.toFixed(1)}%`;
+        else if (diffPct < 0) diffStr = `${diffPct.toFixed(1)}%`;
+        else diffStr = '0%';
+      }
+
+      return {
+        row: [
+          String(idx + 1),
+          prod.codigo_interno,
+          prod.descricao.substring(0, 42),
+          fmt(selPrice),
+          ...concPrices.map(v => fmt(v)),
+          diffStr,
+        ],
+        selPrice,
+        concPrices,
+      };
     });
 
     autoTable(doc, {
-      startY: 40,
+      startY: 46,
       head: [colHeaders],
-      body: tableBody,
+      body: rowData.map(r => r.row),
       theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185], fontSize: 7, halign: 'center' },
-      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        fontSize: 7,
+        halign: 'center',
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      styles: {
+        fontSize: 7,
+        cellPadding: 2,
+        lineColor: [220, 220, 220],
+        lineWidth: 0.2,
+      },
+      alternateRowStyles: { fillColor: [250, 250, 252] },
       columnStyles: {
-        0: { cellWidth: 22 },
-        1: { cellWidth: 45 },
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 42 },
+        [colHeaders.length - 1]: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
       },
       didParseCell: (data: any) => {
-        // Highlight the selected supplier column
-        if (data.section === 'body' && data.column.index === 2) {
+        if (data.section !== 'body') return;
+        const rowIdx = data.row.index;
+        const rd = rowData[rowIdx];
+        if (!rd) return;
+
+        const selColIdx = 3; // supplier column index
+        const firstConcIdx = 4;
+        const lastConcIdx = firstConcIdx + outrasEmpresas.length - 1;
+        const diffColIdx = colHeaders.length - 1;
+
+        // Highlight selected supplier column
+        if (data.column.index === selColIdx) {
           data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.fillColor = [235, 245, 255];
+          data.cell.styles.fillColor = [230, 242, 255];
+        }
+
+        // Highlight competitor prices that are LOWER than the selected supplier (green)
+        if (data.column.index >= firstConcIdx && data.column.index <= lastConcIdx) {
+          const concIdx = data.column.index - firstConcIdx;
+          const concPrice = rd.concPrices[concIdx];
+          if (!isNaN(concPrice) && concPrice > 0 && !isNaN(rd.selPrice) && rd.selPrice > 0) {
+            if (concPrice < rd.selPrice) {
+              data.cell.styles.fillColor = [220, 245, 220];
+              data.cell.styles.textColor = [30, 120, 30];
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+        }
+
+        // Difference column coloring
+        if (data.column.index === diffColIdx) {
+          const txt = data.cell.raw || '';
+          if (typeof txt === 'string' && txt.startsWith('+')) {
+            data.cell.styles.textColor = [200, 50, 50];
+          } else if (typeof txt === 'string' && txt.startsWith('-')) {
+            data.cell.styles.textColor = [30, 120, 30];
+          }
         }
       },
     });
 
-    // Footer note
+    // --- Footer ---
     const finalY = (doc as any).lastAutoTable?.finalY || 200;
-    doc.setFontSize(8);
-    doc.setTextColor(120, 120, 120);
-    doc.text('* Os nomes dos concorrentes foram omitidos por questões de confidencialidade.', 14, finalY + 8);
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Os nomes dos concorrentes foram omitidos por questões de confidencialidade.', 14, finalY + 6);
+
+    // Legend
+    doc.setFillColor(220, 245, 220);
+    doc.rect(14, finalY + 10, 4, 3, 'F');
+    doc.setTextColor(80, 80, 80);
+    doc.text('= Preço do concorrente menor que o seu (oportunidade de cobrir)', 20, finalY + 12.5);
 
     doc.save(`comparativo_${empresaSelecionada.replace(/\s+/g, '_')}.pdf`);
     setShowComparativoDialog(false);
