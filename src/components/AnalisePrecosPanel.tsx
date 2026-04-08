@@ -104,8 +104,8 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     // --- Table ---
     const colHeaders = ['#', 'Código', 'Descrição', empresaSelecionada, ...outrasEmpresas.map(r => nomesConcorrentes[r.empresa]), 'Diferença'];
 
-    // Pre-compute numeric prices for highlighting
-    const rowData = produtos.map((prod, idx) => {
+    // Pre-compute numeric prices and filter out wins / no-price items
+    const allRowData = produtos.map((prod, idx) => {
       const getNum = (resp: RespostaEmpresa) => {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
         if (!item) return NaN;
@@ -117,20 +117,23 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       const selPrice = selResp ? getNum(selResp) : NaN;
       const concPrices = outrasEmpresas.map(r => getNum(r));
 
-      // Difference column
       const validConc = concPrices.filter(v => !isNaN(v) && v > 0);
       const minConc = validConc.length > 0 ? Math.min(...validConc) : NaN;
+
+      // Skip if supplier has no price or already has the best/equal price
+      const hasPrice = !isNaN(selPrice) && selPrice > 0;
+      const alreadyWon = hasPrice && !isNaN(minConc) && selPrice <= minConc;
+      if (!hasPrice || alreadyWon) return null;
+
       let diffStr = '-';
-      if (!isNaN(selPrice) && selPrice > 0 && !isNaN(minConc)) {
+      if (!isNaN(minConc)) {
         const diffPct = ((selPrice - minConc) / selPrice) * 100;
-        if (diffPct > 0) diffStr = `+${diffPct.toFixed(1)}%`;
-        else if (diffPct < 0) diffStr = `${diffPct.toFixed(1)}%`;
-        else diffStr = '0%';
+        diffStr = diffPct > 0 ? `+${diffPct.toFixed(1)}%` : '0%';
       }
 
       return {
         row: [
-          String(idx + 1),
+          '', // placeholder for sequential #
           prod.codigo_interno,
           prod.descricao.substring(0, 42),
           fmt(selPrice),
@@ -140,7 +143,13 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         selPrice,
         concPrices,
       };
-    });
+    }).filter(Boolean) as { row: string[]; selPrice: number; concPrices: number[] }[];
+
+    // Re-number rows sequentially
+    allRowData.forEach((rd, i) => { rd.row[0] = String(i + 1); });
+
+    // Update summary with filtered count
+    lossesCount = allRowData.length;
 
     autoTable(doc, {
       startY: 46,
