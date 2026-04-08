@@ -44,6 +44,74 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
   const [historico, setHistorico] = useState<Record<string, HistoricoItem[]>>({});
   const [showHistorico, setShowHistorico] = useState(false);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+  const [showComparativoDialog, setShowComparativoDialog] = useState(false);
+
+  const exportComparativoPDF = (empresaSelecionada: string) => {
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+    const outrasEmpresas = respostas.filter(r => r.empresa !== empresaSelecionada);
+    
+    // Build anonymized names map
+    const nomesConcorrentes: Record<string, string> = {};
+    outrasEmpresas.forEach((r, idx) => {
+      nomesConcorrentes[r.empresa] = `Concorrente ${idx + 1}`;
+    });
+
+    // Title
+    doc.setFontSize(16);
+    doc.text(`Comparativo de Preços`, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Cotação: ${listaNome || 'Sem nome'}`, 14, 22);
+    doc.text(`Fornecedor: ${empresaSelecionada}`, 14, 28);
+    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 14, 34);
+
+    const colHeaders = ['Código', 'Descrição', empresaSelecionada, ...outrasEmpresas.map(r => nomesConcorrentes[r.empresa])];
+
+    const tableBody = produtos.map(prod => {
+      const getPreco = (resp: RespostaEmpresa) => {
+        const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+        if (!item) return '-';
+        const val = parsePreco(item.preco_mt ?? item.preco);
+        return !isNaN(val) && val > 0 ? `R$ ${val.toFixed(2).replace('.', ',')}` : '-';
+      };
+
+      const respSelecionada = respostas.find(r => r.empresa === empresaSelecionada);
+      return [
+        prod.codigo_interno,
+        prod.descricao.substring(0, 45),
+        respSelecionada ? getPreco(respSelecionada) : '-',
+        ...outrasEmpresas.map(r => getPreco(r)),
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 40,
+      head: [colHeaders],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185], fontSize: 7, halign: 'center' },
+      styles: { fontSize: 7, cellPadding: 2 },
+      columnStyles: {
+        0: { cellWidth: 22 },
+        1: { cellWidth: 45 },
+      },
+      didParseCell: (data: any) => {
+        // Highlight the selected supplier column
+        if (data.section === 'body' && data.column.index === 2) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [235, 245, 255];
+        }
+      },
+    });
+
+    // Footer note
+    const finalY = (doc as any).lastAutoTable?.finalY || 200;
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text('* Os nomes dos concorrentes foram omitidos por questões de confidencialidade.', 14, finalY + 8);
+
+    doc.save(`comparativo_${empresaSelecionada.replace(/\s+/g, '_')}.pdf`);
+    setShowComparativoDialog(false);
+  };
 
   const loadHistorico = async () => {
     if (Object.keys(historico).length > 0) {
