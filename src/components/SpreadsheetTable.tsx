@@ -518,7 +518,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     }
     setCellEdits({});
     setHasUnsavedChanges(false);
-  }, [onSave, produtos, cellEdits, allColDefs, respostas, listaId]);
+    if (onAfterSave) onAfterSave();
+  }, [onSave, produtos, cellEdits, allColDefs, respostas, listaId, onAfterSave]);
 
   // Mouse selection
   const handleCellMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
