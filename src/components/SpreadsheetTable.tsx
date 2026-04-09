@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2 } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Produto {
@@ -26,6 +26,8 @@ interface SpreadsheetTableProps {
   onSave?: (produtos: Produto[]) => void;
   listaId?: string;
   onDeleteResposta?: (empresa: string) => Promise<void>;
+  onAfterSave?: () => void;
+  onAddEmpresa?: (empresa: string) => Promise<void>;
 }
 
 const parsePrice = (val: string | number): number => {
@@ -70,6 +72,7 @@ interface ColDef {
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   produtos, respostas, readOnly = false, editableColumn, onPriceChange,
   editPrices = {}, highlightLowest = false, onSave, listaId, onDeleteResposta,
+  onAfterSave, onAddEmpresa,
 }) => {
   const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
 
@@ -515,7 +518,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     }
     setCellEdits({});
     setHasUnsavedChanges(false);
-  }, [onSave, produtos, cellEdits, allColDefs, respostas, listaId]);
+    if (onAfterSave) onAfterSave();
+  }, [onSave, produtos, cellEdits, allColDefs, respostas, listaId, onAfterSave]);
 
   // Mouse selection
   const handleCellMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
@@ -888,6 +892,26 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [markupValue, setMarkupValue] = useState('');
   const markupInputRef = useRef<HTMLInputElement>(null);
 
+  // Add supplier column state
+  const [showAddEmpresa, setShowAddEmpresa] = useState(false);
+  const [newEmpresaName, setNewEmpresaName] = useState('');
+  const addEmpresaInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (showAddEmpresa) setTimeout(() => addEmpresaInputRef.current?.focus(), 50); }, [showAddEmpresa]);
+
+  const handleAddEmpresa = async () => {
+    const name = newEmpresaName.trim();
+    if (!name || !onAddEmpresa) return;
+    if (empresas.includes(name)) {
+      setShowAddEmpresa(false);
+      setNewEmpresaName('');
+      return;
+    }
+    await onAddEmpresa(name);
+    setShowAddEmpresa(false);
+    setNewEmpresaName('');
+  };
+
   useEffect(() => {
     if (!listaId) return;
     const loadMarkups = async () => {
@@ -1204,22 +1228,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </>
         )}
 
-        {/* Search */}
-        <div className="w-px h-5 bg-border mx-1" />
-        <button onClick={() => setShowSearch(!showSearch)}
-          className={`p-1.5 rounded transition-colors ${showSearch ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`} title="Buscar">
-          <Search className="w-4 h-4" />
-        </button>
-        {showSearch && (
-          <div className="relative flex-1 max-w-xs">
-            <input type="text" className="w-full h-7 rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-              value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar código, descrição..." autoFocus />
-            {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded">
-                <X className="w-3 h-3 text-muted-foreground" />
-              </button>
-            )}
-          </div>
+        {/* Add Supplier */}
+        {onAddEmpresa && (
+          <>
+            <div className="w-px h-5 bg-border mx-1" />
+            <button onClick={() => setShowAddEmpresa(true)}
+              className="p-1.5 rounded hover:bg-accent transition-colors flex items-center gap-1 text-xs" title="Adicionar Fornecedor">
+              <Plus className="w-4 h-4" /><span className="hidden sm:inline">Fornecedor</span>
+            </button>
+          </>
         )}
       </div>
 
@@ -1421,6 +1438,29 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 </div>
                 <button onClick={applyMarkup} className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors">
                   Aplicar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Empresa Dialog */}
+        {showAddEmpresa && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onClick={() => setShowAddEmpresa(false)}>
+            <div className="bg-popover border border-border rounded-lg shadow-xl p-4 w-72" onClick={e => e.stopPropagation()}>
+              <h3 className="text-sm font-bold text-foreground mb-1">Adicionar Fornecedor</h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Digite o nome do fornecedor para criar uma nova coluna na planilha.
+              </p>
+              <div className="flex items-center gap-2">
+                <input ref={addEmpresaInputRef} type="text"
+                  className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={newEmpresaName} onChange={e => setNewEmpresaName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddEmpresa(); if (e.key === 'Escape') setShowAddEmpresa(false); }}
+                  placeholder="Nome do fornecedor" />
+                <button onClick={handleAddEmpresa} disabled={!newEmpresaName.trim()}
+                  className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50">
+                  Adicionar
                 </button>
               </div>
             </div>

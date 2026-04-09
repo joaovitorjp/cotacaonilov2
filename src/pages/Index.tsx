@@ -396,7 +396,7 @@ const Index = () => {
         <SpreadsheetTable
           produtos={currentLista?.produtos ?? []}
           respostas={respostas}
-          readOnly={isFinalized}
+          readOnly={false}
           highlightLowest={respostas.length > 1}
           listaId={currentLista?.id}
           onDeleteResposta={currentLista ? async (empresa: string) => {
@@ -412,7 +412,7 @@ const Index = () => {
               toast.success(`Dados de "${empresa}" excluídos com sucesso.`);
             }
           } : undefined}
-          onSave={currentLista && !isFinalized ? async (updatedProdutos) => {
+          onSave={currentLista ? async (updatedProdutos) => {
             const { error } = await supabase
               .from('listas')
               .update({ produtos: updatedProdutos as any })
@@ -422,6 +422,18 @@ const Index = () => {
             } else {
               setCurrentLista({ ...currentLista, produtos: updatedProdutos });
               toast.success('Alterações salvas com sucesso!');
+            }
+          } : undefined}
+          onAfterSave={currentLista ? () => loadRespostas(currentLista.id) : undefined}
+          onAddEmpresa={currentLista ? async (empresa: string) => {
+            const { error } = await supabase
+              .from('respostas')
+              .insert({ lista_id: currentLista.id, empresa, resposta: [] as any });
+            if (error) {
+              toast.error('Erro ao adicionar fornecedor.');
+            } else {
+              await loadRespostas(currentLista.id);
+              toast.success(`Coluna "${empresa}" adicionada!`);
             }
           } : undefined}
         />
