@@ -892,6 +892,26 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [markupValue, setMarkupValue] = useState('');
   const markupInputRef = useRef<HTMLInputElement>(null);
 
+  // Add supplier column state
+  const [showAddEmpresa, setShowAddEmpresa] = useState(false);
+  const [newEmpresaName, setNewEmpresaName] = useState('');
+  const addEmpresaInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (showAddEmpresa) setTimeout(() => addEmpresaInputRef.current?.focus(), 50); }, [showAddEmpresa]);
+
+  const handleAddEmpresa = async () => {
+    const name = newEmpresaName.trim();
+    if (!name || !onAddEmpresa) return;
+    if (empresas.includes(name)) {
+      setShowAddEmpresa(false);
+      setNewEmpresaName('');
+      return;
+    }
+    await onAddEmpresa(name);
+    setShowAddEmpresa(false);
+    setNewEmpresaName('');
+  };
+
   useEffect(() => {
     if (!listaId) return;
     const loadMarkups = async () => {
