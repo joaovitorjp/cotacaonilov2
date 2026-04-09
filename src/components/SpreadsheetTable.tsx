@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2, Plus } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2, Plus, Swords } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Produto {
@@ -955,6 +955,67 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return colDef?.empresa || null;
   };
 
+  const calcUndercutPrice = (competitorPrice: number): number => {
+    const cents = Math.round(competitorPrice * 100);
+    for (let c = cents - 1; c >= cents - 5; c--) {
+      const lastDigit = c % 10;
+      if (lastDigit === 5 || lastDigit === 7 || lastDigit === 9) return c / 100;
+    }
+    for (let c = cents - 6; c >= cents - 10; c--) {
+      const lastDigit = c % 10;
+      if (lastDigit === 5 || lastDigit === 7 || lastDigit === 9) return c / 100;
+    }
+    return (cents - 1) / 100;
+  };
+
+  const handleCobrirConcorrentes = useCallback(() => {
+    if (!contextMenu || contextMenu.colIdx === undefined) return;
+    const colDef = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
+    if (!colDef?.empresa || !colDef?.state) { setContextMenu(null); return; }
+    const emp = colDef.empresa;
+    const state = colDef.state;
+    const newEdits: Record<string, string> = {};
+    let changed = 0;
+
+    for (let rowIdx = 0; rowIdx < produtos.length; rowIdx++) {
+      const prod = produtos[rowIdx];
+      const rawSel = getPreco(emp, state, prod.codigo_interno);
+      const selPrice = parsePrice(rawSel as string | number);
+      if (selPrice === Infinity || selPrice <= 0) continue;
+
+      // Find lowest competitor price
+      let minConc = Infinity;
+      for (const otherEmp of empresas) {
+        if (otherEmp === emp) continue;
+        const rawOther = getPreco(otherEmp, state, prod.codigo_interno);
+        const otherPrice = parsePrice(rawOther as string | number);
+        if (otherPrice > 0 && otherPrice < Infinity && otherPrice < minConc) {
+          minConc = otherPrice;
+        }
+      }
+
+      // Only undercut if supplier lost (their price > lowest competitor)
+      if (minConc === Infinity || selPrice <= minConc) continue;
+
+      const undercutPrice = calcUndercutPrice(minConc);
+      if (undercutPrice > 0 && undercutPrice < selPrice) {
+        // Find the originalIdx for this empresa+state column
+        const matchCol = allColDefs.find(c => c.empresa === emp && c.state === state);
+        if (matchCol) {
+          const editKey = `${rowIdx}-${matchCol.originalIdx}`;
+          newEdits[editKey] = undercutPrice.toFixed(2).replace('.', ',');
+          changed++;
+        }
+      }
+    }
+
+    if (changed > 0) {
+      setCellEdits(prev => ({ ...prev, ...newEdits }));
+      setHasUnsavedChanges(true);
+    }
+    setContextMenu(null);
+  }, [contextMenu, orderedColDefs, allColDefs, produtos, empresas, getPreco]);
+
   // Toolbar
   const getSelectionTarget = (): { type: 'cell'; keys: string[] } | null => {
     const range = getSelectionRange();
@@ -1366,6 +1427,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       <X className="w-3.5 h-3.5" /> Remover acréscimo
                     </button>
                   ) : null}
+                  <button onClick={handleCobrirConcorrentes}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
+                    <Swords className="w-3.5 h-3.5" /> Cobrir concorrentes
+                  </button>
                   <div className="border-t border-border my-1" />
                 </>
               );
