@@ -1224,26 +1224,16 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               >
                 Ambos
               </button>
-            </div>
+        {onAddEmpresa && (
+          <>
+            <div className="w-px h-5 bg-border mx-1" />
+            <button onClick={() => setShowAddEmpresa(true)}
+              className="p-1.5 rounded hover:bg-accent transition-colors flex items-center gap-1 text-xs" title="Adicionar Fornecedor">
+              <Plus className="w-4 h-4" /><span className="hidden sm:inline">Fornecedor</span>
+            </button>
           </>
         )}
-
-        {/* Search */}
-        <div className="w-px h-5 bg-border mx-1" />
-        <button onClick={() => setShowSearch(!showSearch)}
-          className={`p-1.5 rounded transition-colors ${showSearch ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`} title="Buscar">
-          <Search className="w-4 h-4" />
-        </button>
-        {showSearch && (
-          <div className="relative flex-1 max-w-xs">
-            <input type="text" className="w-full h-7 rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-              value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar código, descrição..." autoFocus />
-            {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded">
-                <X className="w-3 h-3 text-muted-foreground" />
-              </button>
-            )}
-          </div>
+      </div>
         )}
       </div>
 
