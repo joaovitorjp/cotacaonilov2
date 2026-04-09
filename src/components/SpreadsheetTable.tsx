@@ -1224,6 +1224,11 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               >
                 Ambos
               </button>
+            </div>
+          </>
+        )}
+
+        {/* Add Supplier */}
         {onAddEmpresa && (
           <>
             <div className="w-px h-5 bg-border mx-1" />
@@ -1232,8 +1237,6 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               <Plus className="w-4 h-4" /><span className="hidden sm:inline">Fornecedor</span>
             </button>
           </>
-        )}
-      </div>
         )}
       </div>
 
