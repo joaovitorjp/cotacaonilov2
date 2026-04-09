@@ -1427,6 +1427,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       <X className="w-3.5 h-3.5" /> Remover acréscimo
                     </button>
                   ) : null}
+                  <button onClick={handleCobrirConcorrentes}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
+                    <Swords className="w-3.5 h-3.5" /> Cobrir concorrentes
+                  </button>
                   <div className="border-t border-border my-1" />
                 </>
               );
