@@ -929,7 +929,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const saveMarkupToDb = async (empresa: string, percent: number) => {
     if (!listaId) return;
     if (percent === 0) await supabase.from('price_markups').delete().eq('lista_id', listaId).eq('empresa', empresa);
-    else await supabase.from('price_markups').upsert({ lista_id: listaId, empresa, markup_percent: percent, updated_at: new Date().toISOString() }, { onConflict: 'lista_id,empresa' });
+    else await supabase.from('price_markups').upsert({ lista_id: listaId, empresa, markup_percent: percent, updated_at: new Date().toISOString(), user_id: user?.id }, { onConflict: 'lista_id,empresa' });
   };
 
   useEffect(() => { if (markupDialog) setTimeout(() => markupInputRef.current?.focus(), 50); }, [markupDialog]);
