@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      estoques_resultados: {
+        Row: {
+          codigo_produto: string
+          dias_cobertura: number | null
+          estoque_atual: number
+          id: string
+          loja: string
+          media_vendas: number
+          meses_considerados: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          codigo_produto: string
+          dias_cobertura?: number | null
+          estoque_atual?: number
+          id?: string
+          loja: string
+          media_vendas?: number
+          meses_considerados?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          codigo_produto?: string
+          dias_cobertura?: number | null
+          estoque_atual?: number
+          id?: string
+          loja?: string
+          media_vendas?: number
+          meses_considerados?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      estoques_uploads: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          loja: string
+          referencia: string | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          loja: string
+          referencia?: string | null
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          loja?: string
+          referencia?: string | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fornecedores: {
         Row: {
           contato: string | null
