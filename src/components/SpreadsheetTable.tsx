@@ -75,6 +75,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   editPrices = {}, highlightLowest = false, onSave, listaId, onDeleteResposta,
   onAfterSave, onAddEmpresa,
 }) => {
+  const { user } = useAuth();
   const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
 
   // State filter
