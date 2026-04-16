@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ interface ImportListaPanelProps {
 }
 
 const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange, onImported }) => {
+  const { user } = useAuth();
   const [nome, setNome] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [prazo, setPrazo] = useState('');
@@ -54,6 +56,7 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
         nome: nome.trim(),
         produtos,
         status: 'aberta',
+        user_id: user?.id,
       };
 
       // 5. DEADLINE: Add prazo if set

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -19,6 +20,7 @@ interface FornecedoresPanelProps {
 }
 
 const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChange }) => {
+  const { user } = useAuth();
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [loading, setLoading] = useState(false);
   const [nome, setNome] = useState('');
@@ -57,6 +59,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome: nome.trim(),
       whatsapp: cleanWhatsapp,
       contato: contato.trim() || null,
+      user_id: user?.id,
     });
     if (error) {
       toast.error('Erro ao adicionar fornecedor.');

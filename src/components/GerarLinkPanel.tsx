@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -53,6 +54,7 @@ const ESTADO_LABELS: Record<EstadoOption, string> = {
 };
 
 const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, listaId }) => {
+  const { user } = useAuth();
   const [empresa, setEmpresa] = useState('');
   const [loading, setLoading] = useState(false);
   const [generatedLinks, setGeneratedLinks] = useState<GeneratedLink[]>([]);
@@ -91,7 +93,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const generateLink = async (empresaNome: string, estados: EstadoOption) => {
     const { data, error } = await supabase
       .from('links_cotacao')
-      .insert({ lista_id: listaId, empresa: empresaNome, estados })
+      .insert({ lista_id: listaId, empresa: empresaNome, estados, user_id: user?.id })
       .select()
       .single();
 

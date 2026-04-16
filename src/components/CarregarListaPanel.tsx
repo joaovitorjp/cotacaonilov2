@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
@@ -36,6 +37,7 @@ interface CarregarListaPanelProps {
 const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   open, onOpenChange, onListaSelected, statusFilter, title, onExport, onDownloadResultados,
 }) => {
+  const { user } = useAuth();
   const [listas, setListas] = useState<Lista[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Lista | null>(null);
@@ -125,7 +127,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   const handleReplicate = async (lista: Lista) => {
     const { data, error } = await supabase
       .from('listas')
-      .insert({ nome: `${lista.nome} (cópia)`, produtos: lista.produtos as any, status: 'aberta' })
+      .insert({ nome: `${lista.nome} (cópia)`, produtos: lista.produtos as any, status: 'aberta', user_id: user?.id })
       .select().single();
     if (error) {
       toast.error('Erro ao replicar lista.');
