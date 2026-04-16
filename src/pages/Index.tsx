@@ -32,7 +32,7 @@ interface RespostaEmpresa {
 }
 
 const Index = () => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
@@ -428,7 +428,7 @@ const Index = () => {
           onAddEmpresa={currentLista ? async (empresa: string) => {
             const { error } = await supabase
               .from('respostas')
-              .insert({ lista_id: currentLista.id, empresa, resposta: [] as any });
+              .insert({ lista_id: currentLista.id, empresa, resposta: [] as any, user_id: user?.id });
             if (error) {
               toast.error('Erro ao adicionar fornecedor.');
             } else {
