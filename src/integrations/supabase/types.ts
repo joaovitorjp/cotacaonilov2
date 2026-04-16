@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          user_id: string | null
           whatsapp: string
         }
         Insert: {
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          user_id?: string | null
           whatsapp?: string
         }
         Update: {
@@ -34,6 +36,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          user_id?: string | null
           whatsapp?: string
         }
         Relationships: []
@@ -47,6 +50,7 @@ export type Database = {
           lista_id: string
           respondido: boolean
           token: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -56,6 +60,7 @@ export type Database = {
           lista_id: string
           respondido?: boolean
           token?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -65,6 +70,7 @@ export type Database = {
           lista_id?: string
           respondido?: boolean
           token?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -85,6 +91,7 @@ export type Database = {
           produtos: Json
           status: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -94,6 +101,7 @@ export type Database = {
           produtos?: Json
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -103,6 +111,7 @@ export type Database = {
           produtos?: Json
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -114,6 +123,7 @@ export type Database = {
           lista_id: string
           markup_percent: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -122,6 +132,7 @@ export type Database = {
           lista_id: string
           markup_percent?: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -130,6 +141,7 @@ export type Database = {
           lista_id?: string
           markup_percent?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -172,6 +184,7 @@ export type Database = {
           id: string
           lista_id: string
           resposta: Json
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -179,6 +192,7 @@ export type Database = {
           id?: string
           lista_id: string
           resposta?: Json
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -186,6 +200,7 @@ export type Database = {
           id?: string
           lista_id?: string
           resposta?: Json
+          user_id?: string | null
         }
         Relationships: [
           {
