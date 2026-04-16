@@ -6,6 +6,7 @@ import ImportListaPanel from '@/components/ImportListaPanel';
 import CarregarListaPanel from '@/components/CarregarListaPanel';
 import GerarLinkPanel from '@/components/GerarLinkPanel';
 import FornecedoresPanel from '@/components/FornecedoresPanel';
+import EstoquesPanel from '@/components/EstoquesPanel';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import Dashboard from '@/components/Dashboard';
 import { toast } from 'sonner';
