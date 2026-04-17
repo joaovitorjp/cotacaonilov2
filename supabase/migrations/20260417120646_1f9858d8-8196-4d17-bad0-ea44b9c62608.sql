@@ -1,0 +1,1 @@
+ALTER TABLE public.estoques_resultados ADD COLUMN IF NOT EXISTS descricao text;
