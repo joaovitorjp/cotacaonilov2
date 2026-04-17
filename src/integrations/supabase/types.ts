@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      estoques_manuais: {
+        Row: {
+          created_at: string
+          estoque: number
+          id: string
+          loja: string
+          mes: number
+          updated_at: string
+          user_id: string
+          venda: number
+        }
+        Insert: {
+          created_at?: string
+          estoque?: number
+          id?: string
+          loja: string
+          mes: number
+          updated_at?: string
+          user_id: string
+          venda?: number
+        }
+        Update: {
+          created_at?: string
+          estoque?: number
+          id?: string
+          loja?: string
+          mes?: number
+          updated_at?: string
+          user_id?: string
+          venda?: number
+        }
+        Relationships: []
+      }
       estoques_resultados: {
         Row: {
           codigo_produto: string
