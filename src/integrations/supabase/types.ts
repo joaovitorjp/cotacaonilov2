@@ -17,6 +17,7 @@ export type Database = {
       estoques_resultados: {
         Row: {
           codigo_produto: string
+          descricao: string | null
           dias_cobertura: number | null
           estoque_atual: number
           id: string
@@ -28,6 +29,7 @@ export type Database = {
         }
         Insert: {
           codigo_produto: string
+          descricao?: string | null
           dias_cobertura?: number | null
           estoque_atual?: number
           id?: string
@@ -39,6 +41,7 @@ export type Database = {
         }
         Update: {
           codigo_produto?: string
+          descricao?: string | null
           dias_cobertura?: number | null
           estoque_atual?: number
           id?: string
