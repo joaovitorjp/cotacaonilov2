@@ -302,26 +302,30 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
                           </td>
                           {mesesSel.map((m, idx) => {
                             const key = k(loja, m);
-                            const isDirty = dirty.has(key);
+                            const isSaving = savingKeys.has(key);
+                            const isSaved = savedKeys.has(key);
+                            const cellCls = isSaving ? 'border-primary' : isSaved ? 'border-success' : '';
                             return (
                               <React.Fragment key={idx}>
-                                <td className="px-1 py-0.5 border-r border-border/50">
+                                <td className="px-1 py-0.5 border-r border-border/50 relative">
                                   <Input
                                     value={getVendaDisplay(loja, m)}
                                     onChange={e => handleVendaChange(loja, m, e.target.value)}
                                     onBlur={() => handleVendaBlur(loja, m)}
                                     placeholder="0"
-                                    className={`h-7 text-right tabular-nums text-xs px-1.5 ${isDirty ? 'border-primary' : ''}`}
+                                    className={`h-7 text-right tabular-nums text-xs px-1.5 ${cellCls}`}
                                     inputMode="decimal"
                                   />
+                                  {isSaving && <Loader2 className="w-3 h-3 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-primary" />}
+                                  {isSaved && !isSaving && <Check className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-success" />}
                                 </td>
-                                <td className="px-1 py-0.5 border-r border-border">
+                                <td className="px-1 py-0.5 border-r border-border relative">
                                   <Input
                                     value={getEstoqueDisplay(loja, m)}
                                     onChange={e => handleEstoqueChange(loja, m, e.target.value)}
                                     onBlur={() => handleEstoqueBlur(loja, m)}
                                     placeholder="0"
-                                    className={`h-7 text-right tabular-nums text-xs px-1.5 ${isDirty ? 'border-primary' : ''}`}
+                                    className={`h-7 text-right tabular-nums text-xs px-1.5 ${cellCls}`}
                                     inputMode="decimal"
                                   />
                                 </td>
