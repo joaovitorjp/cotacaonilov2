@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { FileSpreadsheet, Loader2, Save, RotateCcw } from 'lucide-react';
+import { FileSpreadsheet, Loader2, Check } from 'lucide-react';
 
 interface EstoquesPanelProps {
   open: boolean;
@@ -68,7 +68,8 @@ const corDias = (d: number | null): string => {
 const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
   // Quais 3 meses serão exibidos como colunas (default: 3 últimos meses do ano corrente)
   const [mesesSel, setMesesSel] = useState<number[]>(() => {
     const now = new Date();
@@ -84,7 +85,6 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
   // Buffer de edição (texto cru por campo) para permitir digitar vírgula
   const [editVenda, setEditVenda] = useState<Record<string, string>>({});
   const [editEstoque, setEditEstoque] = useState<Record<string, string>>({});
-  const [dirty, setDirty] = useState<Set<string>>(new Set());
 
   const loadAll = useCallback(async () => {
     if (!user) return;
