@@ -328,6 +328,8 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
                                     className={`h-7 text-right tabular-nums text-xs px-1.5 ${cellCls}`}
                                     inputMode="decimal"
                                   />
+                                  {isSaving && <Loader2 className="w-3 h-3 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-primary" />}
+                                  {isSaved && !isSaving && <Check className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-success" />}
                                 </td>
                               </React.Fragment>
                             );
