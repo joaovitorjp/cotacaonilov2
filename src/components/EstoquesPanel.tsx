@@ -215,78 +215,6 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
     return { mediaVenda, estoqueAtual, dias };
   };
 
-  const handleSalvar = async () => {
-    if (!user) return;
-    setSaving(true);
-    try {
-      // Aplica buffer de edição pendente
-      const finalDados = { ...dados };
-      for (const key of Object.keys(editVenda)) {
-        const [loja, mesStr] = key.split('|');
-        const mes = Number(mesStr);
-        finalDados[key] = {
-          ...(finalDados[key] ?? { loja, mes, venda: 0, estoque: 0 }),
-          loja, mes,
-          venda: parseBR(editVenda[key]),
-        };
-      }
-      for (const key of Object.keys(editEstoque)) {
-        const [loja, mesStr] = key.split('|');
-        const mes = Number(mesStr);
-        finalDados[key] = {
-          ...(finalDados[key] ?? { loja, mes, venda: 0, estoque: 0 }),
-          loja, mes,
-          estoque: parseBR(editEstoque[key]),
-        };
-      }
-
-      // Apenas linhas modificadas (dirty) ou que tenham algum valor
-      const toUpsert: any[] = [];
-      const toDelete: string[] = [];
-      for (const key of dirty) {
-        const r = finalDados[key];
-        if (!r) continue;
-        if (r.venda === 0 && r.estoque === 0) {
-          if (r.id) toDelete.push(r.id);
-        } else {
-          toUpsert.push({
-            ...(r.id ? { id: r.id } : {}),
-            user_id: user.id,
-            loja: r.loja,
-            mes: r.mes,
-            venda: r.venda,
-            estoque: r.estoque,
-          });
-        }
-      }
-
-      if (toDelete.length > 0) {
-        const { error } = await supabase.from('estoques_manuais').delete().in('id', toDelete);
-        if (error) throw error;
-      }
-      if (toUpsert.length > 0) {
-        const { error } = await supabase
-          .from('estoques_manuais')
-          .upsert(toUpsert, { onConflict: 'user_id,loja,mes' });
-        if (error) throw error;
-      }
-
-      toast.success('Dados salvos.');
-      await loadAll();
-    } catch (err: any) {
-      toast.error('Erro ao salvar: ' + (err.message ?? 'desconhecido'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDescartar = () => {
-    setEditVenda({});
-    setEditEstoque({});
-    setDirty(new Set());
-    toast.info('Alterações descartadas.');
-  };
-
   const handleMesChange = (idx: number, novoMes: number) => {
     setMesesSel(prev => {
       const n = [...prev];
@@ -294,8 +222,6 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
       return n;
     });
   };
-
-  const temPendentes = dirty.size > 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -324,15 +250,9 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
               </select>
             ))}
             <div className="flex-1" />
-            {temPendentes && (
-              <Button variant="outline" size="sm" onClick={handleDescartar} disabled={saving} className="gap-1">
-                <RotateCcw className="w-3 h-3" /> Descartar
-              </Button>
-            )}
-            <Button onClick={handleSalvar} disabled={!temPendentes || saving} size="sm" className="gap-1">
-              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-              Salvar {temPendentes ? `(${dirty.size})` : ''}
-            </Button>
+            <span className="text-[11px] text-muted-foreground italic">
+              Salvamento automático ao sair do campo
+            </span>
           </div>
 
           {loading ? (
