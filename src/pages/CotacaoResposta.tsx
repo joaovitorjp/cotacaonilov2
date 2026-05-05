@@ -19,6 +19,8 @@ const CotacaoResposta = () => {
   const [error, setError] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [listaId, setListaId] = useState('');
+  const [listaUserId, setListaUserId] = useState<string | null>(null);
+  const [linkId, setLinkId] = useState<string>('');
   const [listaNome, setListaNome] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [pricesMT, setPricesMT] = useState<Record<number, string>>({});
@@ -61,6 +63,7 @@ const CotacaoResposta = () => {
     if (linkData.respondido) setLinkRespondido(true);
     setEmpresa(linkData.empresa);
     setListaId(linkData.lista_id);
+    setLinkId(linkData.id);
     setEstados((linkData as any).estados || 'AMBOS');
 
     const { data: lista } = await supabase
@@ -76,6 +79,7 @@ const CotacaoResposta = () => {
     }
 
     setListaNome(lista.nome);
+    setListaUserId((lista as any).user_id ?? null);
     const prods = lista.produtos as any as Produto[];
     setProdutos(prods);
 
@@ -123,10 +127,20 @@ const CotacaoResposta = () => {
       if (existing) {
         await supabase.from('respostas').update({ resposta }).eq('id', existing.id);
       } else {
-        await supabase.from('respostas').insert({ lista_id: listaId, empresa, resposta });
+        await supabase.from('respostas').insert({
+          lista_id: listaId,
+          empresa,
+          resposta,
+          ...(listaUserId ? { user_id: listaUserId } : {}),
+        });
       }
 
-      await supabase.from('links_cotacao').update({ respondido: true }).eq('token', token);
+      // Vincula a resposta ao link específico que foi usado
+      if (linkId) {
+        await supabase.from('links_cotacao').update({ respondido: true }).eq('id', linkId);
+      } else {
+        await supabase.from('links_cotacao').update({ respondido: true }).eq('token', token);
+      }
       setSubmitted(true);
       toast.success('Resposta enviada com sucesso!');
     } catch {
