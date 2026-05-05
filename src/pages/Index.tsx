@@ -194,60 +194,71 @@ const Index = () => {
       resposta: d.resposta as any[],
     }));
 
-    const winnersBySupplier: Record<string, { codigo_barras: string; preco: number }[]> = {};
+    const parsePrice = (raw: any): number => {
+      if (typeof raw === 'number') return raw;
+      if (typeof raw === 'string' && raw !== '') {
+        const n = parseFloat(raw.replace(/\./g, '').replace(',', '.'));
+        return isNaN(n) ? NaN : n;
+      }
+      return NaN;
+    };
 
-    for (const prod of lista.produtos) {
-      let lowestPrice = Infinity;
-      let winnerEmpresa: string | null = null;
+    const estados: { key: 'mt' | 'go'; label: string }[] = [
+      { key: 'mt', label: 'MT' },
+      { key: 'go', label: 'GO' },
+    ];
 
-      for (const resp of resps) {
-        const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
-        if (item) {
-          const raw = item.preco_mt ?? item.preco;
-          let num: number;
-          if (typeof raw === 'number') {
-            num = raw;
-          } else if (typeof raw === 'string' && raw !== '') {
-            num = parseFloat(raw.replace(/\./g, '').replace(',', '.'));
-          } else {
-            continue;
-          }
+    let totalArquivos = 0;
+
+    for (const est of estados) {
+      const winnersBySupplier: Record<string, { codigo_barras: string; preco: number }[]> = {};
+
+      for (const prod of lista.produtos) {
+        let lowestPrice = Infinity;
+        let winnerEmpresa: string | null = null;
+
+        for (const resp of resps) {
+          const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+          if (!item) continue;
+          // Por estado: MT usa preco_mt (fallback preco), GO usa preco_go.
+          const raw = est.key === 'mt' ? (item.preco_mt ?? item.preco) : item.preco_go;
+          const num = parsePrice(raw);
           if (!isNaN(num) && num > 0 && num < lowestPrice) {
             lowestPrice = num;
             winnerEmpresa = resp.empresa;
           }
         }
+
+        if (winnerEmpresa && lowestPrice !== Infinity) {
+          if (!winnersBySupplier[winnerEmpresa]) winnersBySupplier[winnerEmpresa] = [];
+          winnersBySupplier[winnerEmpresa].push({ codigo_barras: prod.codigo_barras, preco: lowestPrice });
+        }
       }
 
-      if (winnerEmpresa && lowestPrice !== Infinity) {
-        if (!winnersBySupplier[winnerEmpresa]) winnersBySupplier[winnerEmpresa] = [];
-        winnersBySupplier[winnerEmpresa].push({ codigo_barras: prod.codigo_barras, preco: lowestPrice });
+      const suppliers = Object.keys(winnersBySupplier);
+      for (const empresa of suppliers) {
+        const items = winnersBySupplier[empresa];
+        const csvLines = items.map(item => {
+          const precoFormatted = item.preco.toFixed(2).replace('.', ',');
+          return `${item.codigo_barras};1;${precoFormatted}`;
+        });
+        const csvContent = csvLines.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${lista.nome}_${est.label}_${empresa}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        totalArquivos++;
       }
     }
 
-    const suppliers = Object.keys(winnersBySupplier);
-    if (suppliers.length === 0) {
+    if (totalArquivos === 0) {
       toast.error('Nenhum preço ganhador encontrado.');
       return;
     }
-
-    for (const empresa of suppliers) {
-      const items = winnersBySupplier[empresa];
-      const csvLines = items.map(item => {
-        const precoFormatted = item.preco.toFixed(2).replace('.', ',');
-        return `${item.codigo_barras};1;${precoFormatted}`;
-      });
-      const csvContent = csvLines.join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${lista.nome}_${empresa}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    toast.success(`${suppliers.length} arquivo(s) CSV baixado(s)!`);
+    toast.success(`${totalArquivos} arquivo(s) CSV baixado(s) (separados por estado).`);
   };
 
   const handleDashboardNavigate = (view: 'importar' | 'carregar' | 'finalizadas') => {
