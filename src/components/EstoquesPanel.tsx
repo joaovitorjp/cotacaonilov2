@@ -111,7 +111,6 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
     setDados(map);
     setEditVenda({});
     setEditEstoque({});
-    setDirty(new Set());
     setLoading(false);
   }, [user]);
 
@@ -131,45 +130,71 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
   };
 
   const handleVendaChange = (loja: string, mes: number, val: string) => {
-    const key = k(loja, mes);
-    setEditVenda(prev => ({ ...prev, [key]: val }));
-    setDirty(prev => new Set(prev).add(key));
+    setEditVenda(prev => ({ ...prev, [k(loja, mes)]: val }));
   };
   const handleEstoqueChange = (loja: string, mes: number, val: string) => {
-    const key = k(loja, mes);
-    setEditEstoque(prev => ({ ...prev, [key]: val }));
-    setDirty(prev => new Set(prev).add(key));
+    setEditEstoque(prev => ({ ...prev, [k(loja, mes)]: val }));
   };
+
+  // Salva uma célula (autosave on blur)
+  const saveCell = useCallback(async (loja: string, mes: number, novoValor: { venda?: number; estoque?: number }) => {
+    if (!user) return;
+    const key = k(loja, mes);
+    const atual = dados[key] ?? { loja, mes, venda: 0, estoque: 0 };
+    const novo: ManualRow = {
+      ...atual,
+      loja, mes,
+      venda: novoValor.venda !== undefined ? novoValor.venda : atual.venda,
+      estoque: novoValor.estoque !== undefined ? novoValor.estoque : atual.estoque,
+    };
+    if (novo.venda === atual.venda && novo.estoque === atual.estoque) return;
+
+    setSavingKeys(prev => new Set(prev).add(key));
+    try {
+      if (novo.venda === 0 && novo.estoque === 0) {
+        if (atual.id) {
+          await supabase.from('estoques_manuais').delete().eq('id', atual.id);
+          setDados(prev => { const n = { ...prev }; delete n[key]; return n; });
+        }
+      } else {
+        const payload: any = {
+          ...(atual.id ? { id: atual.id } : {}),
+          user_id: user.id, loja, mes,
+          venda: novo.venda, estoque: novo.estoque,
+        };
+        const { data, error } = await supabase
+          .from('estoques_manuais')
+          .upsert(payload, { onConflict: 'user_id,loja,mes' })
+          .select('id').maybeSingle();
+        if (error) throw error;
+        setDados(prev => ({ ...prev, [key]: { ...novo, id: data?.id ?? atual.id } }));
+      }
+      setSavedKeys(prev => new Set(prev).add(key));
+      setTimeout(() => {
+        setSavedKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
+      }, 1500);
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + (err.message ?? 'desconhecido'));
+    } finally {
+      setSavingKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
+    }
+  }, [user, dados]);
 
   const handleVendaBlur = (loja: string, mes: number) => {
     const key = k(loja, mes);
     const raw = editVenda[key];
     if (raw === undefined) return;
     const num = parseBR(raw);
-    setDados(prev => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? { loja, mes, venda: 0, estoque: 0 }), loja, mes, venda: num },
-    }));
-    setEditVenda(prev => {
-      const n = { ...prev };
-      delete n[key];
-      return n;
-    });
+    setEditVenda(prev => { const n = { ...prev }; delete n[key]; return n; });
+    void saveCell(loja, mes, { venda: num });
   };
   const handleEstoqueBlur = (loja: string, mes: number) => {
     const key = k(loja, mes);
     const raw = editEstoque[key];
     if (raw === undefined) return;
     const num = parseBR(raw);
-    setDados(prev => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? { loja, mes, venda: 0, estoque: 0 }), loja, mes, estoque: num },
-    }));
-    setEditEstoque(prev => {
-      const n = { ...prev };
-      delete n[key];
-      return n;
-    });
+    setEditEstoque(prev => { const n = { ...prev }; delete n[key]; return n; });
+    void saveCell(loja, mes, { estoque: num });
   };
 
   // Cálculos por loja
