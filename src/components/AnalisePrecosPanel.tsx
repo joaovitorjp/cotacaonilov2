@@ -70,7 +70,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     doc.text('Comparativo de Preços', 14, 12);
     doc.setFontSize(9);
     doc.text(`Cotação: ${listaNome || 'Sem nome'}`, 14, 19);
-    doc.text(`Fornecedor: ${empresaSelecionada}`, 14, 24);
+    doc.text(`Fornecedor: ${empresaSelecionada}  ·  Estado: ${estadoLabel}`, 14, 24);
     const dataStr = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
     doc.text(dataStr, pageWidth - 14 - doc.getTextWidth(dataStr), 24);
 
@@ -88,7 +88,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       const getNum = (resp: RespostaEmpresa) => {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
         if (!item) return NaN;
-        return parsePreco(item.preco_mt ?? item.preco);
+        return parsePreco(getPriceField(item));
       };
       const selPrice = getNum(respostas.find(r => r.empresa === empresaSelecionada)!);
       if (isNaN(selPrice) || selPrice <= 0) return;
@@ -114,7 +114,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       const getNum = (resp: RespostaEmpresa) => {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
         if (!item) return NaN;
-        return parsePreco(item.preco_mt ?? item.preco);
+        return parsePreco(getPriceField(item));
       };
       const fmt = (v: number) => !isNaN(v) && v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '-';
 
@@ -236,7 +236,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     doc.setTextColor(80, 80, 80);
     doc.text('= Preço do concorrente menor que o seu (oportunidade de cobrir)', 20, finalY + 12.5);
 
-    doc.save(`comparativo_${empresaSelecionada.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`comparativo_${empresaSelecionada.replace(/\s+/g, '_')}_${estado.toUpperCase()}.pdf`);
     setShowComparativoDialog(false);
   };
 
