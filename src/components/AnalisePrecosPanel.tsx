@@ -45,8 +45,13 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
   const [showHistorico, setShowHistorico] = useState(false);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
   const [showComparativoDialog, setShowComparativoDialog] = useState(false);
+  const [estadoComparativo, setEstadoComparativo] = useState<'mt' | 'go'>('mt');
 
   const exportComparativoPDF = (empresaSelecionada: string) => {
+    const estado = estadoComparativo;
+    const estadoLabel = estado === 'mt' ? 'MT (Mato Grosso)' : 'GO (Goiás)';
+    const getPriceField = (item: any) =>
+      estado === 'mt' ? (item.preco_mt ?? item.preco) : (item.preco_go ?? item.preco);
     const doc = new jsPDF('landscape', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const outrasEmpresas = respostas.filter(r => r.empresa !== empresaSelecionada);
