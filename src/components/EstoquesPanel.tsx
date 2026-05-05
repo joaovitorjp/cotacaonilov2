@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { FileSpreadsheet, Loader2, Save, RotateCcw } from 'lucide-react';
+import { FileSpreadsheet, Loader2, Check } from 'lucide-react';
 
 interface EstoquesPanelProps {
   open: boolean;
@@ -68,7 +68,8 @@ const corDias = (d: number | null): string => {
 const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
   // Quais 3 meses serão exibidos como colunas (default: 3 últimos meses do ano corrente)
   const [mesesSel, setMesesSel] = useState<number[]>(() => {
     const now = new Date();
@@ -84,7 +85,6 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
   // Buffer de edição (texto cru por campo) para permitir digitar vírgula
   const [editVenda, setEditVenda] = useState<Record<string, string>>({});
   const [editEstoque, setEditEstoque] = useState<Record<string, string>>({});
-  const [dirty, setDirty] = useState<Set<string>>(new Set());
 
   const loadAll = useCallback(async () => {
     if (!user) return;
@@ -111,7 +111,6 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
     setDados(map);
     setEditVenda({});
     setEditEstoque({});
-    setDirty(new Set());
     setLoading(false);
   }, [user]);
 
@@ -131,45 +130,71 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
   };
 
   const handleVendaChange = (loja: string, mes: number, val: string) => {
-    const key = k(loja, mes);
-    setEditVenda(prev => ({ ...prev, [key]: val }));
-    setDirty(prev => new Set(prev).add(key));
+    setEditVenda(prev => ({ ...prev, [k(loja, mes)]: val }));
   };
   const handleEstoqueChange = (loja: string, mes: number, val: string) => {
-    const key = k(loja, mes);
-    setEditEstoque(prev => ({ ...prev, [key]: val }));
-    setDirty(prev => new Set(prev).add(key));
+    setEditEstoque(prev => ({ ...prev, [k(loja, mes)]: val }));
   };
+
+  // Salva uma célula (autosave on blur)
+  const saveCell = useCallback(async (loja: string, mes: number, novoValor: { venda?: number; estoque?: number }) => {
+    if (!user) return;
+    const key = k(loja, mes);
+    const atual = dados[key] ?? { loja, mes, venda: 0, estoque: 0 };
+    const novo: ManualRow = {
+      ...atual,
+      loja, mes,
+      venda: novoValor.venda !== undefined ? novoValor.venda : atual.venda,
+      estoque: novoValor.estoque !== undefined ? novoValor.estoque : atual.estoque,
+    };
+    if (novo.venda === atual.venda && novo.estoque === atual.estoque) return;
+
+    setSavingKeys(prev => new Set(prev).add(key));
+    try {
+      if (novo.venda === 0 && novo.estoque === 0) {
+        if (atual.id) {
+          await supabase.from('estoques_manuais').delete().eq('id', atual.id);
+          setDados(prev => { const n = { ...prev }; delete n[key]; return n; });
+        }
+      } else {
+        const payload: any = {
+          ...(atual.id ? { id: atual.id } : {}),
+          user_id: user.id, loja, mes,
+          venda: novo.venda, estoque: novo.estoque,
+        };
+        const { data, error } = await supabase
+          .from('estoques_manuais')
+          .upsert(payload, { onConflict: 'user_id,loja,mes' })
+          .select('id').maybeSingle();
+        if (error) throw error;
+        setDados(prev => ({ ...prev, [key]: { ...novo, id: data?.id ?? atual.id } }));
+      }
+      setSavedKeys(prev => new Set(prev).add(key));
+      setTimeout(() => {
+        setSavedKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
+      }, 1500);
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + (err.message ?? 'desconhecido'));
+    } finally {
+      setSavingKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
+    }
+  }, [user, dados]);
 
   const handleVendaBlur = (loja: string, mes: number) => {
     const key = k(loja, mes);
     const raw = editVenda[key];
     if (raw === undefined) return;
     const num = parseBR(raw);
-    setDados(prev => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? { loja, mes, venda: 0, estoque: 0 }), loja, mes, venda: num },
-    }));
-    setEditVenda(prev => {
-      const n = { ...prev };
-      delete n[key];
-      return n;
-    });
+    setEditVenda(prev => { const n = { ...prev }; delete n[key]; return n; });
+    void saveCell(loja, mes, { venda: num });
   };
   const handleEstoqueBlur = (loja: string, mes: number) => {
     const key = k(loja, mes);
     const raw = editEstoque[key];
     if (raw === undefined) return;
     const num = parseBR(raw);
-    setDados(prev => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? { loja, mes, venda: 0, estoque: 0 }), loja, mes, estoque: num },
-    }));
-    setEditEstoque(prev => {
-      const n = { ...prev };
-      delete n[key];
-      return n;
-    });
+    setEditEstoque(prev => { const n = { ...prev }; delete n[key]; return n; });
+    void saveCell(loja, mes, { estoque: num });
   };
 
   // Cálculos por loja
@@ -190,78 +215,6 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
     return { mediaVenda, estoqueAtual, dias };
   };
 
-  const handleSalvar = async () => {
-    if (!user) return;
-    setSaving(true);
-    try {
-      // Aplica buffer de edição pendente
-      const finalDados = { ...dados };
-      for (const key of Object.keys(editVenda)) {
-        const [loja, mesStr] = key.split('|');
-        const mes = Number(mesStr);
-        finalDados[key] = {
-          ...(finalDados[key] ?? { loja, mes, venda: 0, estoque: 0 }),
-          loja, mes,
-          venda: parseBR(editVenda[key]),
-        };
-      }
-      for (const key of Object.keys(editEstoque)) {
-        const [loja, mesStr] = key.split('|');
-        const mes = Number(mesStr);
-        finalDados[key] = {
-          ...(finalDados[key] ?? { loja, mes, venda: 0, estoque: 0 }),
-          loja, mes,
-          estoque: parseBR(editEstoque[key]),
-        };
-      }
-
-      // Apenas linhas modificadas (dirty) ou que tenham algum valor
-      const toUpsert: any[] = [];
-      const toDelete: string[] = [];
-      for (const key of dirty) {
-        const r = finalDados[key];
-        if (!r) continue;
-        if (r.venda === 0 && r.estoque === 0) {
-          if (r.id) toDelete.push(r.id);
-        } else {
-          toUpsert.push({
-            ...(r.id ? { id: r.id } : {}),
-            user_id: user.id,
-            loja: r.loja,
-            mes: r.mes,
-            venda: r.venda,
-            estoque: r.estoque,
-          });
-        }
-      }
-
-      if (toDelete.length > 0) {
-        const { error } = await supabase.from('estoques_manuais').delete().in('id', toDelete);
-        if (error) throw error;
-      }
-      if (toUpsert.length > 0) {
-        const { error } = await supabase
-          .from('estoques_manuais')
-          .upsert(toUpsert, { onConflict: 'user_id,loja,mes' });
-        if (error) throw error;
-      }
-
-      toast.success('Dados salvos.');
-      await loadAll();
-    } catch (err: any) {
-      toast.error('Erro ao salvar: ' + (err.message ?? 'desconhecido'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDescartar = () => {
-    setEditVenda({});
-    setEditEstoque({});
-    setDirty(new Set());
-    toast.info('Alterações descartadas.');
-  };
-
   const handleMesChange = (idx: number, novoMes: number) => {
     setMesesSel(prev => {
       const n = [...prev];
@@ -269,8 +222,6 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
       return n;
     });
   };
-
-  const temPendentes = dirty.size > 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -299,15 +250,9 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
               </select>
             ))}
             <div className="flex-1" />
-            {temPendentes && (
-              <Button variant="outline" size="sm" onClick={handleDescartar} disabled={saving} className="gap-1">
-                <RotateCcw className="w-3 h-3" /> Descartar
-              </Button>
-            )}
-            <Button onClick={handleSalvar} disabled={!temPendentes || saving} size="sm" className="gap-1">
-              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-              Salvar {temPendentes ? `(${dirty.size})` : ''}
-            </Button>
+            <span className="text-[11px] text-muted-foreground italic">
+              Salvamento automático ao sair do campo
+            </span>
           </div>
 
           {loading ? (
@@ -357,28 +302,34 @@ const EstoquesPanel: React.FC<EstoquesPanelProps> = ({ open, onOpenChange }) => 
                           </td>
                           {mesesSel.map((m, idx) => {
                             const key = k(loja, m);
-                            const isDirty = dirty.has(key);
+                            const isSaving = savingKeys.has(key);
+                            const isSaved = savedKeys.has(key);
+                            const cellCls = isSaving ? 'border-primary' : isSaved ? 'border-success' : '';
                             return (
                               <React.Fragment key={idx}>
-                                <td className="px-1 py-0.5 border-r border-border/50">
+                                <td className="px-1 py-0.5 border-r border-border/50 relative">
                                   <Input
                                     value={getVendaDisplay(loja, m)}
                                     onChange={e => handleVendaChange(loja, m, e.target.value)}
                                     onBlur={() => handleVendaBlur(loja, m)}
                                     placeholder="0"
-                                    className={`h-7 text-right tabular-nums text-xs px-1.5 ${isDirty ? 'border-primary' : ''}`}
+                                    className={`h-7 text-right tabular-nums text-xs px-1.5 ${cellCls}`}
                                     inputMode="decimal"
                                   />
+                                  {isSaving && <Loader2 className="w-3 h-3 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-primary" />}
+                                  {isSaved && !isSaving && <Check className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-success" />}
                                 </td>
-                                <td className="px-1 py-0.5 border-r border-border">
+                                <td className="px-1 py-0.5 border-r border-border relative">
                                   <Input
                                     value={getEstoqueDisplay(loja, m)}
                                     onChange={e => handleEstoqueChange(loja, m, e.target.value)}
                                     onBlur={() => handleEstoqueBlur(loja, m)}
                                     placeholder="0"
-                                    className={`h-7 text-right tabular-nums text-xs px-1.5 ${isDirty ? 'border-primary' : ''}`}
+                                    className={`h-7 text-right tabular-nums text-xs px-1.5 ${cellCls}`}
                                     inputMode="decimal"
                                   />
+                                  {isSaving && <Loader2 className="w-3 h-3 animate-spin absolute right-2 top-1/2 -translate-y-1/2 text-primary" />}
+                                  {isSaved && !isSaving && <Check className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-success" />}
                                 </td>
                               </React.Fragment>
                             );

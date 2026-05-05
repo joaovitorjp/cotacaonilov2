@@ -45,8 +45,13 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
   const [showHistorico, setShowHistorico] = useState(false);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
   const [showComparativoDialog, setShowComparativoDialog] = useState(false);
+  const [estadoComparativo, setEstadoComparativo] = useState<'mt' | 'go'>('mt');
 
   const exportComparativoPDF = (empresaSelecionada: string) => {
+    const estado = estadoComparativo;
+    const estadoLabel = estado === 'mt' ? 'MT (Mato Grosso)' : 'GO (Goiás)';
+    const getPriceField = (item: any) =>
+      estado === 'mt' ? (item.preco_mt ?? item.preco) : (item.preco_go ?? item.preco);
     const doc = new jsPDF('landscape', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const outrasEmpresas = respostas.filter(r => r.empresa !== empresaSelecionada);
@@ -65,7 +70,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     doc.text('Comparativo de Preços', 14, 12);
     doc.setFontSize(9);
     doc.text(`Cotação: ${listaNome || 'Sem nome'}`, 14, 19);
-    doc.text(`Fornecedor: ${empresaSelecionada}`, 14, 24);
+    doc.text(`Fornecedor: ${empresaSelecionada}  ·  Estado: ${estadoLabel}`, 14, 24);
     const dataStr = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
     doc.text(dataStr, pageWidth - 14 - doc.getTextWidth(dataStr), 24);
 
@@ -83,7 +88,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       const getNum = (resp: RespostaEmpresa) => {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
         if (!item) return NaN;
-        return parsePreco(item.preco_mt ?? item.preco);
+        return parsePreco(getPriceField(item));
       };
       const selPrice = getNum(respostas.find(r => r.empresa === empresaSelecionada)!);
       if (isNaN(selPrice) || selPrice <= 0) return;
@@ -109,7 +114,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       const getNum = (resp: RespostaEmpresa) => {
         const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
         if (!item) return NaN;
-        return parsePreco(item.preco_mt ?? item.preco);
+        return parsePreco(getPriceField(item));
       };
       const fmt = (v: number) => !isNaN(v) && v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '-';
 
@@ -231,7 +236,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     doc.setTextColor(80, 80, 80);
     doc.text('= Preço do concorrente menor que o seu (oportunidade de cobrir)', 20, finalY + 12.5);
 
-    doc.save(`comparativo_${empresaSelecionada.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`comparativo_${empresaSelecionada.replace(/\s+/g, '_')}_${estado.toUpperCase()}.pdf`);
     setShowComparativoDialog(false);
   };
 
@@ -491,20 +496,52 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
           <DialogHeader>
             <DialogTitle className="font-display">Gerar Comparativo de Preços</DialogTitle>
             <DialogDescription>
-              Selecione o fornecedor para quem deseja gerar o PDF comparativo. Os nomes dos concorrentes serão anonimizados.
+              Escolha o estado considerado e o fornecedor. Os nomes dos concorrentes serão anonimizados.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 max-h-[300px] overflow-auto">
-            {respostas.map(r => (
-              <Button
-                key={r.empresa}
-                variant="outline"
-                className="w-full justify-start font-display"
-                onClick={() => exportComparativoPDF(r.empresa)}
-              >
-                {r.empresa}
-              </Button>
-            ))}
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground mb-1.5 block">
+                Estado considerado
+              </label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={estadoComparativo === 'mt' ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex-1 font-display"
+                  onClick={() => setEstadoComparativo('mt')}
+                >
+                  MT (Mato Grosso)
+                </Button>
+                <Button
+                  type="button"
+                  variant={estadoComparativo === 'go' ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex-1 font-display"
+                  onClick={() => setEstadoComparativo('go')}
+                >
+                  GO (Goiás)
+                </Button>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground mb-1.5 block">
+                Fornecedor
+              </label>
+              <div className="space-y-2 max-h-[300px] overflow-auto">
+                {respostas.map(r => (
+                  <Button
+                    key={r.empresa}
+                    variant="outline"
+                    className="w-full justify-start font-display"
+                    onClick={() => exportComparativoPDF(r.empresa)}
+                  >
+                    {r.empresa}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
