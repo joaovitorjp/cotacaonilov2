@@ -496,20 +496,52 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
           <DialogHeader>
             <DialogTitle className="font-display">Gerar Comparativo de Preços</DialogTitle>
             <DialogDescription>
-              Selecione o fornecedor para quem deseja gerar o PDF comparativo. Os nomes dos concorrentes serão anonimizados.
+              Escolha o estado considerado e o fornecedor. Os nomes dos concorrentes serão anonimizados.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 max-h-[300px] overflow-auto">
-            {respostas.map(r => (
-              <Button
-                key={r.empresa}
-                variant="outline"
-                className="w-full justify-start font-display"
-                onClick={() => exportComparativoPDF(r.empresa)}
-              >
-                {r.empresa}
-              </Button>
-            ))}
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground mb-1.5 block">
+                Estado considerado
+              </label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={estadoComparativo === 'mt' ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex-1 font-display"
+                  onClick={() => setEstadoComparativo('mt')}
+                >
+                  MT (Mato Grosso)
+                </Button>
+                <Button
+                  type="button"
+                  variant={estadoComparativo === 'go' ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex-1 font-display"
+                  onClick={() => setEstadoComparativo('go')}
+                >
+                  GO (Goiás)
+                </Button>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground mb-1.5 block">
+                Fornecedor
+              </label>
+              <div className="space-y-2 max-h-[300px] overflow-auto">
+                {respostas.map(r => (
+                  <Button
+                    key={r.empresa}
+                    variant="outline"
+                    className="w-full justify-start font-display"
+                    onClick={() => exportComparativoPDF(r.empresa)}
+                  >
+                    {r.empresa}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
