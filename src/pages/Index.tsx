@@ -274,9 +274,11 @@ const Index = () => {
   };
 
   const handleDashboardNavigate = (view: 'importar' | 'carregar' | 'finalizadas') => {
-    if (view === 'importar') setImportOpen(true);
-    else if (view === 'carregar') setCarregarOpen(true);
-    else if (view === 'finalizadas') setFinalizadasOpen(true);
+    requireAccess(() => {
+      if (view === 'importar') setImportOpen(true);
+      else if (view === 'carregar') setCarregarOpen(true);
+      else if (view === 'finalizadas') setFinalizadasOpen(true);
+    });
   };
 
   // Check if deadline passed
@@ -284,12 +286,12 @@ const Index = () => {
 
   const navItems = [
     { label: 'Início', icon: Home, action: handleBackToDashboard },
-    { label: 'Importar', icon: Upload, action: () => { setImportOpen(true); setMobileMenuOpen(false); } },
-    { label: 'Abertas', icon: FolderOpen, action: () => { setCarregarOpen(true); setMobileMenuOpen(false); } },
-    { label: 'Gerar Link', icon: Link2, action: () => { setGerarLinkOpen(true); setMobileMenuOpen(false); }, disabled: !currentLista || isFinalized },
-    { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
-    { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
-    { label: 'Estoques', icon: Boxes, action: () => { setEstoquesOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Importar', icon: Upload, action: () => requireAccess(() => { setImportOpen(true); setMobileMenuOpen(false); }) },
+    { label: 'Abertas', icon: FolderOpen, action: () => requireAccess(() => { setCarregarOpen(true); setMobileMenuOpen(false); }) },
+    { label: 'Gerar Link', icon: Link2, action: () => requireAccess(() => { setGerarLinkOpen(true); setMobileMenuOpen(false); }), disabled: !currentLista || isFinalized },
+    { label: 'Finalizadas', icon: CheckSquare, action: () => requireAccess(() => { setFinalizadasOpen(true); setMobileMenuOpen(false); }) },
+    { label: 'Fornecedores', icon: Users, action: () => requireAccess(() => { setFornecedoresOpen(true); setMobileMenuOpen(false); }) },
+    { label: 'Estoques', icon: Boxes, action: () => requireAccess(() => { setEstoquesOpen(true); setMobileMenuOpen(false); }) },
   ];
 
   return (
@@ -546,6 +548,15 @@ const Index = () => {
       <EstoquesPanel open={estoquesOpen} onOpenChange={setEstoquesOpen} />
       {currentLista && (
         <GerarLinkPanel open={gerarLinkOpen} onOpenChange={setGerarLinkOpen} listaId={currentLista.id} />
+      )}
+      <PaywallDialog open={paywallOpen} onOpenChange={setPaywallOpen} />
+      {!hasAccess && status !== 'loading' && (
+        <button
+          onClick={() => setPaywallOpen(true)}
+          className="fixed bottom-4 right-4 z-50 bg-primary text-primary-foreground shadow-lg rounded-full px-4 py-2 text-sm font-display font-bold flex items-center gap-2 hover:opacity-90"
+        >
+          <Lock className="h-4 w-4" /> Liberar acesso · R$ 69,90
+        </button>
       )}
     </div>
   );
