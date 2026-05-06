@@ -16,7 +16,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, Boxes } from 'lucide-react';
+import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, Boxes, Lock } from 'lucide-react';
+import PaywallDialog from '@/components/PaywallDialog';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface Lista {
   id: string;
@@ -34,6 +36,16 @@ interface RespostaEmpresa {
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { hasAccess, status } = useSubscription();
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const requireAccess = useCallback((fn: () => void) => {
+    if (hasAccess) fn(); else setPaywallOpen(true);
+  }, [hasAccess]);
+  // Auto-abrir paywall em retorno de pagamento
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('pay');
+    if (p && !hasAccess) setPaywallOpen(true);
+  }, [hasAccess]);
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
