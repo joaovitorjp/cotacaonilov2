@@ -24,7 +24,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   const loadStats = async () => {
     const [listasRes, respostasRes] = await Promise.all([
-      supabase.from('listas').select('id, nome, status, created_at, produtos').order('created_at', { ascending: false }).limit(5),
+      supabase.from('listas').select('id, nome, status, created_at, produtos').order('created_at', { ascending: false }),
       supabase.from('respostas').select('id', { count: 'exact', head: true }),
     ]);
 
