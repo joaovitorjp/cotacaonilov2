@@ -39,7 +39,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       totalProdutos: listas.reduce((sum, l) => sum + (Array.isArray(l.produtos) ? l.produtos.length : 0), 0),
       totalRespostas: respostasRes.count ?? 0,
     });
-    setRecentes(listas.slice(0, 5));
+    setRecentes(listas);
     setLoading(false);
   };
 
