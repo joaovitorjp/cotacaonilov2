@@ -536,6 +536,7 @@ const Index = () => {
       {currentLista && (
         <GerarLinkPanel open={gerarLinkOpen} onOpenChange={setGerarLinkOpen} listaId={currentLista.id} />
       )}
+      <FloatingChat />
     </div>
   );
 };
