@@ -9,6 +9,7 @@ import FornecedoresPanel from '@/components/FornecedoresPanel';
 import EstoquesPanel from '@/components/EstoquesPanel';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import Dashboard from '@/components/Dashboard';
+import FloatingChat from '@/components/FloatingChat';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/contexts/AuthContext';
