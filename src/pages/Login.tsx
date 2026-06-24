@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
+import { buildExternalGoogleOAuthUrl, isLovableHosted } from '@/lib/oauth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +16,15 @@ const Login = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const oauthError = searchParams.get('oauth_error');
+    if (!oauthError) return;
+
+    toast.error(decodeURIComponent(oauthError));
+    navigate('/login', { replace: true });
+  }, [navigate, searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +142,11 @@ const Login = () => {
           onClick={async () => {
             setGoogleLoading(true);
             try {
+              if (!isLovableHosted()) {
+                window.location.assign(buildExternalGoogleOAuthUrl());
+                return;
+              }
+
               const result = await lovable.auth.signInWithOAuth('google', {
                 redirect_uri: window.location.origin,
               });

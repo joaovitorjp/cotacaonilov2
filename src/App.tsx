@@ -8,6 +8,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import CotacaoResposta from "./pages/CotacaoResposta.tsx";
+import OAuthCallback from "./pages/OAuthCallback.tsx";
+import OAuthInitiate from "./pages/OAuthInitiate.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -21,6 +23,8 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/~oauth/initiate" element={<OAuthInitiate />} />
+            <Route path="/auth/callback" element={<OAuthCallback />} />
             <Route path="/cotacao/:token" element={<CotacaoResposta />} />
             <Route
               path="/"
