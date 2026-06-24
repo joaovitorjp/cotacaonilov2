@@ -39,7 +39,7 @@ const Index = () => {
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
   const [gerarLinkOpen, setGerarLinkOpen] = useState(false);
   const [fornecedoresOpen, setFornecedoresOpen] = useState(false);
-  const [estoquesOpen, setEstoquesOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
