@@ -277,7 +277,7 @@ const Index = () => {
     { label: 'Gerar Link', icon: Link2, action: () => { setGerarLinkOpen(true); setMobileMenuOpen(false); }, disabled: !currentLista || isFinalized },
     { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
     { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
-    { label: 'Estoques', icon: Boxes, action: () => { setEstoquesOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Chat IA', icon: MessageCircle, action: () => { setChatOpen(true); setMobileMenuOpen(false); } },
   ];
 
   return (
