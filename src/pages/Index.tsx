@@ -531,11 +531,11 @@ const Index = () => {
         onDownloadResultados={handleDownloadResultados}
       />
       <FornecedoresPanel open={fornecedoresOpen} onOpenChange={setFornecedoresOpen} />
-      <EstoquesPanel open={estoquesOpen} onOpenChange={setEstoquesOpen} />
       {currentLista && (
         <GerarLinkPanel open={gerarLinkOpen} onOpenChange={setGerarLinkOpen} listaId={currentLista.id} />
       )}
-      <FloatingChat />
+      <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
+
     </div>
   );
 };
