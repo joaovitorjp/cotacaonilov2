@@ -5,8 +5,8 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA fallback: serve index.html for any route so React Router handles it.
-# Fixes "Page not found" on /login, refresh and deep links.
+# SPA fallback: serve index.html for any route so React Router handles it,
+# including /login, /cotacao/:token and the OAuth bridge routes.
 [[redirects]]
   from = "/*"
   to = "/index.html"
