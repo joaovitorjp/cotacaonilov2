@@ -11,9 +11,20 @@ interface ChatMsg {
   content: string;
 }
 
-const FloatingChat: React.FC = () => {
+interface FloatingChatProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideBubble?: boolean;
+}
+
+const FloatingChat: React.FC<FloatingChatProps> = ({ open: openProp, onOpenChange, hideBubble }) => {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    else setOpenState(v);
+  };
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -135,7 +146,7 @@ const FloatingChat: React.FC = () => {
 
   return (
     <>
-      {!open && (
+      {!open && !hideBubble && (
         <button
           onClick={() => setOpen(true)}
           className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 transition-transform flex items-center justify-center"

@@ -6,7 +6,6 @@ import ImportListaPanel from '@/components/ImportListaPanel';
 import CarregarListaPanel from '@/components/CarregarListaPanel';
 import GerarLinkPanel from '@/components/GerarLinkPanel';
 import FornecedoresPanel from '@/components/FornecedoresPanel';
-import EstoquesPanel from '@/components/EstoquesPanel';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import Dashboard from '@/components/Dashboard';
 import FloatingChat from '@/components/FloatingChat';
@@ -17,7 +16,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, Boxes } from 'lucide-react';
+import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle } from 'lucide-react';
 
 interface Lista {
   id: string;
@@ -40,7 +39,7 @@ const Index = () => {
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
   const [gerarLinkOpen, setGerarLinkOpen] = useState(false);
   const [fornecedoresOpen, setFornecedoresOpen] = useState(false);
-  const [estoquesOpen, setEstoquesOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
@@ -278,7 +277,7 @@ const Index = () => {
     { label: 'Gerar Link', icon: Link2, action: () => { setGerarLinkOpen(true); setMobileMenuOpen(false); }, disabled: !currentLista || isFinalized },
     { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
     { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
-    { label: 'Estoques', icon: Boxes, action: () => { setEstoquesOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Chat IA', icon: MessageCircle, action: () => { setChatOpen(true); setMobileMenuOpen(false); } },
   ];
 
   return (
@@ -532,11 +531,11 @@ const Index = () => {
         onDownloadResultados={handleDownloadResultados}
       />
       <FornecedoresPanel open={fornecedoresOpen} onOpenChange={setFornecedoresOpen} />
-      <EstoquesPanel open={estoquesOpen} onOpenChange={setEstoquesOpen} />
       {currentLista && (
         <GerarLinkPanel open={gerarLinkOpen} onOpenChange={setGerarLinkOpen} listaId={currentLista.id} />
       )}
-      <FloatingChat />
+      <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
+
     </div>
   );
 };
