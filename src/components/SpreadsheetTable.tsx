@@ -898,19 +898,25 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   // Add supplier column state
   const [showAddEmpresa, setShowAddEmpresa] = useState(false);
   const [newEmpresaName, setNewEmpresaName] = useState('');
+  const [addEmpresaStep, setAddEmpresaStep] = useState<'name' | 'state'>('name');
   const addEmpresaInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (showAddEmpresa) setTimeout(() => addEmpresaInputRef.current?.focus(), 50); }, [showAddEmpresa]);
+  useEffect(() => {
+    if (showAddEmpresa) {
+      setAddEmpresaStep('name');
+      setTimeout(() => addEmpresaInputRef.current?.focus(), 50);
+    }
+  }, [showAddEmpresa]);
 
-  const handleAddEmpresa = async () => {
+  const handleAddEmpresa = async (states: ('MT' | 'GO')[]) => {
     const name = newEmpresaName.trim();
-    if (!name || !onAddEmpresa) return;
+    if (!name || !onAddEmpresa || states.length === 0) return;
     if (empresas.includes(name)) {
       setShowAddEmpresa(false);
       setNewEmpresaName('');
       return;
     }
-    await onAddEmpresa(name);
+    await onAddEmpresa(name, states);
     setShowAddEmpresa(false);
     setNewEmpresaName('');
   };
