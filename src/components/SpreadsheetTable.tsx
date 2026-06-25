@@ -1521,22 +1521,55 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         {/* Add Empresa Dialog */}
         {showAddEmpresa && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]" onClick={() => setShowAddEmpresa(false)}>
-            <div className="bg-popover border border-border rounded-lg shadow-xl p-4 w-72" onClick={e => e.stopPropagation()}>
+            <div className="bg-popover border border-border rounded-lg shadow-xl p-4 w-80" onClick={e => e.stopPropagation()}>
               <h3 className="text-sm font-bold text-foreground mb-1">Adicionar Fornecedor</h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Digite o nome do fornecedor para criar uma nova coluna na planilha.
-              </p>
-              <div className="flex items-center gap-2">
-                <input ref={addEmpresaInputRef} type="text"
-                  className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={newEmpresaName} onChange={e => setNewEmpresaName(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleAddEmpresa(); if (e.key === 'Escape') setShowAddEmpresa(false); }}
-                  placeholder="Nome do fornecedor" />
-                <button onClick={handleAddEmpresa} disabled={!newEmpresaName.trim()}
-                  className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50">
-                  Adicionar
-                </button>
-              </div>
+              {addEmpresaStep === 'name' ? (
+                <>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Digite o nome do fornecedor para criar uma nova coluna na planilha.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input ref={addEmpresaInputRef} type="text"
+                      className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      value={newEmpresaName} onChange={e => setNewEmpresaName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && newEmpresaName.trim()) setAddEmpresaStep('state');
+                        if (e.key === 'Escape') setShowAddEmpresa(false);
+                      }}
+                      placeholder="Nome do fornecedor" />
+                    <button onClick={() => setAddEmpresaStep('state')} disabled={!newEmpresaName.trim()}
+                      className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50">
+                      Próximo
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Em qual estado deseja adicionar a coluna para <span className="font-bold text-foreground">{newEmpresaName.trim()}</span>?
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <button onClick={() => handleAddEmpresa(['MT'])}
+                      className="h-10 rounded-md border border-input bg-background hover:bg-accent text-sm font-bold transition-colors">
+                      MT
+                    </button>
+                    <button onClick={() => handleAddEmpresa(['GO'])}
+                      className="h-10 rounded-md border border-input bg-background hover:bg-accent text-sm font-bold transition-colors">
+                      GO
+                    </button>
+                    <button onClick={() => handleAddEmpresa(['MT', 'GO'])}
+                      className="h-10 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold transition-colors">
+                      Ambos
+                    </button>
+                  </div>
+                  <div className="flex justify-end">
+                    <button onClick={() => setAddEmpresaStep('name')}
+                      className="h-8 px-3 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      ← Voltar
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
