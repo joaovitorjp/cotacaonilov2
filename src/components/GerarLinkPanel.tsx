@@ -71,6 +71,10 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [existingLinks, setExistingLinks] = useState<ExistingLink[]>([]);
   const [selectedEstado, setSelectedEstado] = useState<EstadoOption>('AMBOS');
+  const [listaNome, setListaNome] = useState<string>('');
+  const [linkToDelete, setLinkToDelete] = useState<ExistingLink | null>(null);
+
+
 
   useEffect(() => {
     if (open) {
