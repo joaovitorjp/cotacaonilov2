@@ -184,24 +184,38 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     toast.success('Todos os links copiados!');
   };
 
+  const buildWhatsAppMessage = (link: string) => {
+    const cotacaoLabel = listaNome ? `"${listaNome}"` : '';
+    return encodeURIComponent(
+      `Olá! Segue o link para responder a cotação ${cotacaoLabel}:\n${link}`.replace('  ', ' ')
+    );
+  };
+
   const handleShareWhatsApp = (empresa: string, token: string, whatsapp?: string) => {
     const phone = whatsapp ? whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
     const link = `${getPublicBaseUrl()}/cotacao/${token}`;
-    const message = encodeURIComponent(
-      `Olá! Segue o link para responder a cotação:\n${link}`
-    );
-    window.open(`https://wa.me/${fullPhone}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(link)}`, '_blank');
   };
 
   const handleShareWhatsAppGenerated = (item: GeneratedLink) => {
     const phone = item.whatsapp ? item.whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
-    const message = encodeURIComponent(
-      `Olá! Segue o link para responder a cotação:\n${item.link}`
-    );
-    window.open(`https://wa.me/${fullPhone}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(item.link)}`, '_blank');
   };
+
+  const handleDeleteLink = async () => {
+    if (!linkToDelete) return;
+    const { error } = await supabase.from('links_cotacao').delete().eq('id', linkToDelete.id);
+    if (error) {
+      toast.error('Erro ao excluir link.');
+    } else {
+      toast.success('Link excluído.');
+      setExistingLinks(prev => prev.filter(l => l.id !== linkToDelete.id));
+    }
+    setLinkToDelete(null);
+  };
+
 
   const handleClose = (open: boolean) => {
     if (!open) {
