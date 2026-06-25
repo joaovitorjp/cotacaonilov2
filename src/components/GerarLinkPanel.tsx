@@ -81,9 +81,13 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       supabase.from('fornecedores').select('*').order('nome').then(({ data }) => {
         setFornecedores((data ?? []) as Fornecedor[]);
       });
+      supabase.from('listas').select('nome').eq('id', listaId).maybeSingle().then(({ data }) => {
+        setListaNome((data as any)?.nome ?? '');
+      });
       loadExistingLinks();
     }
   }, [open]);
+
 
   const loadExistingLinks = async () => {
     const { data: links } = await supabase
