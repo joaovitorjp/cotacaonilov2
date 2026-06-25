@@ -5,7 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin } from 'lucide-react';
+import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Fornecedor {
   id: string;
@@ -61,15 +71,23 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [existingLinks, setExistingLinks] = useState<ExistingLink[]>([]);
   const [selectedEstado, setSelectedEstado] = useState<EstadoOption>('AMBOS');
+  const [listaNome, setListaNome] = useState<string>('');
+  const [linkToDelete, setLinkToDelete] = useState<ExistingLink | null>(null);
+
+
 
   useEffect(() => {
     if (open) {
       supabase.from('fornecedores').select('*').order('nome').then(({ data }) => {
         setFornecedores((data ?? []) as Fornecedor[]);
       });
+      supabase.from('listas').select('nome').eq('id', listaId).maybeSingle().then(({ data }) => {
+        setListaNome((data as any)?.nome ?? '');
+      });
       loadExistingLinks();
     }
   }, [open]);
+
 
   const loadExistingLinks = async () => {
     const { data: links } = await supabase
@@ -166,24 +184,38 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     toast.success('Todos os links copiados!');
   };
 
+  const buildWhatsAppMessage = (link: string) => {
+    const cotacaoLabel = listaNome ? `"${listaNome}"` : '';
+    return encodeURIComponent(
+      `Olá! Segue o link para responder a cotação ${cotacaoLabel}:\n${link}`.replace('  ', ' ')
+    );
+  };
+
   const handleShareWhatsApp = (empresa: string, token: string, whatsapp?: string) => {
     const phone = whatsapp ? whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
     const link = `${getPublicBaseUrl()}/cotacao/${token}`;
-    const message = encodeURIComponent(
-      `Olá! Segue o link para responder a cotação:\n${link}`
-    );
-    window.open(`https://wa.me/${fullPhone}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(link)}`, '_blank');
   };
 
   const handleShareWhatsAppGenerated = (item: GeneratedLink) => {
     const phone = item.whatsapp ? item.whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
-    const message = encodeURIComponent(
-      `Olá! Segue o link para responder a cotação:\n${item.link}`
-    );
-    window.open(`https://wa.me/${fullPhone}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(item.link)}`, '_blank');
   };
+
+  const handleDeleteLink = async () => {
+    if (!linkToDelete) return;
+    const { error } = await supabase.from('links_cotacao').delete().eq('id', linkToDelete.id);
+    if (error) {
+      toast.error('Erro ao excluir link.');
+    } else {
+      toast.success('Link excluído.');
+      setExistingLinks(prev => prev.filter(l => l.id !== linkToDelete.id));
+    }
+    setLinkToDelete(null);
+  };
+
 
   const handleClose = (open: boolean) => {
     if (!open) {
@@ -383,6 +415,13 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </button>
+                      <button
+                        onClick={() => setLinkToDelete(link)}
+                        className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Excluir link"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -400,12 +439,19 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                 {respondedExisting.map(link => (
                   <div key={link.id} className="border border-success/20 bg-success/5 rounded-lg px-3 py-2 flex items-center gap-2">
                     <Check className="w-4 h-4 text-success shrink-0" />
-                    <p className="font-display font-bold text-foreground text-sm truncate">{link.empresa}</p>
+                    <p className="font-display font-bold text-foreground text-sm truncate flex-1">{link.empresa}</p>
                     {link.estados && link.estados !== 'AMBOS' && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-bold shrink-0">
                         {link.estados}
                       </span>
                     )}
+                    <button
+                      onClick={() => setLinkToDelete(link)}
+                      className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                      title="Excluir link"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -413,6 +459,25 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
           )}
         </div>
       </SheetContent>
+
+      <AlertDialog open={!!linkToDelete} onOpenChange={(o) => !o && setLinkToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir link de {linkToDelete?.empresa}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {linkToDelete?.respondido
+                ? 'Este fornecedor já respondeu. Excluir o link também removerá a resposta vinculada. Esta ação não pode ser desfeita.'
+                : 'O link ficará inválido e o fornecedor não conseguirá mais acessá-lo. Esta ação não pode ser desfeita.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteLink} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 };
