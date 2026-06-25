@@ -439,15 +439,16 @@ const Index = () => {
             }
           } : undefined}
           onAfterSave={currentLista ? () => loadRespostas(currentLista.id) : undefined}
-          onAddEmpresa={currentLista ? async (empresa: string) => {
+          onAddEmpresa={currentLista ? async (empresa: string, states: ('MT' | 'GO')[]) => {
+            const marker = [{ __manual_states: states }] as any;
             const { error } = await supabase
               .from('respostas')
-              .insert({ lista_id: currentLista.id, empresa, resposta: [] as any, user_id: user?.id });
+              .insert({ lista_id: currentLista.id, empresa, resposta: marker, user_id: user?.id });
             if (error) {
               toast.error('Erro ao adicionar fornecedor.');
             } else {
               await loadRespostas(currentLista.id);
-              toast.success(`Coluna "${empresa}" adicionada!`);
+              toast.success(`Coluna "${empresa}" adicionada em ${states.join(' e ')}!`);
             }
           } : undefined}
         />
