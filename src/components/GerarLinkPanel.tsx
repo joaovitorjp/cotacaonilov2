@@ -5,7 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin } from 'lucide-react';
+import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Fornecedor {
   id: string;
