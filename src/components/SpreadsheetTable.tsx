@@ -85,7 +85,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const empresaHasData = useCallback((empresa: string, state: 'MT' | 'GO'): boolean => {
     const resp = respostas.find(r => r.empresa === empresa);
     if (!resp) return false;
-    return resp.resposta.some(item => {
+    return resp.resposta.some((item: any) => {
+      if (Array.isArray(item?.__manual_states) && item.__manual_states.includes(state)) return true;
       if (state === 'MT') {
         return (item.preco_mt !== undefined && item.preco_mt !== '' && item.preco_mt !== 0) ||
                (item.preco !== undefined && item.preco !== '' && item.preco !== 0 && item.preco_go === undefined);
