@@ -439,12 +439,19 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                 {respondedExisting.map(link => (
                   <div key={link.id} className="border border-success/20 bg-success/5 rounded-lg px-3 py-2 flex items-center gap-2">
                     <Check className="w-4 h-4 text-success shrink-0" />
-                    <p className="font-display font-bold text-foreground text-sm truncate">{link.empresa}</p>
+                    <p className="font-display font-bold text-foreground text-sm truncate flex-1">{link.empresa}</p>
                     {link.estados && link.estados !== 'AMBOS' && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-bold shrink-0">
                         {link.estados}
                       </span>
                     )}
+                    <button
+                      onClick={() => setLinkToDelete(link)}
+                      className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                      title="Excluir link"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -452,6 +459,25 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
           )}
         </div>
       </SheetContent>
+
+      <AlertDialog open={!!linkToDelete} onOpenChange={(o) => !o && setLinkToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir link de {linkToDelete?.empresa}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {linkToDelete?.respondido
+                ? 'Este fornecedor já respondeu. Excluir o link também removerá a resposta vinculada. Esta ação não pode ser desfeita.'
+                : 'O link ficará inválido e o fornecedor não conseguirá mais acessá-lo. Esta ação não pode ser desfeita.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteLink} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 };
