@@ -415,6 +415,13 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </button>
+                      <button
+                        onClick={() => setLinkToDelete(link)}
+                        className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Excluir link"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 ))}
