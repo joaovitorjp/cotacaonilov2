@@ -10,6 +10,8 @@ import Login from "./pages/Login.tsx";
 import CotacaoResposta from "./pages/CotacaoResposta.tsx";
 import OAuthCallback from "./pages/OAuthCallback.tsx";
 import OAuthInitiate from "./pages/OAuthInitiate.tsx";
+import Perfil from "./pages/Perfil.tsx";
+import AdminPanel from "./pages/AdminPanel.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Index />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/perfil"
+              element={
+                <ProtectedRoute>
+                  <Perfil />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPanel />
                 </ProtectedRoute>
               }
             />
