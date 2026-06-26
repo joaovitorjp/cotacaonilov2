@@ -543,6 +543,7 @@ const Index = () => {
       <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
 
     </div>
+    </ProfileGate>
   );
 };
 
