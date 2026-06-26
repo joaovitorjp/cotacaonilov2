@@ -281,9 +281,11 @@ const Index = () => {
     { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
     { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
     { label: 'Chat IA', icon: MessageCircle, action: () => { setChatOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Perfil', icon: UserIcon, action: () => { navigate('/perfil'); setMobileMenuOpen(false); } },
   ];
 
   return (
+    <ProfileGate>
     <div className="flex flex-col h-screen">
       {/* Header */}
       <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
