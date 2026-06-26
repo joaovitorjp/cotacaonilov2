@@ -12,11 +12,13 @@ import FloatingChat from '@/components/FloatingChat';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import ProfileGate from '@/components/ProfileGate';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle } from 'lucide-react';
+import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon } from 'lucide-react';
 
 interface Lista {
   id: string;
@@ -34,6 +36,7 @@ interface RespostaEmpresa {
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
@@ -278,9 +281,11 @@ const Index = () => {
     { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
     { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
     { label: 'Chat IA', icon: MessageCircle, action: () => { setChatOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Perfil', icon: UserIcon, action: () => { navigate('/perfil'); setMobileMenuOpen(false); } },
   ];
 
   return (
+    <ProfileGate>
     <div className="flex flex-col h-screen">
       {/* Header */}
       <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
@@ -538,6 +543,7 @@ const Index = () => {
       <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
 
     </div>
+    </ProfileGate>
   );
 };
 
