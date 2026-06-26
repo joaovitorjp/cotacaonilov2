@@ -6,53 +6,54 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
+    --background: 210 40% 99%;
+    --foreground: 215 35% 15%;
 
-    --card: 0 0% 95%;
-    --card-foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 35% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 215 35% 15%;
 
-    --primary: 216 100% 34%;
+    --primary: 210 95% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 10%;
+    --secondary: 205 70% 95%;
+    --secondary-foreground: 215 50% 25%;
 
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 20% 50%;
 
-    --accent: 0 0% 95%;
-    --accent-foreground: 0 0% 10%;
+    --accent: 200 90% 92%;
+    --accent-foreground: 215 50% 25%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 140 63% 30%;
+    --success: 160 70% 40%;
     --success-foreground: 0 0% 100%;
 
-    --disabled: 0 0% 74%;
+    --disabled: 210 20% 80%;
 
-    --border: 0 0% 85%;
-    --input: 0 0% 85%;
-    --ring: 216 100% 34%;
+    --border: 210 30% 90%;
+    --input: 210 30% 90%;
+    --ring: 210 95% 55%;
 
-    --radius: 0.25rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 210 50% 98%;
+    --sidebar-foreground: 215 35% 25%;
+    --sidebar-primary: 210 95% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 205 70% 94%;
+    --sidebar-accent-foreground: 215 50% 25%;
+    --sidebar-border: 210 30% 90%;
+    --sidebar-ring: 210 95% 55%;
 
     --font-display: 'Roboto Condensed', sans-serif;
     --font-body: 'Roboto Flex', sans-serif;
   }
+
 }
 
 @layer base {
