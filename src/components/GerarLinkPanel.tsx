@@ -72,6 +72,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [existingLinks, setExistingLinks] = useState<ExistingLink[]>([]);
   const [selectedEstado, setSelectedEstado] = useState<EstadoOption>('AMBOS');
   const [listaNome, setListaNome] = useState<string>('');
+  const [userNome, setUserNome] = useState<string>('');
   const [linkToDelete, setLinkToDelete] = useState<ExistingLink | null>(null);
 
 
@@ -84,6 +85,11 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       supabase.from('listas').select('nome').eq('id', listaId).maybeSingle().then(({ data }) => {
         setListaNome((data as any)?.nome ?? '');
       });
+      if (user?.id) {
+        supabase.from('profiles').select('nome').eq('user_id', user.id).maybeSingle().then(({ data }) => {
+          setUserNome(((data as any)?.nome ?? '').trim());
+        });
+      }
       loadExistingLinks();
     }
   }, [open]);
@@ -186,9 +192,9 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
 
   const buildWhatsAppMessage = (link: string) => {
     const cotacaoLabel = listaNome ? `"${listaNome}"` : '';
-    return encodeURIComponent(
-      `Olá! Segue o link para responder a cotação ${cotacaoLabel}:\n${link}`.replace('  ', ' ')
-    );
+    const remetente = userNome ? `\n\nEnviado por: ${userNome}` : '';
+    const msg = `Olá! Segue o link para responder a cotação ${cotacaoLabel}:\n${link}${remetente}`.replace(/ {2,}/g, ' ');
+    return encodeURIComponent(msg);
   };
 
   const handleShareWhatsApp = (empresa: string, token: string, whatsapp?: string) => {
