@@ -543,6 +543,7 @@ const Index = () => {
         <GerarLinkPanel open={gerarLinkOpen} onOpenChange={setGerarLinkOpen} listaId={currentLista.id} />
       )}
       <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
+      <PerfilPanel open={perfilOpen} onOpenChange={setPerfilOpen} />
 
     </div>
     </ProfileGate>
