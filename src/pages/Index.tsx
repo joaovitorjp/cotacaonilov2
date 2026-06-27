@@ -44,6 +44,7 @@ const Index = () => {
   const [gerarLinkOpen, setGerarLinkOpen] = useState(false);
   const [fornecedoresOpen, setFornecedoresOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [perfilOpen, setPerfilOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
