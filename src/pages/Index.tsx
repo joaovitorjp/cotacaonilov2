@@ -9,6 +9,7 @@ import FornecedoresPanel from '@/components/FornecedoresPanel';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import Dashboard from '@/components/Dashboard';
 import FloatingChat from '@/components/FloatingChat';
+import PerfilPanel from '@/components/PerfilPanel';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,6 +44,7 @@ const Index = () => {
   const [gerarLinkOpen, setGerarLinkOpen] = useState(false);
   const [fornecedoresOpen, setFornecedoresOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [perfilOpen, setPerfilOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
@@ -281,7 +283,7 @@ const Index = () => {
     { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
     { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
     { label: 'Chat IA', icon: MessageCircle, action: () => { setChatOpen(true); setMobileMenuOpen(false); } },
-    { label: 'Perfil', icon: UserIcon, action: () => { navigate('/perfil'); setMobileMenuOpen(false); } },
+    { label: 'Perfil', icon: UserIcon, action: () => { setPerfilOpen(true); setMobileMenuOpen(false); } },
   ];
 
   return (
@@ -541,6 +543,7 @@ const Index = () => {
         <GerarLinkPanel open={gerarLinkOpen} onOpenChange={setGerarLinkOpen} listaId={currentLista.id} />
       )}
       <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
+      <PerfilPanel open={perfilOpen} onOpenChange={setPerfilOpen} />
 
     </div>
     </ProfileGate>
