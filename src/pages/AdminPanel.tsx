@@ -6,6 +6,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
+import MonthlyReportCard from '@/components/MonthlyReportCard';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import { toast } from 'sonner';
 import { LogOut, Search, Shield, ArrowLeft, FileText, Eye, Package, Users, Calendar, BarChart3, Table as TableIcon } from 'lucide-react';
