@@ -6,6 +6,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
+import MonthlyReportCard from '@/components/MonthlyReportCard';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import { toast } from 'sonner';
 import { LogOut, Search, Shield, ArrowLeft, FileText, Eye, Package, Users, Calendar, BarChart3, Table as TableIcon } from 'lucide-react';
@@ -195,6 +196,9 @@ const AdminPanel: React.FC = () => {
             Visualize todas as cotações de todos os usuários. Você pode abrir a planilha e baixar o PDF, mas não editar.
           </p>
         </div>
+
+        <MonthlyReportCard listas={listas} profiles={profiles} />
+
 
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1">
