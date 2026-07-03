@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      avarias: {
+        Row: {
+          comprador: string
+          created_at: string
+          data_referencia: string
+          fornecedor_codigo: string | null
+          fornecedor_nome: string | null
+          id: string
+          loja_nome: string
+          loja_numero: string
+          quantidade: number
+          sessao: string
+          upload_id: string
+          valor_total: number
+        }
+        Insert: {
+          comprador: string
+          created_at?: string
+          data_referencia?: string
+          fornecedor_codigo?: string | null
+          fornecedor_nome?: string | null
+          id?: string
+          loja_nome: string
+          loja_numero: string
+          quantidade?: number
+          sessao: string
+          upload_id: string
+          valor_total?: number
+        }
+        Update: {
+          comprador?: string
+          created_at?: string
+          data_referencia?: string
+          fornecedor_codigo?: string | null
+          fornecedor_nome?: string | null
+          id?: string
+          loja_nome?: string
+          loja_numero?: string
+          quantidade?: number
+          sessao?: string
+          upload_id?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avarias_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "avarias_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avarias_uploads: {
+        Row: {
+          comprador: string
+          created_at: string
+          data_referencia: string
+          filename: string | null
+          id: string
+          sessao: string
+          total_rows: number
+          total_valor: number
+          user_id: string
+        }
+        Insert: {
+          comprador: string
+          created_at?: string
+          data_referencia?: string
+          filename?: string | null
+          id?: string
+          sessao: string
+          total_rows?: number
+          total_valor?: number
+          user_id: string
+        }
+        Update: {
+          comprador?: string
+          created_at?: string
+          data_referencia?: string
+          filename?: string | null
+          id?: string
+          sessao?: string
+          total_rows?: number
+          total_valor?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string

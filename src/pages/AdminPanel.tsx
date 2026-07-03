@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
 import MonthlyReportCard from '@/components/MonthlyReportCard';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
+import AvariasAdminPanel from '@/components/AvariasAdminPanel';
 import { toast } from 'sonner';
-import { LogOut, Search, Shield, ArrowLeft, FileText, Eye, Package, Users, Calendar, BarChart3, Table as TableIcon } from 'lucide-react';
+import { LogOut, Search, Shield, ArrowLeft, FileText, Eye, Package, Users, Calendar, BarChart3, Table as TableIcon, AlertTriangle, ClipboardList } from 'lucide-react';
 
 interface Lista {
   id: string;
@@ -44,6 +45,7 @@ const AdminPanel: React.FC = () => {
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
   const [respostas, setRespostas] = useState<RespostaEmpresa[]>([]);
   const [activeTab, setActiveTab] = useState<'planilha' | 'analise'>('planilha');
+  const [view, setView] = useState<'cotacoes' | 'avarias'>('cotacoes');
 
   useEffect(() => {
     if (roleLoading) return;
@@ -190,6 +192,28 @@ const AdminPanel: React.FC = () => {
         </div>
       </header>
 
+      <div className="bg-card border-b border-border flex px-4 sm:px-6">
+        <button
+          onClick={() => setView('cotacoes')}
+          className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-display font-bold border-b-2 transition-colors ${
+            view === 'cotacoes' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <ClipboardList className="w-3.5 h-3.5" /> Cotações
+        </button>
+        <button
+          onClick={() => setView('avarias')}
+          className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-display font-bold border-b-2 transition-colors ${
+            view === 'avarias' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <AlertTriangle className="w-3.5 h-3.5" /> Avarias & Trocas
+        </button>
+      </div>
+
+      {view === 'avarias' ? (
+        <AvariasAdminPanel />
+      ) : (
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <div className="mb-6">
           <p className="text-sm text-muted-foreground">
@@ -286,6 +310,7 @@ const AdminPanel: React.FC = () => {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };
