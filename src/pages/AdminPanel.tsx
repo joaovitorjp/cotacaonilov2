@@ -192,6 +192,28 @@ const AdminPanel: React.FC = () => {
         </div>
       </header>
 
+      <div className="bg-card border-b border-border flex px-4 sm:px-6">
+        <button
+          onClick={() => setView('cotacoes')}
+          className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-display font-bold border-b-2 transition-colors ${
+            view === 'cotacoes' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <ClipboardList className="w-3.5 h-3.5" /> Cotações
+        </button>
+        <button
+          onClick={() => setView('avarias')}
+          className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-display font-bold border-b-2 transition-colors ${
+            view === 'avarias' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <AlertTriangle className="w-3.5 h-3.5" /> Avarias & Trocas
+        </button>
+      </div>
+
+      {view === 'avarias' ? (
+        <AvariasAdminPanel />
+      ) : (
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <div className="mb-6">
           <p className="text-sm text-muted-foreground">
