@@ -45,6 +45,7 @@ const AdminPanel: React.FC = () => {
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
   const [respostas, setRespostas] = useState<RespostaEmpresa[]>([]);
   const [activeTab, setActiveTab] = useState<'planilha' | 'analise'>('planilha');
+  const [view, setView] = useState<'cotacoes' | 'avarias'>('cotacoes');
 
   useEffect(() => {
     if (roleLoading) return;
