@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
 import MonthlyReportCard from '@/components/MonthlyReportCard';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
+import AvariasAdminPanel from '@/components/AvariasAdminPanel';
 import { toast } from 'sonner';
-import { LogOut, Search, Shield, ArrowLeft, FileText, Eye, Package, Users, Calendar, BarChart3, Table as TableIcon } from 'lucide-react';
+import { LogOut, Search, Shield, ArrowLeft, FileText, Eye, Package, Users, Calendar, BarChart3, Table as TableIcon, AlertTriangle, ClipboardList } from 'lucide-react';
 
 interface Lista {
   id: string;
