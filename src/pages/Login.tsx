@@ -26,6 +26,10 @@ const Login = () => {
     navigate('/login', { replace: true });
   }, [navigate, searchParams]);
 
+  const rawNext = searchParams.get('next') || '';
+  const safeNext = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '';
+  const goNext = () => navigate(safeNext || '/');
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -38,7 +42,7 @@ const Login = () => {
     if (error) {
       toast.error('Credenciais inválidas.');
     } else {
-      navigate('/');
+      goNext();
     }
   };
 
@@ -58,7 +62,7 @@ const Login = () => {
       password,
       options: {
         data: { nome },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: window.location.origin + (safeNext || ''),
       },
     });
     setLoading(false);
@@ -148,7 +152,7 @@ const Login = () => {
               }
 
               const result = await lovable.auth.signInWithOAuth('google', {
-                redirect_uri: window.location.origin,
+                redirect_uri: window.location.origin + (safeNext || ''),
               });
               if (result.error) {
                 const msg = (result.error.message || '').toLowerCase();
@@ -165,7 +169,7 @@ const Login = () => {
                 return;
               }
               if (result.redirected) return;
-              navigate('/');
+              goNext();
             } catch (err: any) {
               toast.error(`Erro inesperado: ${err?.message || 'tente novamente'}`);
               setGoogleLoading(false);
