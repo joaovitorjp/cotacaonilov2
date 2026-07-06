@@ -3,7 +3,9 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { CheckCircle2, AlertCircle, Loader2, Package, Send, Search } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, Package, Send, Search, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Produto {
   codigo_interno: string;
