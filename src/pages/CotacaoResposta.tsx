@@ -110,6 +110,46 @@ const CotacaoResposta = () => {
     setLoading(false);
   };
 
+  const handleDownloadPdf = () => {
+    try {
+      const doc = new jsPDF();
+      const now = new Date();
+      const dateStr = now.toLocaleString('pt-BR');
+      doc.setFontSize(14);
+      doc.text('Nilo Atacadista - Cópia da Resposta', 14, 15);
+      doc.setFontSize(10);
+      doc.text(`Cotação: ${listaNome}`, 14, 22);
+      doc.text(`Fornecedor: ${empresa}`, 14, 27);
+      doc.text(`Data: ${dateStr}`, 14, 32);
+
+      const head: string[] = ['Código', 'Descrição', 'EAN'];
+      if (showMT) head.push('Preço MT (R$)');
+      if (showGO) head.push('Preço GO (R$)');
+
+      const body = produtos.map((p, idx) => {
+        const row: string[] = [p.codigo_interno, p.descricao, p.codigo_barras || ''];
+        if (showMT) row.push(pricesMT[idx] || '-');
+        if (showGO) row.push(pricesGO[idx] || '-');
+        return row;
+      });
+
+      autoTable(doc, {
+        head: [head],
+        body,
+        startY: 38,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [37, 99, 235] },
+      });
+
+      const safeEmpresa = empresa.replace(/[^a-zA-Z0-9]+/g, '_');
+      const safeLista = listaNome.replace(/[^a-zA-Z0-9]+/g, '_');
+      doc.save(`cotacao_${safeLista}_${safeEmpresa}.pdf`);
+      toast.success('PDF baixado com sucesso!');
+    } catch {
+      toast.error('Erro ao gerar PDF.');
+    }
+  };
+
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
