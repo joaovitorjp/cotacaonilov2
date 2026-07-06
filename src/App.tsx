@@ -10,6 +10,7 @@ import Login from "./pages/Login.tsx";
 import CotacaoResposta from "./pages/CotacaoResposta.tsx";
 import OAuthCallback from "./pages/OAuthCallback.tsx";
 import OAuthInitiate from "./pages/OAuthInitiate.tsx";
+import OAuthConsent from "./pages/OAuthConsent.tsx";
 import Perfil from "./pages/Perfil.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/~oauth/initiate" element={<OAuthInitiate />} />
             <Route path="/auth/callback" element={<OAuthCallback />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="/cotacao/:token" element={<CotacaoResposta />} />
             <Route
               path="/"
