@@ -165,7 +165,6 @@ const Index = () => {
       empresa: d.empresa,
       resposta: d.resposta as any[],
     }));
-    const empresas = resps.map(r => r.empresa);
 
     const parseBR = (v: any): number | null => {
       if (v === null || v === undefined || v === '') return null;
@@ -175,6 +174,23 @@ const Index = () => {
       return isFinite(n) ? n : null;
     };
 
+    // Build price map and identify suppliers that have any MT / GO price
+    const mtByEmp: Record<string, Record<string, number>> = {};
+    const goByEmp: Record<string, Record<string, number>> = {};
+    for (const r of resps) {
+      mtByEmp[r.empresa] = {};
+      goByEmp[r.empresa] = {};
+      for (const item of r.resposta as any[]) {
+        const mt = parseBR(item.preco_mt ?? item.preco);
+        const go = parseBR(item.preco_go);
+        if (mt !== null) mtByEmp[r.empresa][item.codigo_interno] = mt;
+        if (go !== null) goByEmp[r.empresa][item.codigo_interno] = go;
+      }
+    }
+
+    const mtEmpresas = resps.map(r => r.empresa).filter(e => Object.keys(mtByEmp[e]).length > 0);
+    const goEmpresas = resps.map(r => r.empresa).filter(e => Object.keys(goByEmp[e]).length > 0);
+
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Nilo Atacadista';
     wb.created = new Date();
@@ -183,7 +199,7 @@ const Index = () => {
     });
 
     const fixedCols = ['Código Interno', 'Descrição', 'Código de Barras'];
-    const totalCols = fixedCols.length + empresas.length * 2;
+    const totalCols = fixedCols.length + mtEmpresas.length + goEmpresas.length;
 
     // Row 1: Title
     ws.mergeCells(1, 1, 1, totalCols);
@@ -197,94 +213,106 @@ const Index = () => {
     // Row 2: Subtitle
     ws.mergeCells(2, 1, 2, totalCols);
     const subCell = ws.getCell(2, 1);
-    subCell.value = `Exportado em ${new Date().toLocaleString('pt-BR')} • ${lista.produtos.length} produtos • ${empresas.length} fornecedores`;
+    subCell.value = `Exportado em ${new Date().toLocaleString('pt-BR')} • ${lista.produtos.length} produtos • MT: ${mtEmpresas.length} fornecedor(es) • GO: ${goEmpresas.length} fornecedor(es)`;
     subCell.font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF475569' } };
     subCell.alignment = { vertical: 'middle', horizontal: 'center' };
     subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
     ws.getRow(2).height = 18;
 
-    // Row 3: Supplier group header (merged over MT+GO)
-    // Row 4: Column headers
-    const headerFill = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FF2563EB' } };
-    const headerFont = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
-    const groupFillAlt = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FF1D4ED8' } };
+    // Header rows 3-4
+    const headerFontWhite = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    const fixedFill = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FF2563EB' } };
+    const mtFill = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FF1D4ED8' } };
+    const goFill = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FF15803D' } };
+    const mtSubFill = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFDBEAFE' } };
+    const goSubFill = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFDCFCE7' } };
 
     fixedCols.forEach((label, i) => {
       const col = i + 1;
       ws.mergeCells(3, col, 4, col);
       const c = ws.getCell(3, col);
       c.value = label;
-      c.font = headerFont;
-      c.fill = headerFill;
+      c.font = headerFontWhite;
+      c.fill = fixedFill;
       c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
     });
 
-    empresas.forEach((emp, idx) => {
-      const startCol = fixedCols.length + idx * 2 + 1;
-      ws.mergeCells(3, startCol, 3, startCol + 1);
+    // MT region group header + supplier columns
+    if (mtEmpresas.length > 0) {
+      const startCol = fixedCols.length + 1;
+      const endCol = startCol + mtEmpresas.length - 1;
+      ws.mergeCells(3, startCol, 3, endCol);
       const g = ws.getCell(3, startCol);
-      g.value = emp;
-      g.font = headerFont;
-      g.fill = idx % 2 === 0 ? headerFill : groupFillAlt;
+      g.value = 'MATO GROSSO (MT)';
+      g.font = headerFontWhite;
+      g.fill = mtFill;
       g.alignment = { vertical: 'middle', horizontal: 'center' };
+      mtEmpresas.forEach((emp, idx) => {
+        const cell = ws.getCell(4, startCol + idx);
+        cell.value = emp;
+        cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF1E3A8A' } };
+        cell.fill = mtSubFill;
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      });
+    }
 
-      const mt = ws.getCell(4, startCol);
-      mt.value = 'MT';
-      mt.font = headerFont;
-      mt.fill = idx % 2 === 0 ? headerFill : groupFillAlt;
-      mt.alignment = { vertical: 'middle', horizontal: 'center' };
-
-      const go = ws.getCell(4, startCol + 1);
-      go.value = 'GO';
-      go.font = headerFont;
-      go.fill = idx % 2 === 0 ? headerFill : groupFillAlt;
-      go.alignment = { vertical: 'middle', horizontal: 'center' };
-    });
+    // GO region group header + supplier columns
+    if (goEmpresas.length > 0) {
+      const startCol = fixedCols.length + mtEmpresas.length + 1;
+      const endCol = startCol + goEmpresas.length - 1;
+      ws.mergeCells(3, startCol, 3, endCol);
+      const g = ws.getCell(3, startCol);
+      g.value = 'GOIÁS (GO)';
+      g.font = headerFontWhite;
+      g.fill = goFill;
+      g.alignment = { vertical: 'middle', horizontal: 'center' };
+      goEmpresas.forEach((emp, idx) => {
+        const cell = ws.getCell(4, startCol + idx);
+        cell.value = emp;
+        cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF14532D' } };
+        cell.fill = goSubFill;
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      });
+    }
 
     ws.getRow(3).height = 22;
-    ws.getRow(4).height = 20;
+    ws.getRow(4).height = 22;
 
     // Data rows
-    const priceCellsPerRow: { col: number; value: number }[][] = [];
     lista.produtos.forEach((prod, rIdx) => {
       const rowNum = 5 + rIdx;
-      const rowPrices: { col: number; value: number }[] = [];
-
       ws.getCell(rowNum, 1).value = prod.codigo_interno;
       ws.getCell(rowNum, 2).value = prod.descricao;
       ws.getCell(rowNum, 3).value = prod.codigo_barras;
 
-      empresas.forEach((emp, idx) => {
-        const startCol = fixedCols.length + idx * 2 + 1;
-        const resp = resps.find(r => r.empresa === emp);
-        const item = resp?.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
-        const mtVal = parseBR(item?.preco_mt ?? item?.preco);
-        const goVal = parseBR(item?.preco_go);
+      const mtPriceCells: { col: number; value: number }[] = [];
+      const goPriceCells: { col: number; value: number }[] = [];
 
-        const mtCell = ws.getCell(rowNum, startCol);
-        if (mtVal !== null) {
-          mtCell.value = mtVal;
-          mtCell.numFmt = '"R$" #,##0.00';
-          rowPrices.push({ col: startCol, value: mtVal });
-        } else {
-          mtCell.value = '';
+      mtEmpresas.forEach((emp, idx) => {
+        const col = fixedCols.length + 1 + idx;
+        const v = mtByEmp[emp][prod.codigo_interno];
+        const cell = ws.getCell(rowNum, col);
+        if (v !== undefined) {
+          cell.value = v;
+          cell.numFmt = '"R$" #,##0.00';
+          mtPriceCells.push({ col, value: v });
         }
-        mtCell.alignment = { vertical: 'middle', horizontal: 'right' };
-
-        const goCell = ws.getCell(rowNum, startCol + 1);
-        if (goVal !== null) {
-          goCell.value = goVal;
-          goCell.numFmt = '"R$" #,##0.00';
-          rowPrices.push({ col: startCol + 1, value: goVal });
-        } else {
-          goCell.value = '';
-        }
-        goCell.alignment = { vertical: 'middle', horizontal: 'right' };
+        cell.alignment = { vertical: 'middle', horizontal: 'right' };
       });
 
-      priceCellsPerRow.push(rowPrices);
+      goEmpresas.forEach((emp, idx) => {
+        const col = fixedCols.length + mtEmpresas.length + 1 + idx;
+        const v = goByEmp[emp][prod.codigo_interno];
+        const cell = ws.getCell(rowNum, col);
+        if (v !== undefined) {
+          cell.value = v;
+          cell.numFmt = '"R$" #,##0.00';
+          goPriceCells.push({ col, value: v });
+        }
+        cell.alignment = { vertical: 'middle', horizontal: 'right' };
+      });
 
-      // Zebra striping
+      // Zebra
       if (rIdx % 2 === 1) {
         for (let c = 1; c <= totalCols; c++) {
           const cell = ws.getCell(rowNum, c);
@@ -293,23 +321,24 @@ const Index = () => {
           }
         }
       }
+
+      // Highlight min price per region (>= 2 prices)
+      const highlight = (list: { col: number; value: number }[]) => {
+        if (list.length < 2) return;
+        const min = Math.min(...list.map(p => p.value));
+        list.forEach(p => {
+          if (p.value === min) {
+            const cell = ws.getCell(rowNum, p.col);
+            cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF166534' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } };
+          }
+        });
+      };
+      highlight(mtPriceCells);
+      highlight(goPriceCells);
     });
 
-    // Highlight minimum price per row (green + bold) when at least 2 prices
-    priceCellsPerRow.forEach((rowPrices, rIdx) => {
-      if (rowPrices.length < 2) return;
-      const min = Math.min(...rowPrices.map(p => p.value));
-      const rowNum = 5 + rIdx;
-      rowPrices.forEach(p => {
-        if (p.value === min) {
-          const cell = ws.getCell(rowNum, p.col);
-          cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF166534' } };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } };
-        }
-      });
-    });
-
-    // Borders on data area
+    // Borders
     const lastRow = 4 + lista.produtos.length;
     for (let r = 3; r <= lastRow; r++) {
       for (let c = 1; c <= totalCols; c++) {
@@ -321,17 +350,23 @@ const Index = () => {
         };
       }
     }
+    // Thicker divider between MT and GO blocks
+    if (mtEmpresas.length > 0 && goEmpresas.length > 0) {
+      const divCol = fixedCols.length + mtEmpresas.length;
+      for (let r = 3; r <= lastRow; r++) {
+        const cell = ws.getCell(r, divCol);
+        cell.border = { ...cell.border, right: { style: 'medium', color: { argb: 'FF64748B' } } };
+      }
+    }
 
     // Column widths
     ws.getColumn(1).width = 14;
     ws.getColumn(2).width = 48;
     ws.getColumn(3).width = 18;
-    for (let i = 0; i < empresas.length; i++) {
-      ws.getColumn(fixedCols.length + i * 2 + 1).width = 14;
-      ws.getColumn(fixedCols.length + i * 2 + 2).width = 14;
+    for (let i = 0; i < mtEmpresas.length + goEmpresas.length; i++) {
+      ws.getColumn(fixedCols.length + 1 + i).width = 16;
     }
 
-    // AutoFilter on header row 4
     ws.autoFilter = {
       from: { row: 4, column: 1 },
       to: { row: lastRow, column: totalCols },
