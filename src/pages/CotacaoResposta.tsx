@@ -183,6 +183,7 @@ const CotacaoResposta = () => {
       } else {
         await supabase.from('links_cotacao').update({ respondido: true }).eq('token', token);
       }
+      handleDownloadPdf();
       setSubmitted(true);
       toast.success('Resposta enviada com sucesso!');
     } catch {
