@@ -382,6 +382,64 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Duplicate dialog */}
+      <Dialog open={!!duplicateTarget} onOpenChange={(o) => { if (!o) setDuplicateTarget(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Duplicar cotação</DialogTitle>
+            <DialogDescription>
+              {duplicateTarget?.status === 'finalizada' && duplicateRespostas.length > 0
+                ? 'Escolha se deseja incluir as colunas de preços de algum fornecedor na nova cotação.'
+                : 'A nova cotação será criada como aberta.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground uppercase">Nome</label>
+              <Input value={duplicateName} onChange={e => setDuplicateName(e.target.value)} className="mt-1" />
+            </div>
+            {duplicateTarget?.status === 'finalizada' && duplicateRespostas.length > 0 && (
+              <div>
+                <label className="text-xs font-display font-bold text-muted-foreground uppercase">Incluir preços de fornecedores</label>
+                <div className="mt-2 space-y-2 max-h-64 overflow-auto border border-border rounded-md p-2">
+                  {duplicateRespostas.map((r: any) => {
+                    const sel = duplicateSelected[r.empresa] || { mt: false, go: false };
+                    const hasMT = (r.resposta as any[]).some((i: any) => (i.preco_mt !== undefined && i.preco_mt !== '') || (i.preco !== undefined && i.preco !== '' && i.preco_go === undefined));
+                    const hasGO = (r.resposta as any[]).some((i: any) => i.preco_go !== undefined && i.preco_go !== '');
+                    return (
+                      <div key={r.empresa} className="flex items-center justify-between gap-2 text-sm">
+                        <span className="font-medium truncate">{r.empresa}</span>
+                        <div className="flex items-center gap-3 shrink-0">
+                          {hasMT && (
+                            <label className="flex items-center gap-1 text-xs cursor-pointer">
+                              <Checkbox checked={sel.mt} onCheckedChange={(v) => setDuplicateSelected(prev => ({ ...prev, [r.empresa]: { ...(prev[r.empresa] || { mt: false, go: false }), mt: !!v } }))} />
+                              MT
+                            </label>
+                          )}
+                          {hasGO && (
+                            <label className="flex items-center gap-1 text-xs cursor-pointer">
+                              <Checkbox checked={sel.go} onCheckedChange={(v) => setDuplicateSelected(prev => ({ ...prev, [r.empresa]: { ...(prev[r.empresa] || { mt: false, go: false }), go: !!v } }))} />
+                              GO
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">Os preços selecionados serão pré-preenchidos como resposta do fornecedor na nova cotação.</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDuplicateTarget(null)} disabled={duplicating}>Cancelar</Button>
+            <Button onClick={confirmReplicate} disabled={duplicating || !duplicateName.trim()}>
+              {duplicating ? 'Duplicando...' : 'Duplicar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
