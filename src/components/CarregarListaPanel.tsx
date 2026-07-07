@@ -47,6 +47,11 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   const [renameValue, setRenameValue] = useState('');
   const [linksMap, setLinksMap] = useState<Record<string, LinkInfo[]>>({});
   const [respostasCount, setRespostasCount] = useState<Record<string, number>>({});
+  const [duplicateTarget, setDuplicateTarget] = useState<Lista | null>(null);
+  const [duplicateRespostas, setDuplicateRespostas] = useState<any[]>([]);
+  const [duplicateSelected, setDuplicateSelected] = useState<Record<string, { mt: boolean; go: boolean }>>({});
+  const [duplicateName, setDuplicateName] = useState('');
+  const [duplicating, setDuplicating] = useState(false);
 
   useEffect(() => {
     if (open) fetchListas();
