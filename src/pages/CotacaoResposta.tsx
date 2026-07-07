@@ -183,6 +183,7 @@ const CotacaoResposta = () => {
       } else {
         await supabase.from('links_cotacao').update({ respondido: true }).eq('token', token);
       }
+      handleDownloadPdf();
       setSubmitted(true);
       toast.success('Resposta enviada com sucesso!');
     } catch {
@@ -436,16 +437,8 @@ const CotacaoResposta = () => {
               <><Send className="w-4 h-4" /> Enviar Resposta ({filledCount}/{totalFields})</>
             )}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadPdf}
-            disabled={filledCount === 0}
-            className="w-full gap-2 mt-2"
-          >
-            <FileDown className="w-4 h-4" /> Salvar cópia em PDF
-          </Button>
           {filledCount === 0 && (
+
             <p className="text-xs text-muted-foreground text-center mt-2">
               Preencha ao menos um preço para enviar
             </p>
