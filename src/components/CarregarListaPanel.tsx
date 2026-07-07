@@ -132,15 +132,56 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   };
 
   const handleReplicate = async (lista: Lista) => {
-    const { data, error } = await supabase
-      .from('listas')
-      .insert({ nome: `${lista.nome} (cópia)`, produtos: lista.produtos as any, status: 'aberta', user_id: user?.id })
-      .select().single();
-    if (error) {
-      toast.error('Erro ao replicar lista.');
-    } else {
-      toast.success(`Lista replicada como "${data.nome}".`);
+    setDuplicateTarget(lista);
+    setDuplicateName(`${lista.nome} (cópia)`);
+    setDuplicateSelected({});
+    setDuplicateRespostas([]);
+    if (lista.status === 'finalizada') {
+      const { data } = await supabase
+        .from('respostas')
+        .select('empresa, resposta')
+        .eq('lista_id', lista.id);
+      setDuplicateRespostas(data ?? []);
+    }
+  };
+
+  const confirmReplicate = async () => {
+    if (!duplicateTarget || !duplicateName.trim()) return;
+    setDuplicating(true);
+    try {
+      const { data: novaLista, error } = await supabase
+        .from('listas')
+        .insert({ nome: duplicateName.trim(), produtos: duplicateTarget.produtos as any, status: 'aberta', user_id: user?.id })
+        .select().single();
+      if (error || !novaLista) throw error;
+
+      // Copiar respostas de fornecedores selecionados, respeitando estados escolhidos
+      const chosen = duplicateRespostas
+        .map(r => ({ r, sel: duplicateSelected[r.empresa] }))
+        .filter(x => x.sel && (x.sel.mt || x.sel.go));
+
+      if (chosen.length > 0) {
+        const inserts = chosen.map(({ r, sel }) => ({
+          lista_id: novaLista.id,
+          empresa: r.empresa,
+          user_id: user?.id,
+          resposta: (r.resposta as any[]).map((item: any) => ({
+            codigo_interno: item.codigo_interno,
+            ...(sel.mt && (item.preco_mt !== undefined || item.preco !== undefined)
+              ? { preco_mt: item.preco_mt ?? item.preco ?? '' } : {}),
+            ...(sel.go && item.preco_go !== undefined ? { preco_go: item.preco_go } : {}),
+          })),
+        }));
+        await supabase.from('respostas').insert(inserts);
+      }
+
+      toast.success(`Lista replicada como "${novaLista.nome}".`);
+      setDuplicateTarget(null);
       fetchListas();
+    } catch {
+      toast.error('Erro ao replicar lista.');
+    } finally {
+      setDuplicating(false);
     }
   };
 
