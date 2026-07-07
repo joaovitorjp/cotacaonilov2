@@ -12,6 +12,7 @@ import FloatingChat from '@/components/FloatingChat';
 import PerfilPanel from '@/components/PerfilPanel';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ProfileGate from '@/components/ProfileGate';
