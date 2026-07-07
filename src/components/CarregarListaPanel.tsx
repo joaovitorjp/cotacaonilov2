@@ -8,6 +8,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Trash2, Copy, Pencil, Download, FileSpreadsheet, Package, Users, Calendar } from 'lucide-react';
 
@@ -45,6 +47,11 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   const [renameValue, setRenameValue] = useState('');
   const [linksMap, setLinksMap] = useState<Record<string, LinkInfo[]>>({});
   const [respostasCount, setRespostasCount] = useState<Record<string, number>>({});
+  const [duplicateTarget, setDuplicateTarget] = useState<Lista | null>(null);
+  const [duplicateRespostas, setDuplicateRespostas] = useState<any[]>([]);
+  const [duplicateSelected, setDuplicateSelected] = useState<Record<string, { mt: boolean; go: boolean }>>({});
+  const [duplicateName, setDuplicateName] = useState('');
+  const [duplicating, setDuplicating] = useState(false);
 
   useEffect(() => {
     if (open) fetchListas();
@@ -125,15 +132,56 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   };
 
   const handleReplicate = async (lista: Lista) => {
-    const { data, error } = await supabase
-      .from('listas')
-      .insert({ nome: `${lista.nome} (cópia)`, produtos: lista.produtos as any, status: 'aberta', user_id: user?.id })
-      .select().single();
-    if (error) {
-      toast.error('Erro ao replicar lista.');
-    } else {
-      toast.success(`Lista replicada como "${data.nome}".`);
+    setDuplicateTarget(lista);
+    setDuplicateName(`${lista.nome} (cópia)`);
+    setDuplicateSelected({});
+    setDuplicateRespostas([]);
+    if (lista.status === 'finalizada') {
+      const { data } = await supabase
+        .from('respostas')
+        .select('empresa, resposta')
+        .eq('lista_id', lista.id);
+      setDuplicateRespostas(data ?? []);
+    }
+  };
+
+  const confirmReplicate = async () => {
+    if (!duplicateTarget || !duplicateName.trim()) return;
+    setDuplicating(true);
+    try {
+      const { data: novaLista, error } = await supabase
+        .from('listas')
+        .insert({ nome: duplicateName.trim(), produtos: duplicateTarget.produtos as any, status: 'aberta', user_id: user?.id })
+        .select().single();
+      if (error || !novaLista) throw error;
+
+      // Copiar respostas de fornecedores selecionados, respeitando estados escolhidos
+      const chosen = duplicateRespostas
+        .map(r => ({ r, sel: duplicateSelected[r.empresa] }))
+        .filter(x => x.sel && (x.sel.mt || x.sel.go));
+
+      if (chosen.length > 0) {
+        const inserts = chosen.map(({ r, sel }) => ({
+          lista_id: novaLista.id,
+          empresa: r.empresa,
+          user_id: user?.id,
+          resposta: (r.resposta as any[]).map((item: any) => ({
+            codigo_interno: item.codigo_interno,
+            ...(sel.mt && (item.preco_mt !== undefined || item.preco !== undefined)
+              ? { preco_mt: item.preco_mt ?? item.preco ?? '' } : {}),
+            ...(sel.go && item.preco_go !== undefined ? { preco_go: item.preco_go } : {}),
+          })),
+        }));
+        await supabase.from('respostas').insert(inserts);
+      }
+
+      toast.success(`Lista replicada como "${novaLista.nome}".`);
+      setDuplicateTarget(null);
       fetchListas();
+    } catch {
+      toast.error('Erro ao replicar lista.');
+    } finally {
+      setDuplicating(false);
     }
   };
 
@@ -334,6 +382,64 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Duplicate dialog */}
+      <Dialog open={!!duplicateTarget} onOpenChange={(o) => { if (!o) setDuplicateTarget(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Duplicar cotação</DialogTitle>
+            <DialogDescription>
+              {duplicateTarget?.status === 'finalizada' && duplicateRespostas.length > 0
+                ? 'Escolha se deseja incluir as colunas de preços de algum fornecedor na nova cotação.'
+                : 'A nova cotação será criada como aberta.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground uppercase">Nome</label>
+              <Input value={duplicateName} onChange={e => setDuplicateName(e.target.value)} className="mt-1" />
+            </div>
+            {duplicateTarget?.status === 'finalizada' && duplicateRespostas.length > 0 && (
+              <div>
+                <label className="text-xs font-display font-bold text-muted-foreground uppercase">Incluir preços de fornecedores</label>
+                <div className="mt-2 space-y-2 max-h-64 overflow-auto border border-border rounded-md p-2">
+                  {duplicateRespostas.map((r: any) => {
+                    const sel = duplicateSelected[r.empresa] || { mt: false, go: false };
+                    const hasMT = (r.resposta as any[]).some((i: any) => (i.preco_mt !== undefined && i.preco_mt !== '') || (i.preco !== undefined && i.preco !== '' && i.preco_go === undefined));
+                    const hasGO = (r.resposta as any[]).some((i: any) => i.preco_go !== undefined && i.preco_go !== '');
+                    return (
+                      <div key={r.empresa} className="flex items-center justify-between gap-2 text-sm">
+                        <span className="font-medium truncate">{r.empresa}</span>
+                        <div className="flex items-center gap-3 shrink-0">
+                          {hasMT && (
+                            <label className="flex items-center gap-1 text-xs cursor-pointer">
+                              <Checkbox checked={sel.mt} onCheckedChange={(v) => setDuplicateSelected(prev => ({ ...prev, [r.empresa]: { ...(prev[r.empresa] || { mt: false, go: false }), mt: !!v } }))} />
+                              MT
+                            </label>
+                          )}
+                          {hasGO && (
+                            <label className="flex items-center gap-1 text-xs cursor-pointer">
+                              <Checkbox checked={sel.go} onCheckedChange={(v) => setDuplicateSelected(prev => ({ ...prev, [r.empresa]: { ...(prev[r.empresa] || { mt: false, go: false }), go: !!v } }))} />
+                              GO
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">Os preços selecionados serão pré-preenchidos como resposta do fornecedor na nova cotação.</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDuplicateTarget(null)} disabled={duplicating}>Cancelar</Button>
+            <Button onClick={confirmReplicate} disabled={duplicating || !duplicateName.trim()}>
+              {duplicating ? 'Duplicando...' : 'Duplicar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
