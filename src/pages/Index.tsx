@@ -12,6 +12,7 @@ import FloatingChat from '@/components/FloatingChat';
 import PerfilPanel from '@/components/PerfilPanel';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ProfileGate from '@/components/ProfileGate';
@@ -164,27 +165,186 @@ const Index = () => {
       empresa: d.empresa,
       resposta: d.resposta as any[],
     }));
-
     const empresas = resps.map(r => r.empresa);
-    const rows = lista.produtos.map(prod => {
-      const row: Record<string, string | number> = {
-        'Código Interno': prod.codigo_interno,
-        'Descrição': prod.descricao,
-        'Código de Barras': prod.codigo_barras,
-      };
-      for (const emp of empresas) {
-        const resp = resps.find(r => r.empresa === emp);
-        const item = resp?.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
-        row[`${emp} MT`] = item?.preco_mt ?? item?.preco ?? '';
-        row[`${emp} GO`] = item?.preco_go ?? '';
-      }
-      return row;
+
+    const parseBR = (v: any): number | null => {
+      if (v === null || v === undefined || v === '') return null;
+      if (typeof v === 'number') return isFinite(v) ? v : null;
+      const s = String(v).trim().replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+      const n = parseFloat(s);
+      return isFinite(n) ? n : null;
+    };
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Nilo Atacadista';
+    wb.created = new Date();
+    const ws = wb.addWorksheet('Cotação', {
+      views: [{ state: 'frozen', xSplit: 3, ySplit: 4 }],
     });
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Cotação');
-    XLSX.writeFile(wb, `${lista.nome}.xlsx`);
+    const fixedCols = ['Código Interno', 'Descrição', 'Código de Barras'];
+    const totalCols = fixedCols.length + empresas.length * 2;
+
+    // Row 1: Title
+    ws.mergeCells(1, 1, 1, totalCols);
+    const titleCell = ws.getCell(1, 1);
+    titleCell.value = `Cotação: ${lista.nome}`;
+    titleCell.font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } };
+    ws.getRow(1).height = 26;
+
+    // Row 2: Subtitle
+    ws.mergeCells(2, 1, 2, totalCols);
+    const subCell = ws.getCell(2, 1);
+    subCell.value = `Exportado em ${new Date().toLocaleString('pt-BR')} • ${lista.produtos.length} produtos • ${empresas.length} fornecedores`;
+    subCell.font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF475569' } };
+    subCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+    ws.getRow(2).height = 18;
+
+    // Row 3: Supplier group header (merged over MT+GO)
+    // Row 4: Column headers
+    const headerFill = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FF2563EB' } };
+    const headerFont = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    const groupFillAlt = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FF1D4ED8' } };
+
+    fixedCols.forEach((label, i) => {
+      const col = i + 1;
+      ws.mergeCells(3, col, 4, col);
+      const c = ws.getCell(3, col);
+      c.value = label;
+      c.font = headerFont;
+      c.fill = headerFill;
+      c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    });
+
+    empresas.forEach((emp, idx) => {
+      const startCol = fixedCols.length + idx * 2 + 1;
+      ws.mergeCells(3, startCol, 3, startCol + 1);
+      const g = ws.getCell(3, startCol);
+      g.value = emp;
+      g.font = headerFont;
+      g.fill = idx % 2 === 0 ? headerFill : groupFillAlt;
+      g.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      const mt = ws.getCell(4, startCol);
+      mt.value = 'MT';
+      mt.font = headerFont;
+      mt.fill = idx % 2 === 0 ? headerFill : groupFillAlt;
+      mt.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      const go = ws.getCell(4, startCol + 1);
+      go.value = 'GO';
+      go.font = headerFont;
+      go.fill = idx % 2 === 0 ? headerFill : groupFillAlt;
+      go.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+
+    ws.getRow(3).height = 22;
+    ws.getRow(4).height = 20;
+
+    // Data rows
+    const priceCellsPerRow: { col: number; value: number }[][] = [];
+    lista.produtos.forEach((prod, rIdx) => {
+      const rowNum = 5 + rIdx;
+      const rowPrices: { col: number; value: number }[] = [];
+
+      ws.getCell(rowNum, 1).value = prod.codigo_interno;
+      ws.getCell(rowNum, 2).value = prod.descricao;
+      ws.getCell(rowNum, 3).value = prod.codigo_barras;
+
+      empresas.forEach((emp, idx) => {
+        const startCol = fixedCols.length + idx * 2 + 1;
+        const resp = resps.find(r => r.empresa === emp);
+        const item = resp?.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+        const mtVal = parseBR(item?.preco_mt ?? item?.preco);
+        const goVal = parseBR(item?.preco_go);
+
+        const mtCell = ws.getCell(rowNum, startCol);
+        if (mtVal !== null) {
+          mtCell.value = mtVal;
+          mtCell.numFmt = '"R$" #,##0.00';
+          rowPrices.push({ col: startCol, value: mtVal });
+        } else {
+          mtCell.value = '';
+        }
+        mtCell.alignment = { vertical: 'middle', horizontal: 'right' };
+
+        const goCell = ws.getCell(rowNum, startCol + 1);
+        if (goVal !== null) {
+          goCell.value = goVal;
+          goCell.numFmt = '"R$" #,##0.00';
+          rowPrices.push({ col: startCol + 1, value: goVal });
+        } else {
+          goCell.value = '';
+        }
+        goCell.alignment = { vertical: 'middle', horizontal: 'right' };
+      });
+
+      priceCellsPerRow.push(rowPrices);
+
+      // Zebra striping
+      if (rIdx % 2 === 1) {
+        for (let c = 1; c <= totalCols; c++) {
+          const cell = ws.getCell(rowNum, c);
+          if (!cell.fill || (cell.fill as any).type !== 'pattern') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+          }
+        }
+      }
+    });
+
+    // Highlight minimum price per row (green + bold) when at least 2 prices
+    priceCellsPerRow.forEach((rowPrices, rIdx) => {
+      if (rowPrices.length < 2) return;
+      const min = Math.min(...rowPrices.map(p => p.value));
+      const rowNum = 5 + rIdx;
+      rowPrices.forEach(p => {
+        if (p.value === min) {
+          const cell = ws.getCell(rowNum, p.col);
+          cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF166534' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } };
+        }
+      });
+    });
+
+    // Borders on data area
+    const lastRow = 4 + lista.produtos.length;
+    for (let r = 3; r <= lastRow; r++) {
+      for (let c = 1; c <= totalCols; c++) {
+        ws.getCell(r, c).border = {
+          top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        };
+      }
+    }
+
+    // Column widths
+    ws.getColumn(1).width = 14;
+    ws.getColumn(2).width = 48;
+    ws.getColumn(3).width = 18;
+    for (let i = 0; i < empresas.length; i++) {
+      ws.getColumn(fixedCols.length + i * 2 + 1).width = 14;
+      ws.getColumn(fixedCols.length + i * 2 + 2).width = 14;
+    }
+
+    // AutoFilter on header row 4
+    ws.autoFilter = {
+      from: { row: 4, column: 1 },
+      to: { row: lastRow, column: totalCols },
+    };
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${lista.nome}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
     toast.success('Planilha exportada!');
   };
 
