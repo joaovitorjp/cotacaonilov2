@@ -25,6 +25,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <DesktopAppBanner />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/~oauth/initiate" element={<OAuthInitiate />} />
