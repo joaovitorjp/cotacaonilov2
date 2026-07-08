@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Monitor, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import desktopAsset from '@/assets/CotacaoNilo-desktop-linux-x64.tar.gz.asset.json';
 
 const DISMISS_KEY = 'desktop_app_banner_dismissed';
 const AUTO_HIDE_MS = 8000;
 
-// Caminho relativo para o pacote desktop disponível na public folder.
-// Substitua pelo nome do arquivo real gerado via `bun run package:desktop`.
-const DESKTOP_DOWNLOAD_URL = '/CotacaoNilo-desktop-linux-x64.tar.gz';
+const DESKTOP_DOWNLOAD_URL = desktopAsset.url;
 
 const DesktopAppBanner: React.FC = () => {
   const [visible, setVisible] = useState(false);
