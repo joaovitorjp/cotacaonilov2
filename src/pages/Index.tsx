@@ -22,8 +22,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon } from 'lucide-react';
 
-
-
 interface Lista {
   id: string;
   nome: string;
@@ -488,7 +486,6 @@ const Index = () => {
     <div className="flex flex-col h-screen">
       {/* Header */}
       <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
-
         <button onClick={handleBackToDashboard} className="flex items-center gap-2">
           <h1 className="text-lg sm:text-xl font-display font-bold text-foreground tracking-tight">Nilo Atacadista</h1>
         </button>
