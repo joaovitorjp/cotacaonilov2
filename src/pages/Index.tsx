@@ -10,6 +10,7 @@ import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import Dashboard from '@/components/Dashboard';
 import FloatingChat from '@/components/FloatingChat';
 import PerfilPanel from '@/components/PerfilPanel';
+import DesktopAppBanner from '@/components/DesktopAppBanner';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
@@ -21,6 +22,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon } from 'lucide-react';
+
 
 interface Lista {
   id: string;
