@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import DesktopAppBanner from "@/components/DesktopAppBanner";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import CotacaoResposta from "./pages/CotacaoResposta.tsx";
@@ -24,6 +25,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <DesktopAppBanner />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/~oauth/initiate" element={<OAuthInitiate />} />
