@@ -46,6 +46,88 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
   const [loadingHistorico, setLoadingHistorico] = useState(false);
   const [showComparativoDialog, setShowComparativoDialog] = useState(false);
   const [estadoComparativo, setEstadoComparativo] = useState<'mt' | 'go'>('mt');
+  const [showFornecedorDialog, setShowFornecedorDialog] = useState(false);
+  const [estadoFornecedor, setEstadoFornecedor] = useState<'mt' | 'go' | 'ambos'>('ambos');
+
+  const exportFornecedorPDF = (empresaSelecionada: string) => {
+    const resp = respostas.find(r => r.empresa === empresaSelecionada);
+    if (!resp) return;
+
+    const showMT = estadoFornecedor === 'mt' || estadoFornecedor === 'ambos';
+    const showGO = estadoFornecedor === 'go' || estadoFornecedor === 'ambos';
+
+    const doc = new jsPDF('portrait', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFillColor(41, 128, 185);
+    doc.rect(0, 0, pageWidth, 26, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text('Cotação — Preços do Fornecedor', 14, 12);
+    doc.setFontSize(9);
+    doc.text(`Cotação: ${listaNome || 'Sem nome'}`, 14, 18);
+    doc.text(`Fornecedor: ${empresaSelecionada}`, 14, 23);
+    const dataStr = `${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
+    doc.text(dataStr, pageWidth - 14 - doc.getTextWidth(dataStr), 23);
+    doc.setTextColor(0, 0, 0);
+
+    const fmt = (v: number) => !isNaN(v) && v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '-';
+
+    const head: string[] = ['#', 'Código', 'Descrição', 'Cód. Barras'];
+    if (showMT) head.push('MT');
+    if (showGO) head.push('GO');
+
+    let totalMT = 0, totalGO = 0, countMT = 0, countGO = 0;
+
+    const body = produtos.map((prod, idx) => {
+      const item: any = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+      const priceMT = item ? parsePreco(item.preco_mt ?? item.preco) : NaN;
+      const priceGO = item ? parsePreco(item.preco_go ?? item.preco) : NaN;
+      if (!isNaN(priceMT) && priceMT > 0) { totalMT += priceMT; countMT++; }
+      if (!isNaN(priceGO) && priceGO > 0) { totalGO += priceGO; countGO++; }
+      const row = [String(idx + 1), prod.codigo_interno, prod.descricao.substring(0, 55), prod.codigo_barras || '-'];
+      if (showMT) row.push(fmt(priceMT));
+      if (showGO) row.push(fmt(priceGO));
+      return row;
+    });
+
+    autoTable(doc, {
+      startY: 32,
+      head: [head],
+      body,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center' },
+      styles: { fontSize: 8, cellPadding: 2, lineColor: [220, 220, 220], lineWidth: 0.2 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 22 },
+        3: { cellWidth: 28 },
+      },
+      didParseCell: (data: any) => {
+        if (data.section !== 'body') return;
+        const priceColStart = 4;
+        if (data.column.index >= priceColStart) {
+          data.cell.styles.halign = 'right';
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+    });
+
+    const finalY = (doc as any).lastAutoTable?.finalY || 200;
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+    let y = finalY + 8;
+    doc.text(`Total de produtos: ${produtos.length}`, 14, y);
+    y += 5;
+    if (showMT) { doc.text(`Itens precificados (MT): ${countMT}  ·  Soma MT: R$ ${totalMT.toFixed(2).replace('.', ',')}`, 14, y); y += 5; }
+    if (showGO) { doc.text(`Itens precificados (GO): ${countGO}  ·  Soma GO: R$ ${totalGO.toFixed(2).replace('.', ',')}`, 14, y); y += 5; }
+
+    doc.save(`precos_${empresaSelecionada.replace(/\s+/g, '_')}${listaNome ? `_${listaNome.replace(/\s+/g, '_')}` : ''}.pdf`);
+    setShowFornecedorDialog(false);
+  };
+
 
   const exportComparativoPDF = (empresaSelecionada: string) => {
     const estado = estadoComparativo;
