@@ -88,7 +88,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
           </div>
           <p className="text-2xl sm:text-3xl font-display font-bold text-foreground">{stats.totalProdutos}</p>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Produtos cadastrados</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Total de produtos cotados</p>
         </div>
 
         <div className="bg-card border border-border rounded-lg p-4 sm:p-5">
