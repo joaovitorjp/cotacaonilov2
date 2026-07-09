@@ -570,6 +570,14 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
           <Send className="w-4 h-4" />
           Comparativo p/ Fornecedor
         </button>
+        <button
+          onClick={() => setShowFornecedorDialog(true)}
+          className="flex items-center gap-2 px-3 py-2 text-xs font-display font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+        >
+          <FileDown className="w-4 h-4" />
+          PDF por Fornecedor
+        </button>
+
       </div>
 
       {/* Supplier selection dialog for comparative PDF */}
