@@ -636,6 +636,48 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         </DialogContent>
       </Dialog>
 
+      {/* Single-supplier PDF dialog */}
+      <Dialog open={showFornecedorDialog} onOpenChange={setShowFornecedorDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">PDF de Preços por Fornecedor</DialogTitle>
+            <DialogDescription>
+              Escolha o(s) estado(s) e o fornecedor. O PDF conterá apenas os produtos e preços deste fornecedor.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground mb-1.5 block">
+                Estado(s)
+              </label>
+              <div className="flex gap-2">
+                <Button type="button" variant={estadoFornecedor === 'mt' ? 'default' : 'outline'} size="sm" className="flex-1 font-display" onClick={() => setEstadoFornecedor('mt')}>MT</Button>
+                <Button type="button" variant={estadoFornecedor === 'go' ? 'default' : 'outline'} size="sm" className="flex-1 font-display" onClick={() => setEstadoFornecedor('go')}>GO</Button>
+                <Button type="button" variant={estadoFornecedor === 'ambos' ? 'default' : 'outline'} size="sm" className="flex-1 font-display" onClick={() => setEstadoFornecedor('ambos')}>Ambos</Button>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground mb-1.5 block">
+                Fornecedor
+              </label>
+              <div className="space-y-2 max-h-[300px] overflow-auto">
+                {respostas.map(r => (
+                  <Button
+                    key={r.empresa}
+                    variant="outline"
+                    className="w-full justify-start font-display"
+                    onClick={() => exportFornecedorPDF(r.empresa)}
+                  >
+                    {r.empresa}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       {/* Price history section */}
       {showHistorico && (
         <div>
