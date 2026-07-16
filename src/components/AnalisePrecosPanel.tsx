@@ -100,7 +100,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     let totalMT = 0, totalGO = 0, countMT = 0, countGO = 0;
 
     const body = produtos.map((prod, idx) => {
-      const item: any = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+      const item: any = findRespItem(resp.resposta as any[], prod);
       const priceMT = item ? parsePreco(item.preco_mt ?? item.preco) : NaN;
       const priceGO = item ? parsePreco(item.preco_go ?? item.preco) : NaN;
       if (!isNaN(priceMT) && priceMT > 0) { totalMT += priceMT; countMT++; }
@@ -187,7 +187,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     let lossesCount = 0;
     produtos.forEach(prod => {
       const getNum = (resp: RespostaEmpresa) => {
-        const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+        const item = findRespItem(resp.resposta as any[], prod);
         if (!item) return NaN;
         return parsePreco(getPriceField(item));
       };
@@ -213,7 +213,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     // Pre-compute numeric prices and filter out wins / no-price items
     const allRowData = produtos.map((prod, idx) => {
       const getNum = (resp: RespostaEmpresa) => {
-        const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+        const item = findRespItem(resp.resposta as any[], prod);
         if (!item) return NaN;
         return parsePreco(getPriceField(item));
       };
@@ -379,7 +379,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
 
         for (const resp of listaResps) {
           const items = resp.resposta as any[];
-          const item = items.find((i: any) => i.codigo_interno === prod.codigo_interno);
+          const item = findRespItem(items, prod);
           if (item) {
             const num = parsePreco(item.preco_mt ?? item.preco);
             if (!isNaN(num) && num > 0 && num < lowestPrice) {
@@ -416,7 +416,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     const prodAnalysis = produtos.map(prod => {
       const prices: { empresa: string; preco: number }[] = [];
       for (const resp of respostas) {
-        const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
+        const item = findRespItem(resp.resposta as any[], prod);
         if (item) {
           const num = parsePreco(item.preco_mt ?? item.preco);
           if (!isNaN(num) && num > 0) {
