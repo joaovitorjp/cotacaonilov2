@@ -150,26 +150,16 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       nomesConcorrentes[r.empresa] = `Concorrente ${idx + 1}`;
     });
 
-    // --- Header bar ---
-    doc.setFillColor(41, 128, 185);
-    doc.rect(0, 0, pageWidth, 28, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.text('Comparativo de Preços', 14, 12);
-    doc.setFontSize(9);
-    doc.text(`Cotação: ${listaNome || 'Sem nome'}`, 14, 19);
-    doc.text(`Fornecedor: ${empresaSelecionada}  ·  Estado: ${estadoLabel}`, 14, 24);
-    const dataStr = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
-    doc.text(dataStr, pageWidth - 14 - doc.getTextWidth(dataStr), 24);
+    // --- Cabeçalho unificado ---
+    let y0 = drawHeader(doc, {
+      title: 'Comparativo de Preços',
+      subtitle: `Cotação: ${listaNome || 'Sem nome'}`,
+      meta: `Fornecedor: ${empresaSelecionada}  ·  Região: ${estadoLabel}`,
+    });
 
-    // Reset text color
-    doc.setTextColor(0, 0, 0);
-
-    // --- Summary box ---
+    // --- Cálculo do resumo ---
     const totalProdutos = produtos.length;
     const totalConcorrentes = outrasEmpresas.length;
-
-    // Count how many items the selected supplier has the best price
     let winsCount = 0;
     let lossesCount = 0;
     produtos.forEach(prod => {
@@ -187,12 +177,14 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       else lossesCount++;
     });
 
-    doc.setFontSize(8);
-    doc.setFillColor(245, 247, 250);
-    doc.roundedRect(14, 32, pageWidth - 28, 10, 2, 2, 'F');
-    doc.setTextColor(80, 80, 80);
-    doc.text(`${totalProdutos} produtos  ·  ${totalConcorrentes} concorrente(s)  ·  ✅ Menor preço em ${winsCount} itens  ·  ⚠️ Preço maior em ${lossesCount} itens`, 18, 38.5);
-    doc.setTextColor(0, 0, 0);
+    y0 = drawChips(doc, y0, [
+      { label: 'Produtos', value: String(totalProdutos), tone: 'primary' },
+      { label: 'Concorrentes', value: String(totalConcorrentes), tone: 'muted' },
+      { label: 'Menor preço', value: `${winsCount} itens`, tone: 'success' },
+      { label: 'Oportunidades', value: `${lossesCount} itens`, tone: 'danger' },
+    ]);
+    y0 = drawSectionTitle(doc, y0 + 2, 'Itens com Preço a Cobrir', 'accent');
+
 
     // --- Table ---
     const colHeaders = ['#', 'Código', 'Descrição', empresaSelecionada, ...outrasEmpresas.map(r => nomesConcorrentes[r.empresa]), 'Diferença'];
