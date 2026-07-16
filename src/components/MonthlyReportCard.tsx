@@ -106,22 +106,33 @@ const MonthlyReportCard: React.FC<Props> = ({ listas, profiles }) => {
         });
 
       autoTable(doc, {
-        startY: 43,
+        ...tableStyles,
+        startY: y0,
         head: [['Data', 'Cotação', 'Usuário', 'Email', 'Produtos', 'Respostas', 'Status']],
         body: rows,
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [37, 99, 235] },
         columnStyles: {
           0: { cellWidth: 22 },
-          1: { cellWidth: 42 },
+          1: { cellWidth: 42, fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
           2: { cellWidth: 32 },
           3: { cellWidth: 46 },
           4: { cellWidth: 16, halign: 'center' },
           5: { cellWidth: 18, halign: 'center' },
-          6: { cellWidth: 22 },
+          6: { cellWidth: 22, halign: 'center' },
+        },
+        didParseCell: (data: any) => {
+          if (data.section !== 'body' || data.column.index !== 6) return;
+          const v = String(data.cell.raw || '');
+          if (v === 'Finalizada') {
+            data.cell.styles.textColor = PDF_COLORS.success;
+            data.cell.styles.fontStyle = 'bold';
+          } else {
+            data.cell.styles.textColor = PDF_COLORS.primary;
+            data.cell.styles.fontStyle = 'bold';
+          }
         },
       });
 
+      drawFooter(doc);
       const fileName = `relatorio-cotacoes-${month}${userId !== 'all' ? '-' + (profiles[userId]?.nome || 'usuario').replace(/\s+/g, '_') : ''}.pdf`;
       doc.save(fileName);
       toast.success('Relatório gerado.');
