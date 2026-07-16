@@ -120,8 +120,8 @@ const CotacaoResposta = () => {
         meta: `Fornecedor: ${empresa}`,
       });
 
-      const preenchidosMT = showMT ? pricesMT.filter(p => p && p.trim() !== '').length : 0;
-      const preenchidosGO = showGO ? pricesGO.filter(p => p && p.trim() !== '').length : 0;
+      const preenchidosMT = showMT ? Object.values(pricesMT).filter(p => p && String(p).trim() !== '').length : 0;
+      const preenchidosGO = showGO ? Object.values(pricesGO).filter(p => p && String(p).trim() !== '').length : 0;
       const chips: { label: string; value: string; tone?: 'primary' | 'success' | 'muted' }[] = [
         { label: 'Produtos', value: String(produtos.length), tone: 'primary' },
       ];
