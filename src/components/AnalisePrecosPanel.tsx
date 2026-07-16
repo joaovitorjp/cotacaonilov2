@@ -195,7 +195,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         if (!item) return NaN;
         return parsePreco(getPriceField(item));
       };
-      const fmt = (v: number) => !isNaN(v) && v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '-';
+      const fmt = (v: number) => formatBRL(v);
 
       const selResp = respostas.find(r => r.empresa === empresaSelecionada);
       const selPrice = selResp ? getNum(selResp) : NaN;
