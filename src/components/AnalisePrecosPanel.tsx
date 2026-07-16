@@ -33,6 +33,25 @@ const parsePreco = (raw: number | string): number => {
   return NaN;
 };
 
+// Busca o item da resposta correspondente ao produto, priorizando o
+// código interno e caindo para o código de barras quando necessário.
+// Isso evita ausência de estatísticas quando um dos campos está vazio.
+const norm = (v: any) => (v === undefined || v === null ? '' : String(v).trim());
+const findRespItem = (items: any[] | undefined, prod: { codigo_interno: string; codigo_barras?: string }): any | undefined => {
+  if (!items || items.length === 0) return undefined;
+  const ci = norm(prod.codigo_interno);
+  const cb = norm(prod.codigo_barras);
+  if (ci) {
+    const byCi = items.find((i: any) => norm(i.codigo_interno) === ci);
+    if (byCi) return byCi;
+  }
+  if (cb) {
+    const byCb = items.find((i: any) => norm(i.codigo_barras) === cb);
+    if (byCb) return byCb;
+  }
+  return undefined;
+};
+
 interface HistoricoItem {
   listaNome: string;
   data: string;
