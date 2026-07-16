@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
+import { drawHeader, drawChips, drawSectionTitle, drawFooter, tableStyles, PDF_COLORS } from '@/lib/pdf-theme';
 
 interface Lista {
   id: string;
@@ -67,22 +68,27 @@ const MonthlyReportCard: React.FC<Props> = ({ listas, profiles }) => {
 
       const [y, m] = month.split('-').map(Number);
       const periodLabel = `${monthNames[m - 1]} / ${y}`;
+      const userLabel = userId !== 'all'
+        ? `${profiles[userId]?.nome || 'Sem nome'} (${profiles[userId]?.email || '—'})`
+        : 'Todos os usuários';
 
       const doc = new jsPDF();
-      doc.setFontSize(16);
-      doc.text('Relatório Mensal de Cotações', 14, 18);
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text(`Período: ${periodLabel}`, 14, 25);
+      let y0 = drawHeader(doc, {
+        title: 'Relatório Mensal de Cotações',
+        subtitle: `Período: ${periodLabel}`,
+        meta: `Usuário: ${userLabel}`,
+      });
 
-      if (userId !== 'all') {
-        const p = profiles[userId];
-        doc.text(`Usuário: ${p?.nome || 'Sem nome'} (${p?.email || '—'})`, 14, 31);
-      } else {
-        doc.text('Usuário: Todos', 14, 31);
-      }
-      doc.text(`Total de cotações: ${filtered.length}`, 14, 37);
-      doc.setTextColor(0);
+      const finalizadas = filtered.filter(l => l.status === 'finalizada').length;
+      const totalProdutos = filtered.reduce((s, l) => s + (l.produtos?.length ?? 0), 0);
+      y0 = drawChips(doc, y0, [
+        { label: 'Cotações', value: String(filtered.length), tone: 'primary' },
+        { label: 'Finalizadas', value: String(finalizadas), tone: 'success' },
+        { label: 'Abertas', value: String(filtered.length - finalizadas), tone: 'muted' },
+        { label: 'Produtos', value: String(totalProdutos), tone: 'muted' },
+      ]);
+
+      y0 = drawSectionTitle(doc, y0 + 2, 'Detalhamento');
 
       const rows = filtered
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
@@ -100,22 +106,33 @@ const MonthlyReportCard: React.FC<Props> = ({ listas, profiles }) => {
         });
 
       autoTable(doc, {
-        startY: 43,
+        ...tableStyles,
+        startY: y0,
         head: [['Data', 'Cotação', 'Usuário', 'Email', 'Produtos', 'Respostas', 'Status']],
         body: rows,
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [37, 99, 235] },
         columnStyles: {
           0: { cellWidth: 22 },
-          1: { cellWidth: 42 },
+          1: { cellWidth: 42, fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
           2: { cellWidth: 32 },
           3: { cellWidth: 46 },
           4: { cellWidth: 16, halign: 'center' },
           5: { cellWidth: 18, halign: 'center' },
-          6: { cellWidth: 22 },
+          6: { cellWidth: 22, halign: 'center' },
+        },
+        didParseCell: (data: any) => {
+          if (data.section !== 'body' || data.column.index !== 6) return;
+          const v = String(data.cell.raw || '');
+          if (v === 'Finalizada') {
+            data.cell.styles.textColor = PDF_COLORS.success;
+            data.cell.styles.fontStyle = 'bold';
+          } else {
+            data.cell.styles.textColor = PDF_COLORS.primary;
+            data.cell.styles.fontStyle = 'bold';
+          }
         },
       });
 
+      drawFooter(doc);
       const fileName = `relatorio-cotacoes-${month}${userId !== 'all' ? '-' + (profiles[userId]?.nome || 'usuario').replace(/\s+/g, '_') : ''}.pdf`;
       doc.save(fileName);
       toast.success('Relatório gerado.');

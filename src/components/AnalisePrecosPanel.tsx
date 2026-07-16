@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BarChart3, Trophy, TrendingDown, History, FileDown, Send } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { drawHeader, drawChips, drawSectionTitle, drawFooter, tableStyles, PDF_COLORS, formatBRL } from '@/lib/pdf-theme';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
@@ -76,76 +77,62 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     const showGO = estadoFornecedor === 'go' || estadoFornecedor === 'ambos';
 
     const doc = new jsPDF('portrait', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.getWidth();
+    let y0 = drawHeader(doc, {
+      title: 'Preços do Fornecedor',
+      subtitle: `Cotação: ${listaNome || 'Sem nome'}`,
+      meta: `Fornecedor: ${empresaSelecionada}  ·  Região: ${estadoFornecedor === 'ambos' ? 'MT + GO' : estadoFornecedor.toUpperCase()}`,
+    });
 
-    // Header
-    doc.setFillColor(41, 128, 185);
-    doc.rect(0, 0, pageWidth, 26, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text('Cotação — Preços do Fornecedor', 14, 12);
-    doc.setFontSize(9);
-    doc.text(`Cotação: ${listaNome || 'Sem nome'}`, 14, 18);
-    doc.text(`Fornecedor: ${empresaSelecionada}`, 14, 23);
-    const dataStr = `${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
-    doc.text(dataStr, pageWidth - 14 - doc.getTextWidth(dataStr), 23);
-    doc.setTextColor(0, 0, 0);
-
-    const fmt = (v: number) => !isNaN(v) && v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '-';
-
-    const head: string[] = ['#', 'Código', 'Descrição', 'Cód. Barras'];
-    if (showMT) head.push('MT');
-    if (showGO) head.push('GO');
-
+    // Cálculo de totais
     let totalMT = 0, totalGO = 0, countMT = 0, countGO = 0;
-
     const body = produtos.map((prod, idx) => {
       const item: any = findRespItem(resp.resposta as any[], prod);
       const priceMT = item ? parsePreco(item.preco_mt ?? item.preco) : NaN;
       const priceGO = item ? parsePreco(item.preco_go ?? item.preco) : NaN;
       if (!isNaN(priceMT) && priceMT > 0) { totalMT += priceMT; countMT++; }
       if (!isNaN(priceGO) && priceGO > 0) { totalGO += priceGO; countGO++; }
-      const row = [String(idx + 1), prod.codigo_interno, prod.descricao.substring(0, 55), prod.codigo_barras || '-'];
-      if (showMT) row.push(fmt(priceMT));
-      if (showGO) row.push(fmt(priceGO));
+      const row: string[] = [String(idx + 1), prod.codigo_interno, prod.descricao.substring(0, 60), prod.codigo_barras || '—'];
+      if (showMT) row.push(formatBRL(priceMT));
+      if (showGO) row.push(formatBRL(priceGO));
       return row;
     });
 
+    const chips: any[] = [{ label: 'Produtos', value: String(produtos.length), tone: 'primary' }];
+    if (showMT) chips.push({ label: 'Itens MT', value: `${countMT}`, tone: 'success' }, { label: 'Total MT', value: formatBRL(totalMT), tone: 'muted' });
+    if (showGO) chips.push({ label: 'Itens GO', value: `${countGO}`, tone: 'success' }, { label: 'Total GO', value: formatBRL(totalGO), tone: 'muted' });
+    y0 = drawChips(doc, y0, chips);
+    y0 = drawSectionTitle(doc, y0 + 2, 'Itens Precificados');
+
+    const head: string[] = ['#', 'Código', 'Descrição', 'Cód. Barras'];
+    if (showMT) head.push('MT');
+    if (showGO) head.push('GO');
+
     autoTable(doc, {
-      startY: 32,
+      ...tableStyles,
+      startY: y0,
       head: [head],
       body,
-      theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center' },
-      styles: { fontSize: 8, cellPadding: 2, lineColor: [220, 220, 220], lineWidth: 0.2 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 22 },
-        3: { cellWidth: 28 },
+        0: { cellWidth: 9, halign: 'center', textColor: PDF_COLORS.muted as any },
+        1: { cellWidth: 24, fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
+        3: { cellWidth: 28, textColor: PDF_COLORS.muted as any },
       },
       didParseCell: (data: any) => {
         if (data.section !== 'body') return;
-        const priceColStart = 4;
-        if (data.column.index >= priceColStart) {
+        if (data.column.index >= 4) {
           data.cell.styles.halign = 'right';
           data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.textColor = PDF_COLORS.ink;
+          if (data.cell.raw === '—') data.cell.styles.textColor = PDF_COLORS.muted;
         }
       },
     });
 
-    const finalY = (doc as any).lastAutoTable?.finalY || 200;
-    doc.setFontSize(9);
-    doc.setTextColor(60, 60, 60);
-    let y = finalY + 8;
-    doc.text(`Total de produtos: ${produtos.length}`, 14, y);
-    y += 5;
-    if (showMT) { doc.text(`Itens precificados (MT): ${countMT}  ·  Soma MT: R$ ${totalMT.toFixed(2).replace('.', ',')}`, 14, y); y += 5; }
-    if (showGO) { doc.text(`Itens precificados (GO): ${countGO}  ·  Soma GO: R$ ${totalGO.toFixed(2).replace('.', ',')}`, 14, y); y += 5; }
-
+    drawFooter(doc);
     doc.save(`precos_${empresaSelecionada.replace(/\s+/g, '_')}${listaNome ? `_${listaNome.replace(/\s+/g, '_')}` : ''}.pdf`);
     setShowFornecedorDialog(false);
   };
+
 
 
   const exportComparativoPDF = (empresaSelecionada: string) => {
@@ -154,7 +141,6 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     const getPriceField = (item: any) =>
       estado === 'mt' ? (item.preco_mt ?? item.preco) : (item.preco_go ?? item.preco);
     const doc = new jsPDF('landscape', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.getWidth();
     const outrasEmpresas = respostas.filter(r => r.empresa !== empresaSelecionada);
 
     // Anonymized names
@@ -163,26 +149,16 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       nomesConcorrentes[r.empresa] = `Concorrente ${idx + 1}`;
     });
 
-    // --- Header bar ---
-    doc.setFillColor(41, 128, 185);
-    doc.rect(0, 0, pageWidth, 28, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.text('Comparativo de Preços', 14, 12);
-    doc.setFontSize(9);
-    doc.text(`Cotação: ${listaNome || 'Sem nome'}`, 14, 19);
-    doc.text(`Fornecedor: ${empresaSelecionada}  ·  Estado: ${estadoLabel}`, 14, 24);
-    const dataStr = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
-    doc.text(dataStr, pageWidth - 14 - doc.getTextWidth(dataStr), 24);
+    // --- Cabeçalho unificado ---
+    let y0 = drawHeader(doc, {
+      title: 'Comparativo de Preços',
+      subtitle: `Cotação: ${listaNome || 'Sem nome'}`,
+      meta: `Fornecedor: ${empresaSelecionada}  ·  Região: ${estadoLabel}`,
+    });
 
-    // Reset text color
-    doc.setTextColor(0, 0, 0);
-
-    // --- Summary box ---
+    // --- Cálculo do resumo ---
     const totalProdutos = produtos.length;
     const totalConcorrentes = outrasEmpresas.length;
-
-    // Count how many items the selected supplier has the best price
     let winsCount = 0;
     let lossesCount = 0;
     produtos.forEach(prod => {
@@ -200,12 +176,14 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       else lossesCount++;
     });
 
-    doc.setFontSize(8);
-    doc.setFillColor(245, 247, 250);
-    doc.roundedRect(14, 32, pageWidth - 28, 10, 2, 2, 'F');
-    doc.setTextColor(80, 80, 80);
-    doc.text(`${totalProdutos} produtos  ·  ${totalConcorrentes} concorrente(s)  ·  ✅ Menor preço em ${winsCount} itens  ·  ⚠️ Preço maior em ${lossesCount} itens`, 18, 38.5);
-    doc.setTextColor(0, 0, 0);
+    y0 = drawChips(doc, y0, [
+      { label: 'Produtos', value: String(totalProdutos), tone: 'primary' },
+      { label: 'Concorrentes', value: String(totalConcorrentes), tone: 'muted' },
+      { label: 'Menor preço', value: `${winsCount} itens`, tone: 'success' },
+      { label: 'Oportunidades', value: `${lossesCount} itens`, tone: 'danger' },
+    ]);
+    y0 = drawSectionTitle(doc, y0 + 2, 'Itens com Preço a Cobrir', 'accent');
+
 
     // --- Table ---
     const colHeaders = ['#', 'Código', 'Descrição', empresaSelecionada, ...outrasEmpresas.map(r => nomesConcorrentes[r.empresa]), 'Diferença'];
@@ -217,7 +195,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         if (!item) return NaN;
         return parsePreco(getPriceField(item));
       };
-      const fmt = (v: number) => !isNaN(v) && v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '-';
+      const fmt = (v: number) => formatBRL(v);
 
       const selResp = respostas.find(r => r.empresa === empresaSelecionada);
       const selPrice = selResp ? getNum(selResp) : NaN;
@@ -259,29 +237,17 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     lossesCount = allRowData.length;
 
     autoTable(doc, {
-      startY: 46,
+      ...tableStyles,
+      startY: y0,
       head: [colHeaders],
       body: allRowData.map(r => r.row),
-      theme: 'grid',
-      headStyles: {
-        fillColor: [41, 128, 185],
-        fontSize: 7,
-        halign: 'center',
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-      },
-      styles: {
-        fontSize: 7,
-        cellPadding: 2,
-        lineColor: [220, 220, 220],
-        lineWidth: 0.2,
-      },
-      alternateRowStyles: { fillColor: [250, 250, 252] },
+      headStyles: { ...tableStyles.headStyles, fontSize: 7.5, halign: 'center' },
+      bodyStyles: { ...tableStyles.bodyStyles, fontSize: 7.5 },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 22 },
-        2: { cellWidth: 42 },
-        [colHeaders.length - 1]: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
+        0: { cellWidth: 10, halign: 'center', textColor: PDF_COLORS.muted as any },
+        1: { cellWidth: 22, fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
+        2: { cellWidth: 46 },
+        [colHeaders.length - 1]: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
       },
       didParseCell: (data: any) => {
         if (data.section !== 'body') return;
@@ -289,57 +255,62 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         const rd = allRowData[rowIdx];
         if (!rd) return;
 
-        const selColIdx = 3; // supplier column index
+        const selColIdx = 3;
         const firstConcIdx = 4;
         const lastConcIdx = firstConcIdx + outrasEmpresas.length - 1;
         const diffColIdx = colHeaders.length - 1;
 
-        // Highlight selected supplier column
-        if (data.column.index === selColIdx) {
-          data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.fillColor = [230, 242, 255];
+        if (data.column.index >= selColIdx && data.column.index <= lastConcIdx) {
+          data.cell.styles.halign = 'right';
         }
 
-        // Highlight competitor prices that are LOWER than the selected supplier (green)
+        // Coluna do fornecedor selecionado
+        if (data.column.index === selColIdx) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = PDF_COLORS.primarySoft;
+          data.cell.styles.textColor = PDF_COLORS.primary;
+        }
+
+        // Concorrentes com preço menor (oportunidade de cobrir)
         if (data.column.index >= firstConcIdx && data.column.index <= lastConcIdx) {
           const concIdx = data.column.index - firstConcIdx;
           const concPrice = rd.concPrices[concIdx];
-          if (!isNaN(concPrice) && concPrice > 0 && !isNaN(rd.selPrice) && rd.selPrice > 0) {
-            if (concPrice < rd.selPrice) {
-              data.cell.styles.fillColor = [220, 245, 220];
-              data.cell.styles.textColor = [30, 120, 30];
-              data.cell.styles.fontStyle = 'bold';
-            }
+          if (!isNaN(concPrice) && concPrice > 0 && !isNaN(rd.selPrice) && rd.selPrice > 0 && concPrice < rd.selPrice) {
+            data.cell.styles.fillColor = PDF_COLORS.successSoft;
+            data.cell.styles.textColor = PDF_COLORS.success;
+            data.cell.styles.fontStyle = 'bold';
           }
         }
 
-        // Difference column coloring
+        // Coluna Diferença
         if (data.column.index === diffColIdx) {
           const txt = data.cell.raw || '';
           if (typeof txt === 'string' && txt.startsWith('+')) {
-            data.cell.styles.textColor = [200, 50, 50];
+            data.cell.styles.textColor = PDF_COLORS.danger;
+            data.cell.styles.fillColor = PDF_COLORS.dangerSoft;
           } else if (typeof txt === 'string' && txt.startsWith('-')) {
-            data.cell.styles.textColor = [30, 120, 30];
+            data.cell.styles.textColor = PDF_COLORS.success;
+            data.cell.styles.fillColor = PDF_COLORS.successSoft;
           }
         }
       },
     });
 
-    // --- Footer ---
+    // Legenda
     const finalY = (doc as any).lastAutoTable?.finalY || 200;
-    doc.setFontSize(7);
-    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(7.5);
+    doc.setTextColor(...PDF_COLORS.muted);
     doc.text('Os nomes dos concorrentes foram omitidos por questões de confidencialidade.', 14, finalY + 6);
+    doc.setFillColor(...PDF_COLORS.successSoft);
+    doc.roundedRect(14, finalY + 10, 4, 3, 0.5, 0.5, 'F');
+    doc.setTextColor(...PDF_COLORS.body);
+    doc.text('= Concorrente com preço menor (oportunidade de cobrir)', 20, finalY + 12.5);
 
-    // Legend
-    doc.setFillColor(220, 245, 220);
-    doc.rect(14, finalY + 10, 4, 3, 'F');
-    doc.setTextColor(80, 80, 80);
-    doc.text('= Preço do concorrente menor que o seu (oportunidade de cobrir)', 20, finalY + 12.5);
-
+    drawFooter(doc);
     doc.save(`comparativo_${empresaSelecionada.replace(/\s+/g, '_')}_${estado.toUpperCase()}.pdf`);
     setShowComparativoDialog(false);
   };
+
 
   const loadHistorico = async () => {
     if (Object.keys(historico).length > 0) {
@@ -464,66 +435,87 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     const doc = new jsPDF('landscape', 'mm', 'a4');
     const empresas = respostas.map(r => r.empresa);
 
-    // Title
-    doc.setFontSize(16);
-    doc.text(`Análise de Preços${listaNome ? ` - ${listaNome}` : ''}`, 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 14, 22);
-    doc.text(`${respostas.length} fornecedor(es) · ${produtos.length} produto(s)`, 14, 27);
+    let y0 = drawHeader(doc, {
+      title: 'Análise de Preços',
+      subtitle: listaNome ? `Cotação: ${listaNome}` : undefined,
+      meta: `${respostas.length} fornecedor(es)  ·  ${produtos.length} produto(s)`,
+    });
 
-    // Summary
-    doc.setFontSize(12);
-    doc.text('Resumo', 14, 36);
-    doc.setFontSize(10);
-    doc.text(`Melhor fornecedor: ${analysis.ranking[0]?.empresa || '-'} (${analysis.ranking[0]?.wins || 0} itens com menor preço)`, 14, 42);
-    doc.text(`Economia potencial: R$ ${analysis.totalSavings.toFixed(2).replace('.', ',')}`, 14, 48);
+    y0 = drawChips(doc, y0, [
+      { label: 'Melhor fornecedor', value: analysis.ranking[0]?.empresa || '—', tone: 'primary' },
+      { label: 'Vitórias', value: String(analysis.ranking[0]?.wins || 0), tone: 'success' },
+      { label: 'Economia potencial', value: formatBRL(analysis.totalSavings), tone: 'success' },
+    ]);
 
-    // Ranking table
+    y0 = drawSectionTitle(doc, y0 + 2, 'Ranking de Fornecedores');
+
     autoTable(doc, {
-      startY: 54,
+      ...tableStyles,
+      startY: y0,
       head: [['#', 'Fornecedor', 'Vitórias', 'Preço Médio']],
       body: analysis.ranking.map((r, idx) => [
         `${idx + 1}º`,
         r.empresa,
         String(r.wins),
-        `R$ ${r.avgPrice.toFixed(2).replace('.', ',')}`,
+        formatBRL(r.avgPrice),
       ]),
-      theme: 'striped',
-      headStyles: { fillColor: [41, 128, 185] },
-      styles: { fontSize: 9 },
-    });
-
-    // Price comparison table
-    const tableHead = ['Código', 'Descrição', ...empresas, 'Menor', 'Economia'];
-    const tableBody = analysis.prodAnalysis.map(item => {
-      const row = [
-        item.prod.codigo_interno,
-        item.prod.descricao.substring(0, 40),
-        ...empresas.map(emp => {
-          const p = item.prices.find(pr => pr.empresa === emp);
-          return p ? `R$ ${p.preco.toFixed(2).replace('.', ',')}` : '-';
-        }),
-        item.winner ? `R$ ${item.winner.preco.toFixed(2).replace('.', ',')}` : '-',
-        item.savings > 0 ? `-${item.savings.toFixed(0)}%` : '-',
-      ];
-      return row;
-    });
-
-    autoTable(doc, {
-      startY: (doc as any).lastAutoTable?.finalY + 10 || 80,
-      head: [tableHead],
-      body: tableBody,
-      theme: 'striped',
-      headStyles: { fillColor: [41, 128, 185], fontSize: 7 },
-      styles: { fontSize: 7, cellPadding: 2 },
       columnStyles: {
-        0: { cellWidth: 20 },
-        1: { cellWidth: 40 },
+        0: { cellWidth: 14, halign: 'center', fontStyle: 'bold', textColor: PDF_COLORS.primary as any },
+        1: { fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
+        2: { halign: 'center' },
+        3: { halign: 'right' },
       },
     });
 
+    let y1 = ((doc as any).lastAutoTable?.finalY || 80) + 8;
+    y1 = drawSectionTitle(doc, y1, 'Comparativo por Produto', 'accent');
+
+    const tableHead = ['Código', 'Descrição', ...empresas, 'Menor', 'Economia'];
+    const winnerColIdx = 2 + empresas.length;
+    const savingsColIdx = winnerColIdx + 1;
+    const tableBody = analysis.prodAnalysis.map(item => [
+      item.prod.codigo_interno,
+      item.prod.descricao.substring(0, 40),
+      ...empresas.map(emp => {
+        const p = item.prices.find(pr => pr.empresa === emp);
+        return p ? formatBRL(p.preco) : '—';
+      }),
+      item.winner ? formatBRL(item.winner.preco) : '—',
+      item.savings > 0 ? `-${item.savings.toFixed(0)}%` : '—',
+    ]);
+
+    autoTable(doc, {
+      ...tableStyles,
+      startY: y1,
+      head: [tableHead],
+      body: tableBody,
+      headStyles: { ...tableStyles.headStyles, fontSize: 7.5 },
+      bodyStyles: { ...tableStyles.bodyStyles, fontSize: 7.5 },
+      columnStyles: {
+        0: { cellWidth: 22, fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
+        1: { cellWidth: 46 },
+      },
+      didParseCell: (data: any) => {
+        if (data.section !== 'body') return;
+        if (data.column.index >= 2) data.cell.styles.halign = 'right';
+        if (data.column.index === winnerColIdx) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = PDF_COLORS.successSoft;
+          data.cell.styles.textColor = PDF_COLORS.success;
+        }
+        if (data.column.index === savingsColIdx) {
+          data.cell.styles.halign = 'center';
+          data.cell.styles.fontStyle = 'bold';
+          const v = String(data.cell.raw || '');
+          if (v.startsWith('-')) data.cell.styles.textColor = PDF_COLORS.success;
+        }
+      },
+    });
+
+    drawFooter(doc);
     doc.save(`analise_precos${listaNome ? `_${listaNome}` : ''}.pdf`);
   };
+
 
   if (!analysis || respostas.length < 2) {
     return (
