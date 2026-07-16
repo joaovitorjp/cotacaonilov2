@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { CheckCircle2, AlertCircle, Loader2, Package, Send, Search, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { drawHeader, drawChips, drawSectionTitle, drawFooter, tableStyles, PDF_COLORS } from '@/lib/pdf-theme';
 
 interface Produto {
   codigo_interno: string;
