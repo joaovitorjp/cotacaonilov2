@@ -237,29 +237,17 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     lossesCount = allRowData.length;
 
     autoTable(doc, {
-      startY: 46,
+      ...tableStyles,
+      startY: y0,
       head: [colHeaders],
       body: allRowData.map(r => r.row),
-      theme: 'grid',
-      headStyles: {
-        fillColor: [41, 128, 185],
-        fontSize: 7,
-        halign: 'center',
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-      },
-      styles: {
-        fontSize: 7,
-        cellPadding: 2,
-        lineColor: [220, 220, 220],
-        lineWidth: 0.2,
-      },
-      alternateRowStyles: { fillColor: [250, 250, 252] },
+      headStyles: { ...tableStyles.headStyles, fontSize: 7.5, halign: 'center' },
+      bodyStyles: { ...tableStyles.bodyStyles, fontSize: 7.5 },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 22 },
-        2: { cellWidth: 42 },
-        [colHeaders.length - 1]: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
+        0: { cellWidth: 10, halign: 'center', textColor: PDF_COLORS.muted as any },
+        1: { cellWidth: 22, fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
+        2: { cellWidth: 46 },
+        [colHeaders.length - 1]: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
       },
       didParseCell: (data: any) => {
         if (data.section !== 'body') return;
@@ -267,57 +255,62 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         const rd = allRowData[rowIdx];
         if (!rd) return;
 
-        const selColIdx = 3; // supplier column index
+        const selColIdx = 3;
         const firstConcIdx = 4;
         const lastConcIdx = firstConcIdx + outrasEmpresas.length - 1;
         const diffColIdx = colHeaders.length - 1;
 
-        // Highlight selected supplier column
-        if (data.column.index === selColIdx) {
-          data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.fillColor = [230, 242, 255];
+        if (data.column.index >= selColIdx && data.column.index <= lastConcIdx) {
+          data.cell.styles.halign = 'right';
         }
 
-        // Highlight competitor prices that are LOWER than the selected supplier (green)
+        // Coluna do fornecedor selecionado
+        if (data.column.index === selColIdx) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = PDF_COLORS.primarySoft;
+          data.cell.styles.textColor = PDF_COLORS.primary;
+        }
+
+        // Concorrentes com preço menor (oportunidade de cobrir)
         if (data.column.index >= firstConcIdx && data.column.index <= lastConcIdx) {
           const concIdx = data.column.index - firstConcIdx;
           const concPrice = rd.concPrices[concIdx];
-          if (!isNaN(concPrice) && concPrice > 0 && !isNaN(rd.selPrice) && rd.selPrice > 0) {
-            if (concPrice < rd.selPrice) {
-              data.cell.styles.fillColor = [220, 245, 220];
-              data.cell.styles.textColor = [30, 120, 30];
-              data.cell.styles.fontStyle = 'bold';
-            }
+          if (!isNaN(concPrice) && concPrice > 0 && !isNaN(rd.selPrice) && rd.selPrice > 0 && concPrice < rd.selPrice) {
+            data.cell.styles.fillColor = PDF_COLORS.successSoft;
+            data.cell.styles.textColor = PDF_COLORS.success;
+            data.cell.styles.fontStyle = 'bold';
           }
         }
 
-        // Difference column coloring
+        // Coluna Diferença
         if (data.column.index === diffColIdx) {
           const txt = data.cell.raw || '';
           if (typeof txt === 'string' && txt.startsWith('+')) {
-            data.cell.styles.textColor = [200, 50, 50];
+            data.cell.styles.textColor = PDF_COLORS.danger;
+            data.cell.styles.fillColor = PDF_COLORS.dangerSoft;
           } else if (typeof txt === 'string' && txt.startsWith('-')) {
-            data.cell.styles.textColor = [30, 120, 30];
+            data.cell.styles.textColor = PDF_COLORS.success;
+            data.cell.styles.fillColor = PDF_COLORS.successSoft;
           }
         }
       },
     });
 
-    // --- Footer ---
+    // Legenda
     const finalY = (doc as any).lastAutoTable?.finalY || 200;
-    doc.setFontSize(7);
-    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(7.5);
+    doc.setTextColor(...PDF_COLORS.muted);
     doc.text('Os nomes dos concorrentes foram omitidos por questões de confidencialidade.', 14, finalY + 6);
+    doc.setFillColor(...PDF_COLORS.successSoft);
+    doc.roundedRect(14, finalY + 10, 4, 3, 0.5, 0.5, 'F');
+    doc.setTextColor(...PDF_COLORS.body);
+    doc.text('= Concorrente com preço menor (oportunidade de cobrir)', 20, finalY + 12.5);
 
-    // Legend
-    doc.setFillColor(220, 245, 220);
-    doc.rect(14, finalY + 10, 4, 3, 'F');
-    doc.setTextColor(80, 80, 80);
-    doc.text('= Preço do concorrente menor que o seu (oportunidade de cobrir)', 20, finalY + 12.5);
-
+    drawFooter(doc);
     doc.save(`comparativo_${empresaSelecionada.replace(/\s+/g, '_')}_${estado.toUpperCase()}.pdf`);
     setShowComparativoDialog(false);
   };
+
 
   const loadHistorico = async () => {
     if (Object.keys(historico).length > 0) {
