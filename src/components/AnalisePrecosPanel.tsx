@@ -77,76 +77,62 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     const showGO = estadoFornecedor === 'go' || estadoFornecedor === 'ambos';
 
     const doc = new jsPDF('portrait', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.getWidth();
+    let y0 = drawHeader(doc, {
+      title: 'Preços do Fornecedor',
+      subtitle: `Cotação: ${listaNome || 'Sem nome'}`,
+      meta: `Fornecedor: ${empresaSelecionada}  ·  Região: ${estadoFornecedor === 'ambos' ? 'MT + GO' : estadoFornecedor.toUpperCase()}`,
+    });
 
-    // Header
-    doc.setFillColor(41, 128, 185);
-    doc.rect(0, 0, pageWidth, 26, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text('Cotação — Preços do Fornecedor', 14, 12);
-    doc.setFontSize(9);
-    doc.text(`Cotação: ${listaNome || 'Sem nome'}`, 14, 18);
-    doc.text(`Fornecedor: ${empresaSelecionada}`, 14, 23);
-    const dataStr = `${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
-    doc.text(dataStr, pageWidth - 14 - doc.getTextWidth(dataStr), 23);
-    doc.setTextColor(0, 0, 0);
-
-    const fmt = (v: number) => !isNaN(v) && v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '-';
-
-    const head: string[] = ['#', 'Código', 'Descrição', 'Cód. Barras'];
-    if (showMT) head.push('MT');
-    if (showGO) head.push('GO');
-
+    // Cálculo de totais
     let totalMT = 0, totalGO = 0, countMT = 0, countGO = 0;
-
     const body = produtos.map((prod, idx) => {
       const item: any = findRespItem(resp.resposta as any[], prod);
       const priceMT = item ? parsePreco(item.preco_mt ?? item.preco) : NaN;
       const priceGO = item ? parsePreco(item.preco_go ?? item.preco) : NaN;
       if (!isNaN(priceMT) && priceMT > 0) { totalMT += priceMT; countMT++; }
       if (!isNaN(priceGO) && priceGO > 0) { totalGO += priceGO; countGO++; }
-      const row = [String(idx + 1), prod.codigo_interno, prod.descricao.substring(0, 55), prod.codigo_barras || '-'];
-      if (showMT) row.push(fmt(priceMT));
-      if (showGO) row.push(fmt(priceGO));
+      const row: string[] = [String(idx + 1), prod.codigo_interno, prod.descricao.substring(0, 60), prod.codigo_barras || '—'];
+      if (showMT) row.push(formatBRL(priceMT));
+      if (showGO) row.push(formatBRL(priceGO));
       return row;
     });
 
+    const chips: any[] = [{ label: 'Produtos', value: String(produtos.length), tone: 'primary' }];
+    if (showMT) chips.push({ label: 'Itens MT', value: `${countMT}`, tone: 'success' }, { label: 'Total MT', value: formatBRL(totalMT), tone: 'muted' });
+    if (showGO) chips.push({ label: 'Itens GO', value: `${countGO}`, tone: 'success' }, { label: 'Total GO', value: formatBRL(totalGO), tone: 'muted' });
+    y0 = drawChips(doc, y0, chips);
+    y0 = drawSectionTitle(doc, y0 + 2, 'Itens Precificados');
+
+    const head: string[] = ['#', 'Código', 'Descrição', 'Cód. Barras'];
+    if (showMT) head.push('MT');
+    if (showGO) head.push('GO');
+
     autoTable(doc, {
-      startY: 32,
+      ...tableStyles,
+      startY: y0,
       head: [head],
       body,
-      theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center' },
-      styles: { fontSize: 8, cellPadding: 2, lineColor: [220, 220, 220], lineWidth: 0.2 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 22 },
-        3: { cellWidth: 28 },
+        0: { cellWidth: 9, halign: 'center', textColor: PDF_COLORS.muted as any },
+        1: { cellWidth: 24, fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
+        3: { cellWidth: 28, textColor: PDF_COLORS.muted as any },
       },
       didParseCell: (data: any) => {
         if (data.section !== 'body') return;
-        const priceColStart = 4;
-        if (data.column.index >= priceColStart) {
+        if (data.column.index >= 4) {
           data.cell.styles.halign = 'right';
           data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.textColor = PDF_COLORS.ink;
+          if (data.cell.raw === '—') data.cell.styles.textColor = PDF_COLORS.muted;
         }
       },
     });
 
-    const finalY = (doc as any).lastAutoTable?.finalY || 200;
-    doc.setFontSize(9);
-    doc.setTextColor(60, 60, 60);
-    let y = finalY + 8;
-    doc.text(`Total de produtos: ${produtos.length}`, 14, y);
-    y += 5;
-    if (showMT) { doc.text(`Itens precificados (MT): ${countMT}  ·  Soma MT: R$ ${totalMT.toFixed(2).replace('.', ',')}`, 14, y); y += 5; }
-    if (showGO) { doc.text(`Itens precificados (GO): ${countGO}  ·  Soma GO: R$ ${totalGO.toFixed(2).replace('.', ',')}`, 14, y); y += 5; }
-
+    drawFooter(doc);
     doc.save(`precos_${empresaSelecionada.replace(/\s+/g, '_')}${listaNome ? `_${listaNome.replace(/\s+/g, '_')}` : ''}.pdf`);
     setShowFornecedorDialog(false);
   };
+
 
 
   const exportComparativoPDF = (empresaSelecionada: string) => {
