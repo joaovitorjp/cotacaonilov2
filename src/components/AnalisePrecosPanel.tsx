@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BarChart3, Trophy, TrendingDown, History, FileDown, Send } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { drawHeader, drawChips, drawSectionTitle, drawFooter, tableStyles, PDF_COLORS, formatBRL } from '@/lib/pdf-theme';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
