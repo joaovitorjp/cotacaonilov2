@@ -114,34 +114,55 @@ const CotacaoResposta = () => {
   const handleDownloadPdf = () => {
     try {
       const doc = new jsPDF();
-      const now = new Date();
-      const dateStr = now.toLocaleString('pt-BR');
-      doc.setFontSize(14);
-      doc.text('Nilo Atacadista - Cópia da Resposta', 14, 15);
-      doc.setFontSize(10);
-      doc.text(`Cotação: ${listaNome}`, 14, 22);
-      doc.text(`Fornecedor: ${empresa}`, 14, 27);
-      doc.text(`Data: ${dateStr}`, 14, 32);
+      let y0 = drawHeader(doc, {
+        title: 'Cópia da Resposta de Cotação',
+        subtitle: `Cotação: ${listaNome}`,
+        meta: `Fornecedor: ${empresa}`,
+      });
+
+      const preenchidosMT = showMT ? pricesMT.filter(p => p && p.trim() !== '').length : 0;
+      const preenchidosGO = showGO ? pricesGO.filter(p => p && p.trim() !== '').length : 0;
+      const chips: { label: string; value: string; tone?: 'primary' | 'success' | 'muted' }[] = [
+        { label: 'Produtos', value: String(produtos.length), tone: 'primary' },
+      ];
+      if (showMT) chips.push({ label: 'Preenchidos MT', value: `${preenchidosMT}/${produtos.length}`, tone: 'success' });
+      if (showGO) chips.push({ label: 'Preenchidos GO', value: `${preenchidosGO}/${produtos.length}`, tone: 'success' });
+      y0 = drawChips(doc, y0, chips);
+      y0 = drawSectionTitle(doc, y0 + 2, 'Itens Cotados');
 
       const head: string[] = ['Código', 'Descrição', 'EAN'];
       if (showMT) head.push('Preço MT (R$)');
       if (showGO) head.push('Preço GO (R$)');
 
       const body = produtos.map((p, idx) => {
-        const row: string[] = [p.codigo_interno, p.descricao, p.codigo_barras || ''];
-        if (showMT) row.push(pricesMT[idx] || '-');
-        if (showGO) row.push(pricesGO[idx] || '-');
+        const row: string[] = [p.codigo_interno, p.descricao, p.codigo_barras || '—'];
+        if (showMT) row.push(pricesMT[idx] || '—');
+        if (showGO) row.push(pricesGO[idx] || '—');
         return row;
       });
 
       autoTable(doc, {
+        ...tableStyles,
         head: [head],
         body,
-        startY: 38,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [37, 99, 235] },
+        startY: y0,
+        columnStyles: {
+          0: { cellWidth: 22, fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
+          1: { cellWidth: 'auto' as any },
+          2: { cellWidth: 30 },
+        },
+        didParseCell: (data: any) => {
+          if (data.section !== 'body') return;
+          const isPriceCol = (showMT && data.column.index === 3) || (showGO && data.column.index === (showMT ? 4 : 3));
+          if (isPriceCol) {
+            data.cell.styles.halign = 'right';
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.textColor = PDF_COLORS.ink;
+          }
+        },
       });
 
+      drawFooter(doc);
       const safeEmpresa = empresa.replace(/[^a-zA-Z0-9]+/g, '_');
       const safeLista = listaNome.replace(/[^a-zA-Z0-9]+/g, '_');
       doc.save(`cotacao_${safeLista}_${safeEmpresa}.pdf`);
