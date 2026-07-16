@@ -435,66 +435,87 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     const doc = new jsPDF('landscape', 'mm', 'a4');
     const empresas = respostas.map(r => r.empresa);
 
-    // Title
-    doc.setFontSize(16);
-    doc.text(`Análise de Preços${listaNome ? ` - ${listaNome}` : ''}`, 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 14, 22);
-    doc.text(`${respostas.length} fornecedor(es) · ${produtos.length} produto(s)`, 14, 27);
+    let y0 = drawHeader(doc, {
+      title: 'Análise de Preços',
+      subtitle: listaNome ? `Cotação: ${listaNome}` : undefined,
+      meta: `${respostas.length} fornecedor(es)  ·  ${produtos.length} produto(s)`,
+    });
 
-    // Summary
-    doc.setFontSize(12);
-    doc.text('Resumo', 14, 36);
-    doc.setFontSize(10);
-    doc.text(`Melhor fornecedor: ${analysis.ranking[0]?.empresa || '-'} (${analysis.ranking[0]?.wins || 0} itens com menor preço)`, 14, 42);
-    doc.text(`Economia potencial: R$ ${analysis.totalSavings.toFixed(2).replace('.', ',')}`, 14, 48);
+    y0 = drawChips(doc, y0, [
+      { label: 'Melhor fornecedor', value: analysis.ranking[0]?.empresa || '—', tone: 'primary' },
+      { label: 'Vitórias', value: String(analysis.ranking[0]?.wins || 0), tone: 'success' },
+      { label: 'Economia potencial', value: formatBRL(analysis.totalSavings), tone: 'success' },
+    ]);
 
-    // Ranking table
+    y0 = drawSectionTitle(doc, y0 + 2, 'Ranking de Fornecedores');
+
     autoTable(doc, {
-      startY: 54,
+      ...tableStyles,
+      startY: y0,
       head: [['#', 'Fornecedor', 'Vitórias', 'Preço Médio']],
       body: analysis.ranking.map((r, idx) => [
         `${idx + 1}º`,
         r.empresa,
         String(r.wins),
-        `R$ ${r.avgPrice.toFixed(2).replace('.', ',')}`,
+        formatBRL(r.avgPrice),
       ]),
-      theme: 'striped',
-      headStyles: { fillColor: [41, 128, 185] },
-      styles: { fontSize: 9 },
-    });
-
-    // Price comparison table
-    const tableHead = ['Código', 'Descrição', ...empresas, 'Menor', 'Economia'];
-    const tableBody = analysis.prodAnalysis.map(item => {
-      const row = [
-        item.prod.codigo_interno,
-        item.prod.descricao.substring(0, 40),
-        ...empresas.map(emp => {
-          const p = item.prices.find(pr => pr.empresa === emp);
-          return p ? `R$ ${p.preco.toFixed(2).replace('.', ',')}` : '-';
-        }),
-        item.winner ? `R$ ${item.winner.preco.toFixed(2).replace('.', ',')}` : '-',
-        item.savings > 0 ? `-${item.savings.toFixed(0)}%` : '-',
-      ];
-      return row;
-    });
-
-    autoTable(doc, {
-      startY: (doc as any).lastAutoTable?.finalY + 10 || 80,
-      head: [tableHead],
-      body: tableBody,
-      theme: 'striped',
-      headStyles: { fillColor: [41, 128, 185], fontSize: 7 },
-      styles: { fontSize: 7, cellPadding: 2 },
       columnStyles: {
-        0: { cellWidth: 20 },
-        1: { cellWidth: 40 },
+        0: { cellWidth: 14, halign: 'center', fontStyle: 'bold', textColor: PDF_COLORS.primary as any },
+        1: { fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
+        2: { halign: 'center' },
+        3: { halign: 'right' },
       },
     });
 
+    let y1 = ((doc as any).lastAutoTable?.finalY || 80) + 8;
+    y1 = drawSectionTitle(doc, y1, 'Comparativo por Produto', 'accent');
+
+    const tableHead = ['Código', 'Descrição', ...empresas, 'Menor', 'Economia'];
+    const winnerColIdx = 2 + empresas.length;
+    const savingsColIdx = winnerColIdx + 1;
+    const tableBody = analysis.prodAnalysis.map(item => [
+      item.prod.codigo_interno,
+      item.prod.descricao.substring(0, 40),
+      ...empresas.map(emp => {
+        const p = item.prices.find(pr => pr.empresa === emp);
+        return p ? formatBRL(p.preco) : '—';
+      }),
+      item.winner ? formatBRL(item.winner.preco) : '—',
+      item.savings > 0 ? `-${item.savings.toFixed(0)}%` : '—',
+    ]);
+
+    autoTable(doc, {
+      ...tableStyles,
+      startY: y1,
+      head: [tableHead],
+      body: tableBody,
+      headStyles: { ...tableStyles.headStyles, fontSize: 7.5 },
+      bodyStyles: { ...tableStyles.bodyStyles, fontSize: 7.5 },
+      columnStyles: {
+        0: { cellWidth: 22, fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
+        1: { cellWidth: 46 },
+      },
+      didParseCell: (data: any) => {
+        if (data.section !== 'body') return;
+        if (data.column.index >= 2) data.cell.styles.halign = 'right';
+        if (data.column.index === winnerColIdx) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = PDF_COLORS.successSoft;
+          data.cell.styles.textColor = PDF_COLORS.success;
+        }
+        if (data.column.index === savingsColIdx) {
+          data.cell.styles.halign = 'center';
+          data.cell.styles.fontStyle = 'bold';
+          const v = String(data.cell.raw || '');
+          if (v.startsWith('-')) data.cell.styles.textColor = PDF_COLORS.success;
+        }
+      },
+    });
+
+    drawFooter(doc);
     doc.save(`analise_precos${listaNome ? `_${listaNome}` : ''}.pdf`);
   };
+
 
   if (!analysis || respostas.length < 2) {
     return (
