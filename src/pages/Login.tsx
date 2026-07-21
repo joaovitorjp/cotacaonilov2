@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import AetherFlowBackground from '@/components/ui/aether-flow-background';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -75,8 +76,9 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="w-full max-w-sm mx-auto p-8">
+    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-background">
+      <AetherFlowBackground />
+      <div className="relative z-10 w-full max-w-sm mx-auto p-8 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
             Nilo Atacadista
