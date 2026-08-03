@@ -80,7 +80,10 @@ const AdminPanel: React.FC = () => {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return listas.filter(l => {
+      // Filtro de status
       if (statusFilter !== 'all' && l.status !== statusFilter) return false;
+      
+      // Filtro de pesquisa
       if (!q) return true;
       const owner = profiles[l.user_id];
       return (
