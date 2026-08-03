@@ -33,11 +33,12 @@ interface CarregarListaPanelProps {
   statusFilter: 'aberta' | 'finalizada';
   title: string;
   onExport?: (lista: Lista) => void;
-  onDownloadResultados?: (lista: Lista) => void;
+  onDownloadCISS?: (lista: Lista) => void;
+  onDownloadCONSINCO?: (lista: Lista) => void;
 }
 
 const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
-  open, onOpenChange, onListaSelected, statusFilter, title, onExport, onDownloadResultados,
+  open, onOpenChange, onListaSelected, statusFilter, title, onExport, onDownloadCISS, onDownloadCONSINCO,
 }) => {
   const { user } = useAuth();
   const [listas, setListas] = useState<Lista[]>([]);
@@ -324,14 +325,24 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                           <FileSpreadsheet className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      {statusFilter === 'finalizada' && onDownloadResultados && (
+                      {statusFilter === 'finalizada' && onDownloadCISS && (
                         <button
-                          onClick={() => onDownloadResultados(lista)}
+                          onClick={() => onDownloadCISS(lista)}
                           className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
-                          title="Exportar CSV Ganhadores (CISS e CONSINCO)"
+                          title="Exportar CSV Ganhadores (CISS)"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline text-[11px] font-display">CSVs Ganhadores</span>
+                          <span className="hidden sm:inline text-[11px] font-display uppercase font-bold">CSV CISS</span>
+                        </button>
+                      )}
+                      {statusFilter === 'finalizada' && onDownloadCONSINCO && (
+                        <button
+                          onClick={() => onDownloadCONSINCO(lista)}
+                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
+                          title="Exportar CSV Ganhadores (CONSINCO)"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline text-[11px] font-display uppercase font-bold">CSV CONSINCO</span>
                         </button>
                       )}
                       <div className="flex-1" />
