@@ -383,7 +383,7 @@ const Index = () => {
     toast.success('Planilha exportada!');
   };
 
-  const handleDownloadResultados = async (lista: Lista) => {
+  const handleDownloadResultados = async (lista: Lista, type: 'CISS' | 'CONSINCO') => {
     const { data: respsData } = await supabase
       .from('respostas')
       .select('empresa, resposta')
@@ -391,7 +391,7 @@ const Index = () => {
 
     const { data: fornsData } = await supabase
       .from('fornecedores')
-      .select('nome, codigo_interno');
+      .select('*');
 
     const resps: RespostaEmpresa[] = (respsData ?? []).map((d: any) => ({
       empresa: d.empresa,
@@ -447,35 +447,37 @@ const Index = () => {
       for (const empresa of suppliers) {
         const items = winnersBySupplier[empresa];
         
-        // CSV CISS (Existing format)
-        const csvLinesCISS = items.map(item => {
-          const precoFormatted = item.preco.toFixed(2).replace('.', ',');
-          return `${item.codigo_barras};1;${precoFormatted}`;
-        });
-        const blobCISS = new Blob([csvLinesCISS.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        const urlCISS = URL.createObjectURL(blobCISS);
-        const aCISS = document.createElement('a');
-        aCISS.href = urlCISS;
-        aCISS.download = `${lista.nome}_${est.label}_${empresa}_CISS.csv`;
-        aCISS.click();
-        URL.revokeObjectURL(urlCISS);
-
-        // CSV CONSINCO (New format)
-        const codFornecedor = fornsMap[empresa] || '';
-        const csvLinesCONSINCO = items.map(item => {
-          const precoFormatted = item.preco.toFixed(2); // format 3.45 (dot separator)
-          // Col A: codFornecedor, B: "", C: "", D: barcode, E: "", F: "1", G: price, H-K: "0"
-          return `${codFornecedor};;;${item.codigo_barras};;1;${precoFormatted};0;0;0;0`;
-        });
-        const blobCONSINCO = new Blob([csvLinesCONSINCO.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        const urlCONSINCO = URL.createObjectURL(blobCONSINCO);
-        const aCONSINCO = document.createElement('a');
-        aCONSINCO.href = urlCONSINCO;
-        aCONSINCO.download = `${lista.nome}_${est.label}_${empresa}_CONSINCO.csv`;
-        aCONSINCO.click();
-        URL.revokeObjectURL(urlCONSINCO);
-
-        totalArquivos += 2;
+        if (type === 'CISS') {
+          // CSV CISS (Existing format)
+          const csvLinesCISS = items.map(item => {
+            const precoFormatted = item.preco.toFixed(2).replace('.', ',');
+            return `${item.codigo_barras};1;${precoFormatted}`;
+          });
+          const blobCISS = new Blob([csvLinesCISS.join('\n')], { type: 'text/csv;charset=utf-8;' });
+          const urlCISS = URL.createObjectURL(blobCISS);
+          const aCISS = document.createElement('a');
+          aCISS.href = urlCISS;
+          aCISS.download = `${lista.nome}_${est.label}_${empresa}_CISS.csv`;
+          aCISS.click();
+          URL.revokeObjectURL(urlCISS);
+          totalArquivos++;
+        } else {
+          // CSV CONSINCO (New format)
+          const codFornecedor = fornsMap[empresa] || '';
+          const csvLinesCONSINCO = items.map(item => {
+            const precoFormatted = item.preco.toFixed(2); // format 3.45 (dot separator)
+            // Col A: codFornecedor, B: "", C: "", D: barcode, E: "", F: "1", G: price, H-K: "0"
+            return `${codFornecedor};;;${item.codigo_barras};;1;${precoFormatted};0;0;0;0`;
+          });
+          const blobCONSINCO = new Blob([csvLinesCONSINCO.join('\n')], { type: 'text/csv;charset=utf-8;' });
+          const urlCONSINCO = URL.createObjectURL(blobCONSINCO);
+          const aCONSINCO = document.createElement('a');
+          aCONSINCO.href = urlCONSINCO;
+          aCONSINCO.download = `${lista.nome}_${est.label}_${empresa}_CONSINCO.csv`;
+          aCONSINCO.click();
+          URL.revokeObjectURL(urlCONSINCO);
+          totalArquivos++;
+        }
       }
     }
 
@@ -754,10 +756,11 @@ const Index = () => {
         onOpenChange={setFinalizadasOpen}
         onListaSelected={lista => handleListaSelected(lista, true)}
         statusFilter="finalizada"
-        title="Cotações Finalizadas"
-        onExport={handleExport}
-        onDownloadResultados={handleDownloadResultados}
-      />
+          title="Cotações Finalizadas"
+          onExport={handleExport}
+          onDownloadCISS={(l) => handleDownloadResultados(l, 'CISS')}
+          onDownloadCONSINCO={(l) => handleDownloadResultados(l, 'CONSINCO')}
+        />
       <FornecedoresPanel open={fornecedoresOpen} onOpenChange={setFornecedoresOpen} />
       {currentLista && (
         <GerarLinkPanel open={gerarLinkOpen} onOpenChange={setGerarLinkOpen} listaId={currentLista.id} />
