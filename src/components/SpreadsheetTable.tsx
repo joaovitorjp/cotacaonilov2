@@ -75,7 +75,7 @@ interface ColDef {
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   produtos, respostas, readOnly = false, editableColumn, onPriceChange,
   editPrices = {}, highlightLowest = false, onSave, listaId, onDeleteResposta,
-  onAfterSave, onAddEmpresa,
+  onAfterSave, onAddEmpresa, onAddProduto, onDeleteProduto,
 }) => {
   const { user } = useAuth();
   const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
