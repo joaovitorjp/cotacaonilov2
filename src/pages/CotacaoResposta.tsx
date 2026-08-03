@@ -69,6 +69,7 @@ const CotacaoResposta = () => {
     setListaId(linkData.lista_id);
     setLinkId(linkData.id);
     setEstados((linkData as any).estados || 'AMBOS');
+    setTipoPreco((linkData as any).tipo_preco || 'IPI_ST');
 
     const { data: lista } = await supabase
       .from('listas')
