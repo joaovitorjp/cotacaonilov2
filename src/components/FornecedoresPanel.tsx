@@ -84,6 +84,8 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       setNome('');
       setWhatsapp('');
       setContato('');
+      setNomeRepresentante('');
+      setEmail('');
       setCodigoInternoCISS('');
       setCodigoInternoCONSINCO('');
       fetchFornecedores();
