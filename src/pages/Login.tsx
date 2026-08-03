@@ -76,9 +76,9 @@ const Login = () => {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-background">
+    <div className="relative flex items-center justify-center min-h-screen w-full overflow-hidden bg-background p-4 sm:p-6">
       <AetherFlowBackground />
-      <div className="relative z-10 w-full max-w-sm mx-auto p-8 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl">
+      <div className="relative z-10 w-full max-w-[90%] sm:max-w-sm mx-auto p-6 sm:p-8 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
             Nilo Atacadista
