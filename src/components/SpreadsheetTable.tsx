@@ -549,6 +549,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Shortcut: Adicionar produto
+      if (!readOnly && onAddProduto && ((e.ctrlKey && e.key.toLowerCase() === 'm') || (e.altKey && e.key.toLowerCase() === 'n'))) {
+        e.preventDefault();
+        onAddProduto(produtos.length);
+        return;
+      }
+
       if (!activeCell) return;
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' && !['ArrowUp', 'ArrowDown', 'Tab', 'Enter', 'Escape'].includes(e.key)) return;
