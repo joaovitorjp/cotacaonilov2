@@ -40,9 +40,11 @@ interface ExistingLink {
   respondido: boolean;
   whatsapp?: string;
   estados?: string;
+  tipo_preco?: 'IPI_ST' | 'NOTA';
 }
 
 type EstadoOption = 'AMBOS' | 'MT' | 'GO';
+type TipoPrecoOption = 'IPI_ST' | 'NOTA';
 
 interface GerarLinkPanelProps {
   open: boolean;
