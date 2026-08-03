@@ -283,6 +283,32 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
             </p>
           </div>
 
+          {/* Price type selector */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Check className="w-3.5 h-3.5 text-muted-foreground" />
+              <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">Formato do Preço</p>
+            </div>
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+              {(['IPI_ST', 'NOTA'] as TipoPrecoOption[]).map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setSelectedTipoPreco(opt)}
+                  className={`flex-1 px-3 py-2 rounded-md text-xs font-display font-bold transition-colors ${
+                    selectedTipoPreco === opt
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  }`}
+                >
+                  {TIPO_PRECO_LABELS[opt]}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Este aviso será exibido para o fornecedor ao abrir o link.
+            </p>
+          </div>
+
           {/* Quick add from saved fornecedores */}
           {fornecedores.length > 0 && (
             <div>
