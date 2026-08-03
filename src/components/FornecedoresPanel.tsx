@@ -41,6 +41,8 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
   const [editNome, setEditNome] = useState('');
   const [editWhatsapp, setEditWhatsapp] = useState('');
   const [editContato, setEditContato] = useState('');
+  const [editNomeRepresentante, setEditNomeRepresentante] = useState('');
+  const [editEmail, setEditEmail] = useState('');
   const [editCodigoInternoCISS, setEditCodigoInternoCISS] = useState('');
   const [editCodigoInternoCONSINCO, setEditCodigoInternoCONSINCO] = useState('');
 
