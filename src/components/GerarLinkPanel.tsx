@@ -504,6 +504,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                           <RefreshCw className="w-3.5 h-3.5" />
                           <Mail className="w-3.5 h-3.5" />
                         </button>
+                      )}
                       <button
                         onClick={async () => {
                           const url = `${getPublicBaseUrl()}/cotacao/${link.token}`;
