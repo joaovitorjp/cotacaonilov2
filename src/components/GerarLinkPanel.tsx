@@ -30,6 +30,7 @@ interface GeneratedLink {
   copied: boolean;
   whatsapp?: string;
   estados?: string;
+  tipo_preco?: 'IPI_ST' | 'NOTA';
 }
 
 interface ExistingLink {
