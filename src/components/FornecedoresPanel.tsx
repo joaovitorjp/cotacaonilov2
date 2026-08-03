@@ -166,18 +166,22 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
 
         {/* Add form */}
         <div className="px-6 pt-4 pb-2 space-y-2 border-b border-border">
-          <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome do fornecedor *" />
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={whatsapp}
-              onChange={e => setWhatsapp(e.target.value)}
-              placeholder="WhatsApp com DDD * (ex: 11999998888)"
-              className="pl-9"
-              inputMode="tel"
-            />
+          <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome Fantasia da Empresa *" />
+          <Input value={nomeRepresentante} onChange={e => setNomeRepresentante(e.target.value)} placeholder="Nome do Representante" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={whatsapp}
+                onChange={e => setWhatsapp(e.target.value)}
+                placeholder="WhatsApp c/ DDD *"
+                className="pl-9"
+                inputMode="tel"
+              />
+            </div>
+            <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="E-mail de contato" type="email" />
           </div>
-          <Input value={contato} onChange={e => setContato(e.target.value)} placeholder="Contato / e-mail (opcional)" />
+          <Input value={contato} onChange={e => setContato(e.target.value)} placeholder="Observações (opcional)" />
           <div className="grid grid-cols-2 gap-2">
             <Input value={codigoInternoCISS} onChange={e => setCodigoInternoCISS(e.target.value)} placeholder="Cód. Interno CISS" />
             <Input value={codigoInternoCONSINCO} onChange={e => setCodigoInternoCONSINCO(e.target.value)} placeholder="Cód. Interno CONSINCO" />
