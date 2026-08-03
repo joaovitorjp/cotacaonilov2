@@ -391,7 +391,7 @@ const Index = () => {
 
     const { data: fornsData } = await supabase
       .from('fornecedores')
-      .select('nome, codigo_interno');
+      .select('*');
 
     const resps: RespostaEmpresa[] = (respsData ?? []).map((d: any) => ({
       empresa: d.empresa,
