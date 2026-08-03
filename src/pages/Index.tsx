@@ -59,11 +59,27 @@ const Index = () => {
   const [encerrarStats, setEncerrarStats] = useState<{ total: number; responded: number; pending: string[] }>({ total: 0, responded: 0, pending: [] });
 
   const loadRespostas = useCallback(async (listaId: string) => {
-    const { data } = await supabase
+    // Buscar respostas e juntar com tipo_preco do link
+    const { data: respData } = await supabase
       .from('respostas')
       .select('empresa, resposta')
       .eq('lista_id', listaId);
-    setRespostas((data ?? []).map((d: any) => ({ empresa: d.empresa, resposta: d.resposta as any[] })));
+    
+    const { data: linksData } = await supabase
+      .from('links_cotacao')
+      .select('empresa, tipo_preco')
+      .eq('lista_id', listaId);
+
+    const linksMap: Record<string, string> = {};
+    (linksData ?? []).forEach(l => {
+      linksMap[l.empresa] = l.tipo_preco || '';
+    });
+
+    setRespostas((respData ?? []).map((d: any) => ({ 
+      empresa: d.empresa, 
+      resposta: d.resposta as any[],
+      tipo_preco: linksMap[d.empresa] || (d.empresa.includes('GO') ? 'NOTA' : 'IPI_ST') // Fallback logic requested
+    })));
   }, []);
 
   // 1. REALTIME: Subscribe to new responses when a lista is open
