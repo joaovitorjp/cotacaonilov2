@@ -387,6 +387,11 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                             {item.estados}
                           </span>
                         )}
+                        {item.tipo_preco && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-bold shrink-0">
+                            {item.tipo_preco === 'IPI_ST' ? 'IPI+ST' : 'NOTA'}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1">
                         {item.whatsapp && (
