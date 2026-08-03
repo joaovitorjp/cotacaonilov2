@@ -433,8 +433,10 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     if (!analysis) return;
 
     const doc = new jsPDF('landscape', 'mm', 'a4');
+    const empresas = respostas.map(r => r.empresa);
     
     let y0 = drawHeader(doc, {
+
       title: 'Análise Estratégica de Preços',
       subtitle: listaNome ? `Cotação: ${listaNome}` : undefined,
       meta: `${respostas.length} Fornecedores Participantes  ·  ${produtos.length} Produtos Cotados`,
