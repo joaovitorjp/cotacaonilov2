@@ -66,6 +66,11 @@ const ESTADO_LABELS: Record<EstadoOption, string> = {
   'GO': 'Apenas GO',
 };
 
+const TIPO_PRECO_LABELS: Record<TipoPrecoOption, string> = {
+  'IPI_ST': 'PREÇO COM IPI + ST',
+  'NOTA': 'PREÇO DE NOTA',
+};
+
 const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, listaId }) => {
   const { user } = useAuth();
   const [empresa, setEmpresa] = useState('');
