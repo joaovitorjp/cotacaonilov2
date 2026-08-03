@@ -239,8 +239,10 @@ export type Database = {
           codigo_interno_consinco: string | null
           contato: string | null
           created_at: string
+          email: string | null
           id: string
           nome: string
+          nome_representante: string | null
           user_id: string | null
           whatsapp: string
         }
@@ -250,8 +252,10 @@ export type Database = {
           codigo_interno_consinco?: string | null
           contato?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           nome: string
+          nome_representante?: string | null
           user_id?: string | null
           whatsapp?: string
         }
@@ -261,8 +265,10 @@ export type Database = {
           codigo_interno_consinco?: string | null
           contato?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           nome?: string
+          nome_representante?: string | null
           user_id?: string | null
           whatsapp?: string
         }
