@@ -41,8 +41,13 @@ const MonthlyReportCard: React.FC<Props> = ({ listas, profiles }) => {
   const filtered = useMemo(() => {
     const [y, m] = month.split('-').map(Number);
     return listas.filter(l => {
+      // Usar fuso horário local ou UTC consistentemente? 
+      // O input 'month' vem como YYYY-MM (local do browser).
+      // l.created_at é ISO (UTC).
       const d = new Date(l.created_at);
-      if (d.getFullYear() !== y || d.getMonth() + 1 !== m) return false;
+      const yearMatch = d.getUTCFullYear() === y;
+      const monthMatch = (d.getUTCMonth() + 1) === m;
+      if (!yearMatch || !monthMatch) return false;
       if (userId !== 'all' && l.user_id !== userId) return false;
       return true;
     });
