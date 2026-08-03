@@ -235,6 +235,8 @@ export type Database = {
       fornecedores: {
         Row: {
           codigo_interno: string | null
+          codigo_interno_ciss: string | null
+          codigo_interno_consinco: string | null
           contato: string | null
           created_at: string
           id: string
@@ -244,6 +246,8 @@ export type Database = {
         }
         Insert: {
           codigo_interno?: string | null
+          codigo_interno_ciss?: string | null
+          codigo_interno_consinco?: string | null
           contato?: string | null
           created_at?: string
           id?: string
@@ -253,6 +257,8 @@ export type Database = {
         }
         Update: {
           codigo_interno?: string | null
+          codigo_interno_ciss?: string | null
+          codigo_interno_consinco?: string | null
           contato?: string | null
           created_at?: string
           id?: string
