@@ -497,6 +497,11 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                         {link.estados}
                       </span>
                     )}
+                    {link.tipo_preco && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-bold shrink-0">
+                        {link.tipo_preco === 'IPI_ST' ? 'IPI+ST' : 'NOTA'}
+                      </span>
+                    )}
                     <button
                       onClick={() => setLinkToDelete(link)}
                       className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
