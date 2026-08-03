@@ -107,6 +107,8 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
     setEditNome(f.nome);
     setEditWhatsapp(f.whatsapp);
     setEditContato(f.contato || '');
+    setEditNomeRepresentante(f.nome_representante || '');
+    setEditEmail(f.email || '');
     setEditCodigoInternoCISS(f.codigo_interno_ciss || '');
     setEditCodigoInternoCONSINCO(f.codigo_interno_consinco || '');
   };
