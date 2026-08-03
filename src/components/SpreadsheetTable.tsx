@@ -1482,13 +1482,26 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
             {(contextMenu.type === 'row' || contextMenu.type === 'cell') && contextMenu.rowIdx !== undefined && (
               <>
-                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mover Linha</div>
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Linha</div>
                 <button onClick={() => moveRow('up')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowUp className="w-3.5 h-3.5" /> Mover para Cima
                 </button>
                 <button onClick={() => moveRow('down')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowDown className="w-3.5 h-3.5" /> Mover para Baixo
                 </button>
+                
+                {!readOnly && onAddProduto && (
+                  <button onClick={() => { onAddProduto(contextMenu.rowIdx!); setContextMenu(null); }} 
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
+                    <Plus className="w-3.5 h-3.5" /> Adicionar Produto
+                  </button>
+                )}
+                {!readOnly && onDeleteProduto && contextMenu.rowIdx! < produtos.length && (
+                  <button onClick={() => { onDeleteProduto(contextMenu.rowIdx!); setContextMenu(null); }} 
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-destructive">
+                    <Trash2 className="w-3.5 h-3.5" /> Excluir Produto
+                  </button>
+                )}
               </>
             )}
           </div>
