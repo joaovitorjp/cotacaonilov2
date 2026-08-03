@@ -80,14 +80,15 @@ const AdminPanel: React.FC = () => {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return listas.filter(l => {
+      // Filtro de status
       if (statusFilter !== 'all' && l.status !== statusFilter) return false;
+      
+      // Filtro de pesquisa
       if (!q) return true;
       const owner = profiles[l.user_id];
-      return (
-        l.nome.toLowerCase().includes(q) ||
-        owner?.nome?.toLowerCase().includes(q) ||
-        owner?.email?.toLowerCase().includes(q)
-      );
+      const ownerMatch = owner?.nome?.toLowerCase().includes(q) || owner?.email?.toLowerCase().includes(q);
+      const nameMatch = l.nome.toLowerCase().includes(q);
+      return nameMatch || ownerMatch;
     });
   }, [listas, profiles, search, statusFilter]);
 
