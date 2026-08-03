@@ -71,6 +71,8 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome: nome.trim(),
       whatsapp: cleanWhatsapp,
       contato: contato.trim() || null,
+      nome_representante: nomeRepresentante.trim() || null,
+      email: email.trim() || null,
       user_id: user?.id,
       codigo_interno_ciss: codigoInternoCISS.trim() || null,
       codigo_interno_consinco: codigoInternoCONSINCO.trim() || null,
