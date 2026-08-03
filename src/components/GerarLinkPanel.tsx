@@ -107,7 +107,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const loadExistingLinks = async () => {
     const { data: links } = await supabase
       .from('links_cotacao')
-      .select('id, token, empresa, respondido, estados')
+      .select('id, token, empresa, respondido, estados, tipo_preco')
       .eq('lista_id', listaId)
       .order('created_at', { ascending: false });
 
@@ -123,10 +123,10 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     }
   };
 
-  const generateLink = async (empresaNome: string, estados: EstadoOption) => {
+  const generateLink = async (empresaNome: string, estados: EstadoOption, tipo_preco: TipoPrecoOption) => {
     const { data, error } = await supabase
       .from('links_cotacao')
-      .insert({ lista_id: listaId, empresa: empresaNome, estados, user_id: user?.id })
+      .insert({ lista_id: listaId, empresa: empresaNome, estados, tipo_preco, user_id: user?.id })
       .select()
       .single();
 
