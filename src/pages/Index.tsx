@@ -451,6 +451,7 @@ const Index = () => {
         
         if (type === 'CISS') {
           // CSV CISS (Existing format)
+          const codFornecedor = fornsMapCISS[empresa] || '';
           const csvLinesCISS = items.map(item => {
             const precoFormatted = item.preco.toFixed(2).replace('.', ',');
             return `${item.codigo_barras};1;${precoFormatted}`;
@@ -465,7 +466,7 @@ const Index = () => {
           totalArquivos++;
         } else {
           // CSV CONSINCO (New format)
-          const codFornecedor = type === 'CISS' ? (fornsMapCISS[empresa] || '') : (fornsMapCONSINCO[empresa] || '');
+          const codFornecedor = fornsMapCONSINCO[empresa] || '';
           const csvLinesCONSINCO = items.map(item => {
             const precoFormatted = item.preco.toFixed(2); // format 3.45 (dot separator)
             // Col A: codFornecedor, B: "", C: "", D: barcode, E: "", F: "1", G: price, H-K: "0"
