@@ -34,7 +34,7 @@ const MonthlyReportCard: React.FC<Props> = ({ listas, profiles }) => {
   const [generating, setGenerating] = useState(false);
 
   const users = useMemo(() => {
-    const ids = Array.from(new Set(listas.map(l => l.user_id)));
+    const ids = Array.from(new Set(listas.map(l => l.user_id).filter(Boolean)));
     return ids.map(id => profiles[id]).filter(Boolean) as Profile[];
   }, [listas, profiles]);
 

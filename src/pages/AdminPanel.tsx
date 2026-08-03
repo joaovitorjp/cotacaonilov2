@@ -86,11 +86,9 @@ const AdminPanel: React.FC = () => {
       // Filtro de pesquisa
       if (!q) return true;
       const owner = profiles[l.user_id];
-      return (
-        l.nome.toLowerCase().includes(q) ||
-        owner?.nome?.toLowerCase().includes(q) ||
-        owner?.email?.toLowerCase().includes(q)
-      );
+      const ownerMatch = owner?.nome?.toLowerCase().includes(q) || owner?.email?.toLowerCase().includes(q);
+      const nameMatch = l.nome.toLowerCase().includes(q);
+      return nameMatch || ownerMatch;
     });
   }, [listas, profiles, search, statusFilter]);
 
