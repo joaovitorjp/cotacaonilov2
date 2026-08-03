@@ -128,6 +128,8 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome: editNome.trim(),
       whatsapp: cleanWhatsapp,
       contato: editContato.trim() || null,
+      nome_representante: editNomeRepresentante.trim() || null,
+      email: editEmail.trim() || null,
       codigo_interno_ciss: editCodigoInternoCISS.trim() || null,
       codigo_interno_consinco: editCodigoInternoCONSINCO.trim() || null,
     }).eq('id', editingId);
