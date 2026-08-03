@@ -6,7 +6,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
-import MonthlyReportCard from '@/components/MonthlyReportCard';
+
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import { toast } from 'sonner';
 import { LogOut, Search, Shield, ArrowLeft, FileText, Eye, Package, Users, Calendar, BarChart3, Table as TableIcon } from 'lucide-react';
@@ -242,17 +242,6 @@ const AdminPanel: React.FC = () => {
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
           <aside className="xl:col-span-3 space-y-8">
-            <div className="bg-card border border-border/50 rounded-[2rem] p-8 shadow-sm ring-1 ring-black/[0.02]">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-primary/10 rounded-xl">
-                  <FileText className="w-4 h-4 text-primary" />
-                </div>
-                <h3 className="text-sm font-display font-bold uppercase tracking-wider">
-                  Relatórios
-                </h3>
-              </div>
-              <MonthlyReportCard listas={listas} profiles={profiles} />
-            </div>
 
             <div className="bg-card border border-border/50 rounded-[2rem] p-8 shadow-sm ring-1 ring-black/[0.02]">
               <div className="flex items-center gap-3 mb-6">
