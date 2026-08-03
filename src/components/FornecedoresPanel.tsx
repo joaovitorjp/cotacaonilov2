@@ -138,7 +138,16 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       toast.error('Erro ao salvar.');
     } else {
       toast.success('Fornecedor atualizado.');
-      setFornecedores(prev => prev.map(f => f.id === editingId ? { ...f, nome: editNome.trim(), whatsapp: cleanWhatsapp, contato: editContato.trim() || null, codigo_interno_ciss: editCodigoInternoCISS.trim() || null, codigo_interno_consinco: editCodigoInternoCONSINCO.trim() || null } : f));
+      setFornecedores(prev => prev.map(f => f.id === editingId ? { 
+        ...f, 
+        nome: editNome.trim(), 
+        whatsapp: cleanWhatsapp, 
+        contato: editContato.trim() || null,
+        nome_representante: editNomeRepresentante.trim() || null,
+        email: editEmail.trim() || null,
+        codigo_interno_ciss: editCodigoInternoCISS.trim() || null, 
+        codigo_interno_consinco: editCodigoInternoCONSINCO.trim() || null 
+      } : f));
       setEditingId(null);
     }
   };
