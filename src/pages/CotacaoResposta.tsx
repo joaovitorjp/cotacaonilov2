@@ -34,6 +34,7 @@ const CotacaoResposta = () => {
   const [filledCount, setFilledCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [estados, setEstados] = useState<string>('AMBOS');
+  const [tipoPreco, setTipoPreco] = useState<'IPI_ST' | 'NOTA'>('IPI_ST');
 
   const showMT = estados === 'AMBOS' || estados === 'MT';
   const showGO = estados === 'AMBOS' || estados === 'GO';
