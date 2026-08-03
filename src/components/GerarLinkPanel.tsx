@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin, Trash2 } from 'lucide-react';
+import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin, Trash2, Mail } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +29,7 @@ interface GeneratedLink {
   link: string;
   copied: boolean;
   whatsapp?: string;
+  email?: string;
   estados?: string;
   tipo_preco?: 'IPI_ST' | 'NOTA';
 }
@@ -39,6 +40,7 @@ interface ExistingLink {
   empresa: string;
   respondido: boolean;
   whatsapp?: string;
+  email?: string;
   estados?: string;
   tipo_preco?: 'IPI_ST' | 'NOTA';
 }
