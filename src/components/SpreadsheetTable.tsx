@@ -1227,6 +1227,19 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     <div className="flex-1 flex flex-col" style={{ border: '1px solid hsl(var(--border))' }}>
       {/* Toolbar */}
       <div className="flex items-center gap-1 px-2 py-1 border-b bg-muted/50 flex-wrap" style={{ borderColor: 'hsl(var(--border))' }}>
+        {!readOnly && onAddProduto && (
+          <>
+            <button 
+              onClick={() => onAddProduto(produtos.length)} 
+              className="p-1.5 rounded hover:bg-accent transition-colors flex items-center gap-1 text-xs text-primary font-medium" 
+              title="Adicionar Produto (Atalho: Ctrl+M ou Alt+N)"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Adicionar produto</span>
+            </button>
+            <div className="w-px h-5 bg-border mx-1" />
+          </>
+        )}
         <button onClick={toolbarToggleBold} disabled={!hasSelection} className="p-1.5 rounded hover:bg-accent disabled:opacity-40 transition-colors" title="Negrito">
           <Bold className="w-4 h-4" />
         </button>
