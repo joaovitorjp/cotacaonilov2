@@ -138,8 +138,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     if (!empresa.trim()) return;
     setLoading(true);
     try {
-      const link = await generateLink(empresa.trim(), selectedEstado);
-      setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false, estados: selectedEstado }]);
+      const link = await generateLink(empresa.trim(), selectedEstado, selectedTipoPreco);
+      setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false, estados: selectedEstado, tipo_preco: selectedTipoPreco }]);
       setEmpresa('');
       toast.success('Link gerado!');
       loadExistingLinks();
@@ -155,8 +155,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       return;
     }
     try {
-      const link = await generateLink(f.nome, selectedEstado);
-      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado }]);
+      const link = await generateLink(f.nome, selectedEstado, selectedTipoPreco);
+      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado, tipo_preco: selectedTipoPreco }]);
       toast.success(`Link gerado para ${f.nome}!`);
       loadExistingLinks();
     } catch {
@@ -175,8 +175,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     let count = 0;
     for (const f of pendentes) {
       try {
-        const link = await generateLink(f.nome, selectedEstado);
-        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado }]);
+        const link = await generateLink(f.nome, selectedEstado, selectedTipoPreco);
+        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado, tipo_preco: selectedTipoPreco }]);
         count++;
       } catch { /* skip */ }
     }
@@ -199,24 +199,25 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     toast.success('Todos os links copiados!');
   };
 
-  const buildWhatsAppMessage = (link: string) => {
+  const buildWhatsAppMessage = (link: string, tipoPreco?: 'IPI_ST' | 'NOTA') => {
     const cotacaoLabel = listaNome ? `"${listaNome}"` : '';
     const remetente = userNome ? `\n\nEnviado por: ${userNome}` : '';
-    const msg = `Olá! Segue o link para responder a cotação ${cotacaoLabel}:\n${link}${remetente}`.replace(/ {2,}/g, ' ');
+    const avisoPreco = tipoPreco ? `\n\n*ATENÇÃO:* Os preços devem ser preenchidos como: *${TIPO_PRECO_LABELS[tipoPreco]}*` : '';
+    const msg = `Olá! Segue o link para responder a cotação ${cotacaoLabel}:${avisoPreco}\n${link}${remetente}`.replace(/ {2,}/g, ' ');
     return encodeURIComponent(msg);
   };
 
-  const handleShareWhatsApp = (empresa: string, token: string, whatsapp?: string) => {
+  const handleShareWhatsApp = (empresa: string, token: string, whatsapp?: string, tipoPreco?: 'IPI_ST' | 'NOTA') => {
     const phone = whatsapp ? whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
     const link = `${getPublicBaseUrl()}/cotacao/${token}`;
-    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(link)}`, '_blank');
+    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(link, tipoPreco)}`, '_blank');
   };
 
   const handleShareWhatsAppGenerated = (item: GeneratedLink) => {
     const phone = item.whatsapp ? item.whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
-    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(item.link)}`, '_blank');
+    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(item.link, item.tipo_preco)}`, '_blank');
   };
 
   const handleDeleteLink = async () => {
