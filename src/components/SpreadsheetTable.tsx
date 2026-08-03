@@ -14,6 +14,7 @@ interface Produto {
 interface RespostaEmpresa {
   empresa: string;
   resposta: { codigo_interno: string; preco?: number | string; preco_mt?: number | string; preco_go?: number | string }[];
+  tipo_preco?: 'IPI_ST' | 'NOTA';
 }
 
 interface SpreadsheetTableProps {
@@ -70,6 +71,7 @@ interface ColDef {
   isSeparator?: boolean;
   state?: 'MT' | 'GO';
   empresa?: string;
+  tipoPreco?: 'IPI_ST' | 'NOTA';
 }
 
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
@@ -193,36 +195,40 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     let idx = 4;
     // MT columns
     for (let i = 0; i < empresas.length; i++) {
+      const resp = respostas.find(r => r.empresa === empresas[i]);
       cols.push({
         key: `emp_${empresas[i]}_MT`, label: `${empresas[i]} MT`, defaultAlign: 'center',
         highlight: editableColumn === empresas[i], isData: true, originalIdx: idx++,
-        state: 'MT', empresa: empresas[i],
+        state: 'MT', empresa: empresas[i], tipoPreco: resp?.tipo_preco || 'IPI_ST',
       });
     }
     if (editableColumn && !empresas.includes(editableColumn)) {
       cols.push({
         key: `emp_${editableColumn}_MT`, label: `${editableColumn} MT`, defaultAlign: 'center',
         highlight: true, isData: true, originalIdx: idx++, state: 'MT', empresa: editableColumn,
+        tipoPreco: 'IPI_ST',
       });
     }
     // Separator
     cols.push({ key: 'separator', label: '', defaultAlign: 'center', isData: false, isSeparator: true, originalIdx: idx++ });
     // GO columns
     for (let i = 0; i < empresas.length; i++) {
+      const resp = respostas.find(r => r.empresa === empresas[i]);
       cols.push({
         key: `emp_${empresas[i]}_GO`, label: `${empresas[i]} GO`, defaultAlign: 'center',
         highlight: editableColumn === empresas[i], isData: true, originalIdx: idx++,
-        state: 'GO', empresa: empresas[i],
+        state: 'GO', empresa: empresas[i], tipoPreco: resp?.tipo_preco || 'NOTA',
       });
     }
     if (editableColumn && !empresas.includes(editableColumn)) {
       cols.push({
         key: `emp_${editableColumn}_GO`, label: `${editableColumn} GO`, defaultAlign: 'center',
         highlight: true, isData: true, originalIdx: idx++, state: 'GO', empresa: editableColumn,
+        tipoPreco: 'NOTA',
       });
     }
     return cols;
-  }, [empresas, editableColumn]);
+  }, [empresas, editableColumn, respostas]);
 
   // Filter columns based on state filter and remove empty empresa columns, then add fillers
   const baseColDefs = useMemo((): ColDef[] => {
@@ -1390,10 +1396,17 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     onContextMenu={e => handleContextMenu(e, 'column', colIdx)}
                     onClick={() => i > 0 && handleHeaderSort(colIdx, col.originalIdx)}
                   >
-                    <span className="inline-flex items-center gap-1">
-                      {col.label}
-                      {sortCol === col.originalIdx && <span className="text-[9px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                    </span>
+                    <div className="flex flex-col items-center gap-0.5 min-w-0 w-full overflow-hidden">
+                      <span className="inline-flex items-center gap-1 truncate max-w-full">
+                        {col.label}
+                        {sortCol === col.originalIdx && <span className="text-[9px] shrink-0">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                      </span>
+                      {col.tipoPreco && (
+                        <span className="text-[8px] font-black opacity-60 leading-tight uppercase tracking-tighter">
+                          {col.tipoPreco === 'IPI_ST' ? 'PREÇOS COM IPI + ST' : 'PREÇOS DE NOTA'}
+                        </span>
+                      )}
+                    </div>
                     {col.empresa && priceMarkups[col.empresa] ? (
                       <span className="ml-1 text-[9px] opacity-70">(+{priceMarkups[col.empresa].toFixed(1)}%)</span>
                     ) : null}
