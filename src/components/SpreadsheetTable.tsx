@@ -1125,7 +1125,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             onClick: (e: React.MouseEvent) => handleCellClick(idx, visualColIdx, e),
             onMouseDown: (e: React.MouseEvent) => handleCellMouseDown(idx, visualColIdx, e),
             onMouseEnter: () => handleCellMouseEnter(idx, visualColIdx),
-            onContextMenu: (e: React.MouseEvent) => handleContextMenu(e, 'cell', colIdx, idx),
+            onContextMenu: (e: React.MouseEvent) => {
+              if (readOnly) return;
+              handleContextMenu(e, 'cell', colIdx, idx);
+            },
             'data-cell': `${idx}-${visualColIdx}`,
           };
 
