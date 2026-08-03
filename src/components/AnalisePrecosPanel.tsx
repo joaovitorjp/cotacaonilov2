@@ -101,7 +101,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     if (showMT) chips.push({ label: 'Itens MT', value: `${countMT}`, tone: 'success' }, { label: 'Total MT', value: formatBRL(totalMT), tone: 'muted' });
     if (showGO) chips.push({ label: 'Itens GO', value: `${countGO}`, tone: 'success' }, { label: 'Total GO', value: formatBRL(totalGO), tone: 'muted' });
     y0 = drawChips(doc, y0, chips);
-    y0 = drawSectionTitle(doc, y0 + 2, 'Itens Precificados');
+    y0 = drawSectionTitle(doc, y0 + 4, 'Tabela de Preços por Região');
 
     const head: string[] = ['#', 'Código', 'Descrição', 'Cód. Barras'];
     if (showMT) head.push('MT');
@@ -182,7 +182,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       { label: 'Menor preço', value: `${winsCount} itens`, tone: 'success' },
       { label: 'Oportunidades', value: `${lossesCount} itens`, tone: 'danger' },
     ]);
-    y0 = drawSectionTitle(doc, y0 + 2, 'Itens com Preço a Cobrir', 'accent');
+    y0 = drawSectionTitle(doc, y0 + 4, 'Relatório de Itens a Cobrir', 'accent');
 
 
     // --- Table ---
@@ -433,21 +433,21 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     if (!analysis) return;
 
     const doc = new jsPDF('landscape', 'mm', 'a4');
-    const empresas = respostas.map(r => r.empresa);
-
+    
     let y0 = drawHeader(doc, {
-      title: 'Análise de Preços',
+      title: 'Análise Estratégica de Preços',
       subtitle: listaNome ? `Cotação: ${listaNome}` : undefined,
-      meta: `${respostas.length} fornecedor(es)  ·  ${produtos.length} produto(s)`,
+      meta: `${respostas.length} Fornecedores Participantes  ·  ${produtos.length} Produtos Cotados`,
     });
 
     y0 = drawChips(doc, y0, [
-      { label: 'Melhor fornecedor', value: analysis.ranking[0]?.empresa || '—', tone: 'primary' },
-      { label: 'Vitórias', value: String(analysis.ranking[0]?.wins || 0), tone: 'success' },
-      { label: 'Economia potencial', value: formatBRL(analysis.totalSavings), tone: 'success' },
+      { label: 'Melhor Fornecedor', value: (analysis.ranking[0]?.empresa || '—').toUpperCase(), tone: 'primary' },
+      { label: 'Total de Vitórias', value: `${analysis.ranking[0]?.wins || 0} Itens`, tone: 'success' },
+      { label: 'Economia Projetada', value: formatBRL(analysis.totalSavings), tone: 'success' },
     ]);
 
-    y0 = drawSectionTitle(doc, y0 + 2, 'Ranking de Fornecedores');
+    y0 = drawSectionTitle(doc, y0 + 4, 'Ranking Geral de Competitividade');
+
 
     autoTable(doc, {
       ...tableStyles,
