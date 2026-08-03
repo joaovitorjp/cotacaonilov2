@@ -1109,7 +1109,18 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             handleContextMenu(e, 'row', undefined, idx);
           }}
         >
-          {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
+          <div className="flex items-center justify-center gap-1">
+            {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
+            {!readOnly && onAddProduto && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onAddProduto(idx + 1); }}
+                className="opacity-0 group-hover/row:opacity-100 p-0.5 rounded-full hover:bg-primary hover:text-primary-foreground transition-all"
+                title="Adicionar linha abaixo"
+              >
+                <Plus className="w-2.5 h-2.5" />
+              </button>
+            )}
+          </div>
           <div
             className={`absolute left-0 right-0 bottom-[-2px] h-[5px] cursor-row-resize z-30 ${activeRowResize === idx ? 'bg-primary' : 'hover:bg-primary/40'}`}
             style={{ opacity: activeRowResize === idx ? 1 : undefined }}
