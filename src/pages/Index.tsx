@@ -62,7 +62,8 @@ const Index = () => {
     // Buscar respostas e juntar com tipo_preco do link
     const { data: respData } = await supabase
       .from('respostas')
-      .select('empresa, resposta');
+      .select('empresa, resposta')
+      .eq('lista_id', listaId);
     
     const { data: linksData } = await supabase
       .from('links_cotacao')
