@@ -549,6 +549,13 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Shortcut: Adicionar produto
+      if (!readOnly && onAddProduto && ((e.ctrlKey && e.key.toLowerCase() === 'm') || (e.altKey && e.key.toLowerCase() === 'n'))) {
+        e.preventDefault();
+        onAddProduto(produtos.length);
+        return;
+      }
+
       if (!activeCell) return;
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' && !['ArrowUp', 'ArrowDown', 'Tab', 'Enter', 'Escape'].includes(e.key)) return;
@@ -1102,7 +1109,18 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             handleContextMenu(e, 'row', undefined, idx);
           }}
         >
-          {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
+          <div className="flex items-center justify-center gap-1">
+            {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
+            {!readOnly && onAddProduto && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onAddProduto(idx + 1); }}
+                className="opacity-0 group-hover/row:opacity-100 p-0.5 rounded-full hover:bg-primary hover:text-primary-foreground transition-all"
+                title="Adicionar linha abaixo"
+              >
+                <Plus className="w-2.5 h-2.5" />
+              </button>
+            )}
+          </div>
           <div
             className={`absolute left-0 right-0 bottom-[-2px] h-[5px] cursor-row-resize z-30 ${activeRowResize === idx ? 'bg-primary' : 'hover:bg-primary/40'}`}
             style={{ opacity: activeRowResize === idx ? 1 : undefined }}
@@ -1227,6 +1245,19 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     <div className="flex-1 flex flex-col" style={{ border: '1px solid hsl(var(--border))' }}>
       {/* Toolbar */}
       <div className="flex items-center gap-1 px-2 py-1 border-b bg-muted/50 flex-wrap" style={{ borderColor: 'hsl(var(--border))' }}>
+        {!readOnly && onAddProduto && (
+          <>
+            <button 
+              onClick={() => onAddProduto(produtos.length)} 
+              className="p-1.5 rounded hover:bg-accent transition-colors flex items-center gap-1 text-xs text-primary font-medium" 
+              title="Adicionar Produto (Atalho: Ctrl+M ou Alt+N)"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Adicionar produto</span>
+            </button>
+            <div className="w-px h-5 bg-border mx-1" />
+          </>
+        )}
         <button onClick={toolbarToggleBold} disabled={!hasSelection} className="p-1.5 rounded hover:bg-accent disabled:opacity-40 transition-colors" title="Negrito">
           <Bold className="w-4 h-4" />
         </button>
