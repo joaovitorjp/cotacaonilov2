@@ -98,8 +98,11 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
         setListaNome((data as any)?.nome ?? '');
       });
       if (user?.id) {
-        supabase.from('profiles').select('nome').eq('user_id', user.id).maybeSingle().then(({ data }) => {
-          setUserNome(((data as any)?.nome ?? '').trim());
+        supabase.from('profiles').select('nome, cargo').eq('user_id', user.id).maybeSingle().then(({ data }) => {
+          const profile = data as any;
+          const nomeStr = (profile?.nome ?? '').trim();
+          const cargoStr = (profile?.cargo ?? '').trim();
+          setUserNome(cargoStr ? `${nomeStr} (${cargoStr})` : nomeStr);
         });
       }
       loadExistingLinks();

@@ -202,15 +202,6 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         state: 'MT', empresa: empresas[i], tipoPreco: resp?.tipo_preco || 'IPI_ST',
       });
     }
-    if (editableColumn && !empresas.includes(editableColumn)) {
-      cols.push({
-        key: `emp_${editableColumn}_MT`, label: `${editableColumn} MT`, defaultAlign: 'center',
-        highlight: true, isData: true, originalIdx: idx++, state: 'MT', empresa: editableColumn,
-        tipoPreco: 'IPI_ST',
-      });
-    }
-    // Separator
-    cols.push({ key: 'separator', label: '', defaultAlign: 'center', isData: false, isSeparator: true, originalIdx: idx++ });
     // GO columns
     for (let i = 0; i < empresas.length; i++) {
       const resp = respostas.find(r => r.empresa === empresas[i]);
@@ -220,15 +211,47 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         state: 'GO', empresa: empresas[i], tipoPreco: resp?.tipo_preco || 'NOTA',
       });
     }
-    if (editableColumn && !empresas.includes(editableColumn)) {
-      cols.push({
-        key: `emp_${editableColumn}_GO`, label: `${editableColumn} GO`, defaultAlign: 'center',
-        highlight: true, isData: true, originalIdx: idx++, state: 'GO', empresa: editableColumn,
-        tipoPreco: 'NOTA',
-      });
-    }
     return cols;
   }, [empresas, editableColumn, respostas]);
+
+  // Render header cell with modernized style and price type badge
+  const renderHeaderCell = (col: ColDef, visualColIdx: number) => {
+    const isEmpresa = !!col.empresa;
+    
+    return (
+      <div 
+        key={col.key}
+        className={`h-full border-r border-slate-200 flex flex-col justify-center px-2 select-none font-display relative group
+          ${col.sticky ? 'sticky left-0 z-20 bg-slate-50' : 'bg-slate-50/80'}
+          ${col.highlight ? 'bg-primary/5' : ''}
+          ${col.isSeparator ? 'bg-slate-100 border-x-2 border-slate-300' : ''}
+        `}
+        style={{ width: colWidths[visualColIdx] || 120 }}
+      >
+        <div className="flex items-center justify-between gap-1 min-w-0">
+          <span className={`text-[10px] font-bold uppercase tracking-wider truncate ${col.highlight ? 'text-primary' : 'text-slate-500'}`}>
+            {col.label}
+          </span>
+          {isEmpresa && (
+            <div className="flex gap-1 shrink-0">
+               <span className={`text-[8px] px-1 rounded-sm font-black ${
+                 col.tipoPreco === 'IPI_ST' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+               }`}>
+                 {col.tipoPreco === 'IPI_ST' ? 'IPI+ST' : 'NOTA'}
+               </span>
+            </div>
+          )}
+        </div>
+        
+        <div
+          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-primary/30 active:bg-primary/50 z-10"
+          onMouseDown={(e) => handleColResizeStart(e, visualColIdx)}
+        />
+      </div>
+    );
+  };
+
+
 
   // Filter columns based on state filter and remove empty empresa columns, then add fillers
   const baseColDefs = useMemo((): ColDef[] => {
