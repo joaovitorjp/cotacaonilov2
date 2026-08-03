@@ -12,6 +12,8 @@ interface Fornecedor {
   nome: string;
   contato: string | null;
   whatsapp: string;
+  nome_representante?: string | null;
+  email?: string | null;
   codigo_interno_ciss?: string | null;
   codigo_interno_consinco?: string | null;
 }
