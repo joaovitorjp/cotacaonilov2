@@ -384,15 +384,24 @@ const Index = () => {
   };
 
   const handleDownloadResultados = async (lista: Lista) => {
-    const { data } = await supabase
+    const { data: respsData } = await supabase
       .from('respostas')
       .select('empresa, resposta')
       .eq('lista_id', lista.id);
 
-    const resps: RespostaEmpresa[] = (data ?? []).map((d: any) => ({
+    const { data: fornsData } = await supabase
+      .from('fornecedores')
+      .select('nome, codigo_interno');
+
+    const resps: RespostaEmpresa[] = (respsData ?? []).map((d: any) => ({
       empresa: d.empresa,
       resposta: d.resposta as any[],
     }));
+
+    const fornsMap: Record<string, string> = {};
+    (fornsData ?? []).forEach(f => {
+      fornsMap[f.nome] = f.codigo_interno || '';
+    });
 
     const parsePrice = (raw: any): number => {
       if (typeof raw === 'number') return raw;
@@ -420,7 +429,6 @@ const Index = () => {
         for (const resp of resps) {
           const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
           if (!item) continue;
-          // Por estado: MT usa preco_mt (fallback preco), GO usa preco_go.
           const raw = est.key === 'mt' ? (item.preco_mt ?? item.preco) : item.preco_go;
           const num = parsePrice(raw);
           if (!isNaN(num) && num > 0 && num < lowestPrice) {
@@ -438,19 +446,36 @@ const Index = () => {
       const suppliers = Object.keys(winnersBySupplier);
       for (const empresa of suppliers) {
         const items = winnersBySupplier[empresa];
-        const csvLines = items.map(item => {
+        
+        // CSV CISS (Existing format)
+        const csvLinesCISS = items.map(item => {
           const precoFormatted = item.preco.toFixed(2).replace('.', ',');
           return `${item.codigo_barras};1;${precoFormatted}`;
         });
-        const csvContent = csvLines.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${lista.nome}_${est.label}_${empresa}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        totalArquivos++;
+        const blobCISS = new Blob([csvLinesCISS.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const urlCISS = URL.createObjectURL(blobCISS);
+        const aCISS = document.createElement('a');
+        aCISS.href = urlCISS;
+        aCISS.download = `${lista.nome}_${est.label}_${empresa}_CISS.csv`;
+        aCISS.click();
+        URL.revokeObjectURL(urlCISS);
+
+        // CSV CONSINCO (New format)
+        const codFornecedor = fornsMap[empresa] || '';
+        const csvLinesCONSINCO = items.map(item => {
+          const precoFormatted = item.preco.toFixed(2); // format 3.45 (dot separator)
+          // Col A: codFornecedor, B: "", C: "", D: barcode, E: "", F: "1", G: price, H-K: "0"
+          return `${codFornecedor};;;${item.codigo_barras};;1;${precoFormatted};0;0;0;0`;
+        });
+        const blobCONSINCO = new Blob([csvLinesCONSINCO.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const urlCONSINCO = URL.createObjectURL(blobCONSINCO);
+        const aCONSINCO = document.createElement('a');
+        aCONSINCO.href = urlCONSINCO;
+        aCONSINCO.download = `${lista.nome}_${est.label}_${empresa}_CONSINCO.csv`;
+        aCONSINCO.click();
+        URL.revokeObjectURL(urlCONSINCO);
+
+        totalArquivos += 2;
       }
     }
 
