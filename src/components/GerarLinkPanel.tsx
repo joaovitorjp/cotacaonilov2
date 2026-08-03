@@ -437,13 +437,18 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                             {link.estados}
                           </span>
                         )}
+                        {link.tipo_preco && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-bold shrink-0">
+                            {link.tipo_preco === 'IPI_ST' ? 'IPI+ST' : 'NOTA'}
+                          </span>
+                        )}
                       </div>
                       <p className="text-[10px] text-muted-foreground">Ainda não respondeu</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       {link.whatsapp && (
                         <button
-                          onClick={() => handleShareWhatsApp(link.empresa, link.token, link.whatsapp)}
+                          onClick={() => handleShareWhatsApp(link.empresa, link.token, link.whatsapp, link.tipo_preco)}
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-display font-bold text-green-600 bg-green-500/10 hover:bg-green-500/20 transition-colors"
                           title="Reenviar via WhatsApp"
                         >
