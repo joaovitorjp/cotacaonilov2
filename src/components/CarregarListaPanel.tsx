@@ -328,10 +328,10 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                         <button
                           onClick={() => onDownloadResultados(lista)}
                           className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
-                          title="Baixar CSV ganhadores"
+                          title="Exportar CSV Ganhadores (CISS e CONSINCO)"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline text-[11px] font-display">CSV</span>
+                          <span className="hidden sm:inline text-[11px] font-display">CSVs Ganhadores</span>
                         </button>
                       )}
                       <div className="flex-1" />

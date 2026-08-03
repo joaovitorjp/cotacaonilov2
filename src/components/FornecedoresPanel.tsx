@@ -12,6 +12,7 @@ interface Fornecedor {
   nome: string;
   contato: string | null;
   whatsapp: string;
+  codigo_interno?: string | null;
 }
 
 interface FornecedoresPanelProps {
@@ -26,6 +27,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
   const [nome, setNome] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [contato, setContato] = useState('');
+  const [codigoInterno, setCodigoInterno] = useState('');
   const [adding, setAdding] = useState(false);
 
   // Edit state
@@ -33,6 +35,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
   const [editNome, setEditNome] = useState('');
   const [editWhatsapp, setEditWhatsapp] = useState('');
   const [editContato, setEditContato] = useState('');
+  const [editCodigoInterno, setEditCodigoInterno] = useState('');
 
   useEffect(() => {
     if (open) fetchFornecedores();
@@ -59,6 +62,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome: nome.trim(),
       whatsapp: cleanWhatsapp,
       contato: contato.trim() || null,
+      codigo_interno: codigoInterno.trim() || null,
       user_id: user?.id,
     });
     if (error) {
@@ -68,6 +72,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       setNome('');
       setWhatsapp('');
       setContato('');
+      setCodigoInterno('');
       fetchFornecedores();
     }
     setAdding(false);
@@ -87,6 +92,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
     setEditNome(f.nome);
     setEditWhatsapp(f.whatsapp);
     setEditContato(f.contato || '');
+    setEditCodigoInterno(f.codigo_interno || '');
   };
 
   const cancelEdit = () => {
@@ -104,13 +110,14 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome: editNome.trim(),
       whatsapp: cleanWhatsapp,
       contato: editContato.trim() || null,
+      codigo_interno: editCodigoInterno.trim() || null,
     }).eq('id', editingId);
 
     if (error) {
       toast.error('Erro ao salvar.');
     } else {
       toast.success('Fornecedor atualizado.');
-      setFornecedores(prev => prev.map(f => f.id === editingId ? { ...f, nome: editNome.trim(), whatsapp: cleanWhatsapp, contato: editContato.trim() || null } : f));
+      setFornecedores(prev => prev.map(f => f.id === editingId ? { ...f, nome: editNome.trim(), whatsapp: cleanWhatsapp, contato: editContato.trim() || null, codigo_interno: editCodigoInterno.trim() || null } : f));
       setEditingId(null);
     }
   };
@@ -141,6 +148,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
             />
           </div>
           <Input value={contato} onChange={e => setContato(e.target.value)} placeholder="Contato / e-mail (opcional)" />
+          <Input value={codigoInterno} onChange={e => setCodigoInterno(e.target.value)} placeholder="Código interno do fornecedor (opcional)" />
           <Button onClick={handleAdd} disabled={adding || !nome.trim() || !whatsapp.trim()} className="w-full" size="sm">
             <Plus className="w-4 h-4 mr-1" />
             {adding ? 'Adicionando...' : 'Adicionar'}
@@ -161,6 +169,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
                     <Input value={editNome} onChange={e => setEditNome(e.target.value)} placeholder="Nome *" className="h-8 text-sm" />
                     <Input value={editWhatsapp} onChange={e => setEditWhatsapp(e.target.value)} placeholder="WhatsApp *" className="h-8 text-sm" inputMode="tel" />
                     <Input value={editContato} onChange={e => setEditContato(e.target.value)} placeholder="Contato (opcional)" className="h-8 text-sm" />
+                    <Input value={editCodigoInterno} onChange={e => setEditCodigoInterno(e.target.value)} placeholder="Código interno (opcional)" className="h-8 text-sm" />
                     <div className="flex gap-1 justify-end">
                       <button onClick={cancelEdit} className="p-1.5 rounded hover:bg-muted text-muted-foreground transition-colors">
                         <X className="w-4 h-4" />
@@ -178,6 +187,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
                         <Phone className="w-3 h-3" /> {f.whatsapp}
                       </p>
                       {f.contato && <p className="text-xs text-muted-foreground truncate">{f.contato}</p>}
+                      {f.codigo_interno && <p className="text-xs font-bold text-primary truncate">Cód. Interno: {f.codigo_interno}</p>}
                     </div>
                     <button
                       onClick={() => startEdit(f)}
