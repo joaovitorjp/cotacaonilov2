@@ -34,6 +34,7 @@ const CotacaoResposta = () => {
   const [filledCount, setFilledCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [estados, setEstados] = useState<string>('AMBOS');
+  const [tipoPreco, setTipoPreco] = useState<'IPI_ST' | 'NOTA'>('IPI_ST');
 
   const showMT = estados === 'AMBOS' || estados === 'MT';
   const showGO = estados === 'AMBOS' || estados === 'GO';
@@ -68,6 +69,7 @@ const CotacaoResposta = () => {
     setListaId(linkData.lista_id);
     setLinkId(linkData.id);
     setEstados((linkData as any).estados || 'AMBOS');
+    setTipoPreco((linkData as any).tipo_preco || 'IPI_ST');
 
     const { data: lista } = await supabase
       .from('listas')
@@ -124,6 +126,7 @@ const CotacaoResposta = () => {
       const preenchidosGO = showGO ? Object.values(pricesGO).filter(p => p && String(p).trim() !== '').length : 0;
       const chips: { label: string; value: string; tone?: 'primary' | 'success' | 'muted' }[] = [
         { label: 'Produtos', value: String(produtos.length), tone: 'primary' },
+        { label: 'Formato', value: tipoPreco === 'IPI_ST' ? 'IPI + ST' : 'PREÇO DE NOTA', tone: 'muted' },
       ];
       if (showMT) chips.push({ label: 'Preenchidos MT', value: `${preenchidosMT}/${produtos.length}`, tone: 'success' });
       if (showGO) chips.push({ label: 'Preenchidos GO', value: `${preenchidosGO}/${produtos.length}`, tone: 'success' });
@@ -413,6 +416,19 @@ const CotacaoResposta = () => {
 
       <div className="flex-1 overflow-auto px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto space-y-2">
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-3 mb-2 text-primary">
+              <AlertCircle className="w-5 h-5" />
+              <h2 className="font-display font-bold uppercase tracking-wider text-sm">Aviso Importante</h2>
+            </div>
+            <p className="text-sm font-medium text-foreground">
+              Os preços desta cotação devem ser preenchidos obrigatoriamente como:
+              <span className="block mt-1 text-lg font-display font-black text-primary">
+                {tipoPreco === 'IPI_ST' ? 'PREÇO COM IPI + ST' : 'PREÇO DE NOTA'}
+              </span>
+            </p>
+          </div>
+
           <div className="bg-muted/50 border border-border rounded-lg p-3 mb-3">
             <p className="text-xs text-muted-foreground">
               {estados === 'AMBOS' ? (

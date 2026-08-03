@@ -276,6 +276,7 @@ export type Database = {
           id: string
           lista_id: string
           respondido: boolean
+          tipo_preco: string | null
           token: string
           user_id: string | null
         }
@@ -286,6 +287,7 @@ export type Database = {
           id?: string
           lista_id: string
           respondido?: boolean
+          tipo_preco?: string | null
           token?: string
           user_id?: string | null
         }
@@ -296,6 +298,7 @@ export type Database = {
           id?: string
           lista_id?: string
           respondido?: boolean
+          tipo_preco?: string | null
           token?: string
           user_id?: string | null
         }
