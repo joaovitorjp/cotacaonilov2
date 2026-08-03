@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin, Trash2 } from 'lucide-react';
+import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin, Trash2, Mail } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +22,7 @@ interface Fornecedor {
   nome: string;
   contato: string | null;
   whatsapp: string;
+  email?: string | null;
 }
 
 interface GeneratedLink {
@@ -29,6 +30,7 @@ interface GeneratedLink {
   link: string;
   copied: boolean;
   whatsapp?: string;
+  email?: string;
   estados?: string;
   tipo_preco?: 'IPI_ST' | 'NOTA';
 }
@@ -39,6 +41,7 @@ interface ExistingLink {
   empresa: string;
   respondido: boolean;
   whatsapp?: string;
+  email?: string;
   estados?: string;
   tipo_preco?: 'IPI_ST' | 'NOTA';
 }
@@ -112,13 +115,18 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       .order('created_at', { ascending: false });
 
     if (links) {
-      const { data: forns } = await supabase.from('fornecedores').select('nome, whatsapp');
-      const fornMap: Record<string, string> = {};
-      (forns ?? []).forEach((f: any) => { fornMap[f.nome] = f.whatsapp; });
+      const { data: forns } = await supabase.from('fornecedores').select('nome, whatsapp, email');
+      const fornWMap: Record<string, string> = {};
+      const fornEMap: Record<string, string> = {};
+      (forns ?? []).forEach((f: any) => { 
+        fornWMap[f.nome] = f.whatsapp; 
+        if (f.email) fornEMap[f.nome] = f.email;
+      });
 
       setExistingLinks(links.map((l: any) => ({
         ...l,
-        whatsapp: fornMap[l.empresa],
+        whatsapp: fornWMap[l.empresa],
+        email: fornEMap[l.empresa],
       })));
     }
   };
@@ -156,7 +164,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     }
     try {
       const link = await generateLink(f.nome, selectedEstado, selectedTipoPreco);
-      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado, tipo_preco: selectedTipoPreco }]);
+      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, email: f.email ?? undefined, estados: selectedEstado, tipo_preco: selectedTipoPreco }]);
       toast.success(`Link gerado para ${f.nome}!`);
       loadExistingLinks();
     } catch {
@@ -176,7 +184,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     for (const f of pendentes) {
       try {
         const link = await generateLink(f.nome, selectedEstado, selectedTipoPreco);
-        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado, tipo_preco: selectedTipoPreco }]);
+        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, email: f.email ?? undefined, estados: selectedEstado, tipo_preco: selectedTipoPreco }]);
         count++;
       } catch { /* skip */ }
     }
@@ -218,6 +226,28 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     const phone = item.whatsapp ? item.whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
     window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(item.link, item.tipo_preco)}`, '_blank');
+  };
+
+  const buildEmailMessage = (link: string, tipoPreco?: 'IPI_ST' | 'NOTA') => {
+    const cotacaoLabel = listaNome ? `"${listaNome}"` : '';
+    const remetente = userNome ? `\n\nEnviado por: ${userNome}` : '';
+    const avisoPreco = tipoPreco ? `\n\nATENÇÃO: Os preços devem ser preenchidos como: ${TIPO_PRECO_LABELS[tipoPreco]}` : '';
+    const body = `Olá!\n\nSegue o link para responder a cotação ${cotacaoLabel}:${avisoPreco}\n\nLink de resposta:\n${link}${remetente}`;
+    const subject = `Cotação de Preços - ${listaNome || 'Rede Nilo'}`;
+    return { subject: encodeURIComponent(subject), body: encodeURIComponent(body) };
+  };
+
+  const handleShareEmail = (empresa: string, token: string, email?: string, tipoPreco?: 'IPI_ST' | 'NOTA') => {
+    if (!email) return;
+    const link = `${getPublicBaseUrl()}/cotacao/${token}`;
+    const { subject, body } = buildEmailMessage(link, tipoPreco);
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  };
+
+  const handleShareEmailGenerated = (item: GeneratedLink) => {
+    if (!item.email) return;
+    const { subject, body } = buildEmailMessage(item.link, item.tipo_preco);
+    window.location.href = `mailto:${item.email}?subject=${subject}&body=${body}`;
   };
 
   const handleDeleteLink = async () => {
@@ -403,6 +433,15 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                             <MessageCircle className="w-4 h-4" />
                           </button>
                         )}
+                        {item.email && (
+                          <button
+                            onClick={() => handleShareEmailGenerated(item)}
+                            className="p-1.5 rounded transition-colors text-blue-600 hover:bg-blue-500/10"
+                            title="Enviar via E-mail"
+                          >
+                            <Mail className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleCopy(idx)}
                           className={`p-1.5 rounded transition-colors ${
@@ -454,6 +493,16 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
                           <MessageCircle className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {link.email && (
+                        <button
+                          onClick={() => handleShareEmail(link.empresa, link.token, link.email, link.tipo_preco)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-display font-bold text-blue-600 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
+                          title="Reenviar via E-mail"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <Mail className="w-3.5 h-3.5" />
                         </button>
                       )}
                       <button
