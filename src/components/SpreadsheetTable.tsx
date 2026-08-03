@@ -29,6 +29,8 @@ interface SpreadsheetTableProps {
   onDeleteResposta?: (empresa: string) => Promise<void>;
   onAfterSave?: () => void;
   onAddEmpresa?: (empresa: string, states: ('MT' | 'GO')[]) => Promise<void>;
+  onAddProduto?: (rowIndex: number) => void;
+  onDeleteProduto?: (rowIndex: number) => void;
 }
 
 const parsePrice = (val: string | number): number => {
