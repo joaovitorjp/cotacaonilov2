@@ -62,8 +62,8 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome: nome.trim(),
       whatsapp: cleanWhatsapp,
       contato: contato.trim() || null,
-      codigo_interno: codigoInterno.trim() || null,
       user_id: user?.id,
+      ...({ codigo_interno: codigoInterno.trim() || null } as any),
     });
     if (error) {
       toast.error('Erro ao adicionar fornecedor.');
@@ -110,7 +110,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome: editNome.trim(),
       whatsapp: cleanWhatsapp,
       contato: editContato.trim() || null,
-      codigo_interno: editCodigoInterno.trim() || null,
+      ...({ codigo_interno: editCodigoInterno.trim() || null } as any),
     }).eq('id', editingId);
 
     if (error) {
