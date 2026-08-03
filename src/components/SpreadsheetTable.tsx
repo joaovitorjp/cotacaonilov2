@@ -1097,7 +1097,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           onDragOver={e => handleRowDragOver(e, idx)}
           onDrop={e => handleRowDrop(e, idx)}
           onDragEnd={handleRowDragEnd}
-          onContextMenu={e => handleContextMenu(e, 'row', undefined, idx)}
+          onContextMenu={e => {
+            if (readOnly) return;
+            handleContextMenu(e, 'row', undefined, idx);
+          }}
         >
           {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
           <div
