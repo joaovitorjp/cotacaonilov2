@@ -145,37 +145,54 @@ const MonthlyReportCard: React.FC<Props> = ({ listas, profiles }) => {
   };
 
   return (
-    <div className="mb-6 border border-border rounded-lg p-4 bg-card">
-      <div className="flex items-center gap-2 mb-3">
-        <CalendarRange className="w-4 h-4 text-primary" />
-        <h2 className="font-display font-bold text-foreground">Relatório Mensal (PDF)</h2>
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <label className="text-[10px] font-display font-bold uppercase tracking-[0.15em] text-muted-foreground/60 ml-1">Mês de Referência</label>
+        <Input 
+          type="month" 
+          value={month} 
+          onChange={e => setMonth(e.target.value)} 
+          className="bg-muted/40 border-none h-11 rounded-xl text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/20 transition-all"
+        />
       </div>
-      <div className="flex flex-col sm:flex-row gap-3 items-end">
-        <div className="flex-1 w-full">
-          <label className="text-xs text-muted-foreground font-display font-bold">Mês</label>
-          <Input type="month" value={month} onChange={e => setMonth(e.target.value)} />
-        </div>
-        <div className="flex-1 w-full">
-          <label className="text-xs text-muted-foreground font-display font-bold">Usuário</label>
-          <Select value={userId} onValueChange={setUserId}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os usuários</SelectItem>
-              {users.map(u => (
-                <SelectItem key={u.user_id} value={u.user_id}>
-                  {u.nome || 'Sem nome'} — {u.email}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="text-xs text-muted-foreground sm:pb-2">
-          {filtered.length} cotação(ões)
-        </div>
-        <Button onClick={generate} disabled={generating}>
-          <FileText className="w-3.5 h-3.5 mr-1.5" />
-          {generating ? 'Gerando...' : 'Baixar PDF'}
+      <div className="space-y-2">
+        <label className="text-[10px] font-display font-bold uppercase tracking-[0.15em] text-muted-foreground/60 ml-1">Comprador</label>
+        <Select value={userId} onValueChange={setUserId}>
+          <SelectTrigger className="bg-muted/40 border-none h-11 rounded-xl text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/20 transition-all">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-border/50 shadow-xl">
+            <SelectItem value="all" className="font-medium">Todos os usuários</SelectItem>
+            {users.map(u => (
+              <SelectItem key={u.user_id} value={u.user_id} className="text-xs font-medium">
+                {u.nome || 'Sem nome'}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="pt-4">
+        <Button 
+          onClick={generate} 
+          disabled={generating} 
+          className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 rounded-2xl font-display font-bold text-xs h-11 uppercase tracking-widest transition-all duration-300"
+        >
+          {generating ? (
+            <div className="flex items-center gap-2">
+              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span>Processando...</span>
+            </div>
+          ) : (
+            <>
+              <FileText className="w-4 h-4 mr-2.5" />
+              Gerar PDF Mensal
+            </>
+          )}
         </Button>
+        <div className="mt-4 flex items-center justify-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-tighter opacity-50">
+          <CalendarRange className="w-3 h-3" />
+          <span>{filtered.length} Registros Encontrados</span>
+        </div>
       </div>
     </div>
   );

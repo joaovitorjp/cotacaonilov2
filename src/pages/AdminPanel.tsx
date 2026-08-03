@@ -102,55 +102,85 @@ const AdminPanel: React.FC = () => {
   if (currentLista) {
     return (
       <div className="flex flex-col h-screen">
-        <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setCurrentLista(null)} className="flex items-center gap-2 text-foreground hover:text-primary">
-              <ArrowLeft className="w-4 h-4" />
-              <span className="font-display font-bold text-sm">Voltar</span>
+        <header className="bg-background border-b border-border/50 px-4 sm:px-10 py-5 flex items-center justify-between shrink-0 sticky top-0 z-30 shadow-sm shadow-black/[0.01]">
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => setCurrentLista(null)} 
+              className="group flex items-center gap-3 px-4 py-2.5 hover:bg-muted/60 rounded-2xl transition-all duration-300"
+            >
+              <ArrowLeft className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="font-display font-bold text-sm text-foreground uppercase tracking-widest">Sair da Visualização</span>
             </button>
-            <div className="w-px h-5 bg-border" />
-            <Shield className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display font-bold text-foreground">Modo Admin (somente leitura)</span>
+            <div className="w-px h-8 bg-border/60" />
+            <div className="flex items-center gap-2.5 px-4 py-1.5 bg-primary/5 border border-primary/10 rounded-xl">
+              <Shield className="w-4 h-4 text-primary" />
+              <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Monitoramento Admin</span>
+            </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-6">
+             <div className="hidden sm:flex flex-col items-end gap-0.5">
+              <span className="text-xs font-bold text-foreground">Acesso Administrativo</span>
+              <span className="text-[10px] text-muted-foreground font-medium opacity-60">{user?.email}</span>
+            </div>
+            <div className="w-px h-8 bg-border/60 mx-1 hidden sm:block" />
+            <Button variant="ghost" size="icon" onClick={signOut} className="rounded-2xl hover:bg-destructive/10 hover:text-destructive transition-all duration-300">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </header>
 
-        <div className="shrink-0 border-b border-border">
-          <div className="bg-muted/50 px-4 sm:px-6 py-2 text-sm text-foreground flex items-center gap-2 flex-wrap">
-            <span className="font-display font-bold">{currentLista.nome}</span>
-            <span className="text-muted-foreground text-xs">
-              {currentLista.produtos.length} produtos · {respostas.length} resposta(s)
-            </span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-display font-bold ${
-              currentLista.status === 'finalizada' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
-            }`}>
-              {currentLista.status === 'finalizada' ? 'FINALIZADA' : 'ABERTA'}
-            </span>
-            <span className="text-xs text-muted-foreground ml-2">
-              Dono: <strong>{profiles[currentLista.user_id]?.nome || 'Sem nome'}</strong> · {profiles[currentLista.user_id]?.email || '—'}
-            </span>
-          </div>
-          <div className="flex px-4 sm:px-6 bg-card">
-            <button
-              onClick={() => setActiveTab('planilha')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-display font-bold border-b-2 transition-colors ${
-                activeTab === 'planilha' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <TableIcon className="w-3.5 h-3.5" />
-              Planilha
-            </button>
-            <button
-              onClick={() => setActiveTab('analise')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-display font-bold border-b-2 transition-colors ${
-                activeTab === 'analise' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              Análise & PDF
-            </button>
+        <div className="shrink-0 border-b border-border bg-card/60 backdrop-blur-xl sticky top-0 z-20 shadow-sm shadow-black/[0.01]">
+          <div className="px-4 sm:px-10 py-6 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-4">
+                <h2 className="font-display font-bold text-2xl text-foreground tracking-tight">{currentLista.nome}</h2>
+                <span className={`text-[10px] px-3 py-1 rounded-lg font-bold uppercase tracking-[0.2em] shadow-sm ${
+                  currentLista.status === 'finalizada' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
+                }`}>
+                  {currentLista.status}
+                </span>
+              </div>
+              <div className="flex items-center gap-4 text-[11px] text-muted-foreground font-bold uppercase tracking-tighter">
+                <span className="flex items-center gap-1.5 opacity-80">
+                  <Package className="w-3.5 h-3.5 text-primary/40" />
+                  <strong className="text-foreground">{currentLista.produtos.length}</strong> Produtos
+                </span>
+                <div className="w-1 h-1 rounded-full bg-border" />
+                <span className="flex items-center gap-1.5 opacity-80">
+                  <Users className="w-3.5 h-3.5 text-primary/40" />
+                  <strong className="text-foreground">{respostas.length}</strong> Respostas
+                </span>
+                <div className="w-1 h-1 rounded-full bg-border" />
+                <span className="truncate opacity-80">
+                  Dono: <strong className="text-foreground">{profiles[currentLista.user_id]?.nome || 'Sem nome'}</strong>
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex p-1.5 bg-muted/40 rounded-[1.25rem] w-fit ring-1 ring-black/[0.03]">
+              <button
+                onClick={() => setActiveTab('planilha')}
+                className={`flex items-center gap-2.5 px-8 py-2.5 text-sm font-display font-bold rounded-xl transition-all duration-500 ${
+                  activeTab === 'planilha' 
+                  ? 'bg-white text-primary shadow-lg shadow-black/[0.05] translate-y-[-1px]' 
+                  : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <TableIcon className="w-4 h-4" />
+                PLANILHA
+              </button>
+              <button
+                onClick={() => setActiveTab('analise')}
+                className={`flex items-center gap-2.5 px-8 py-2.5 text-sm font-display font-bold rounded-xl transition-all duration-500 ${
+                  activeTab === 'analise' 
+                  ? 'bg-white text-primary shadow-lg shadow-black/[0.05] translate-y-[-1px]' 
+                  : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                ANÁLISE E RELATÓRIO
+              </button>
+            </div>
           </div>
         </div>
 
@@ -174,118 +204,199 @@ const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-primary" />
-          <h1 className="text-lg sm:text-xl font-display font-bold text-foreground tracking-tight">
-            Painel do Administrador
-          </h1>
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/10 selection:text-primary">
+      <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-8 py-4 flex items-center justify-between shadow-sm shadow-black/[0.02]">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-primary/10 rounded-2xl">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-display font-bold text-foreground tracking-tight leading-none uppercase">
+              Painel Administrativo
+            </h1>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1.5 opacity-70">
+              Controle Central de Cotações
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground hidden sm:inline">{user?.email}</span>
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
+        <div className="flex items-center gap-5">
+          <div className="hidden sm:flex flex-col items-end gap-0.5">
+            <span className="text-xs font-bold text-foreground leading-none">{profiles[user?.id || '']?.nome || 'Administrador'}</span>
+            <span className="text-[10px] text-muted-foreground font-medium leading-none opacity-60">{user?.email}</span>
+          </div>
+          <div className="w-px h-8 bg-border/60 mx-1 hidden sm:block" />
+          <Button variant="ghost" size="icon" onClick={signOut} className="rounded-2xl hover:bg-destructive/10 hover:text-destructive transition-all duration-300">
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto p-4 sm:p-6">
-        <div className="mb-6">
-          <p className="text-sm text-muted-foreground">
-            Visualize todas as cotações de todos os usuários. Você pode abrir a planilha e baixar o PDF, mas não editar.
+      <main className="max-w-[1440px] mx-auto p-4 sm:p-10 space-y-12">
+        <section className="space-y-2">
+          <h2 className="text-3xl font-display font-bold text-foreground tracking-tight">Visão Geral</h2>
+          <p className="text-sm text-muted-foreground max-w-2xl font-medium leading-relaxed">
+            Monitore o fluxo de cotações em tempo real de todos os compradores da rede através de uma interface centralizada e segura.
           </p>
-        </div>
+        </section>
 
-        <MonthlyReportCard listas={listas} profiles={profiles} />
-
-
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por cotação, usuário ou email..."
-              className="pl-9"
-            />
-          </div>
-          <div className="flex gap-2">
-            {(['all', 'aberta', 'finalizada'] as const).map(opt => (
-              <Button
-                key={opt}
-                variant={statusFilter === opt ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter(opt)}
-              >
-                {opt === 'all' ? 'Todas' : opt === 'aberta' ? 'Abertas' : 'Finalizadas'}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {loading ? (
-          <p className="text-center text-muted-foreground py-12">Carregando...</p>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-border rounded-lg">
-            <p className="text-muted-foreground text-sm">Nenhuma cotação encontrada.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filtered.map(lista => {
-              const owner = profiles[lista.user_id];
-              return (
-                <div
-                  key={lista.id}
-                  className="border border-border rounded-lg p-4 hover:border-primary/40 hover:shadow-sm transition-all bg-card"
-                >
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-display font-bold text-foreground text-base">{lista.nome}</h3>
-                        <span className={`text-[10px] font-display font-bold px-2 py-0.5 rounded-full ${
-                          lista.status === 'finalizada' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
-                        }`}>
-                          {lista.status === 'finalizada' ? 'FINALIZADA' : 'ABERTA'}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          <strong className="text-foreground">{owner?.nome || 'Sem nome'}</strong>
-                          <span>· {owner?.email || '—'}</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Package className="w-3 h-3" />
-                          {lista.produtos.length} produtos
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(lista.created_at).toLocaleDateString('pt-BR')}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => openLista(lista)}>
-                        <Eye className="w-3.5 h-3.5 mr-1.5" />
-                        Abrir planilha
-                      </Button>
-                      <Button size="sm" onClick={async () => {
-                        await openLista(lista);
-                        setActiveTab('analise');
-                        toast.info('Use o botão "Exportar PDF" na aba Análise.');
-                      }}>
-                        <FileText className="w-3.5 h-3.5 mr-1.5" />
-                        PDF
-                      </Button>
-                    </div>
-                  </div>
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+          <aside className="xl:col-span-3 space-y-8">
+            <div className="bg-card border border-border/50 rounded-[2rem] p-8 shadow-sm ring-1 ring-black/[0.02]">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-primary/10 rounded-xl">
+                  <FileText className="w-4 h-4 text-primary" />
                 </div>
-              );
-            })}
+                <h3 className="text-sm font-display font-bold uppercase tracking-wider">
+                  Relatórios
+                </h3>
+              </div>
+              <MonthlyReportCard listas={listas} profiles={profiles} />
+            </div>
+
+            <div className="bg-card border border-border/50 rounded-[2rem] p-8 shadow-sm ring-1 ring-black/[0.02]">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-primary/10 rounded-xl">
+                  <Search className="w-4 h-4 text-primary" />
+                </div>
+                <h3 className="text-sm font-display font-bold uppercase tracking-wider">
+                  Filtros
+                </h3>
+              </div>
+              <div className="space-y-6">
+                <div className="relative group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Buscar cotação..."
+                    className="pl-12 bg-muted/30 border-none h-12 rounded-2xl focus-visible:ring-2 focus-visible:ring-primary/20 placeholder:text-muted-foreground/50 font-medium transition-all"
+                  />
+                </div>
+                <div className="space-y-2.5">
+                  {(['all', 'aberta', 'finalizada'] as const).map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => setStatusFilter(opt)}
+                      className={`flex items-center justify-between w-full px-5 py-3.5 rounded-2xl text-sm font-display font-bold transition-all duration-300 ${
+                        statusFilter === opt 
+                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 translate-x-1' 
+                        : 'bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:translate-x-1'
+                      }`}
+                    >
+                      <span className="uppercase tracking-widest">{opt === 'all' ? 'Todas' : opt === 'aberta' ? 'Abertas' : 'Finalizadas'}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-lg font-bold ${statusFilter === opt ? 'bg-white/20' : 'bg-muted-foreground/10'}`}>
+                        {opt === 'all' ? listas.length : listas.filter(l => l.status === opt).length}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <div className="xl:col-span-9">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-32 space-y-6">
+                <div className="w-12 h-12 border-[3px] border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-sm text-muted-foreground font-display font-bold uppercase tracking-widest animate-pulse">Sincronizando Banco de Dados</p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-32 border-2 border-dashed border-border/60 rounded-[3rem] bg-muted/5">
+                <div className="p-6 bg-muted/30 rounded-full mb-6 ring-8 ring-muted/10">
+                  <Search className="w-10 h-10 text-muted-foreground/30" />
+                </div>
+                <h4 className="text-foreground font-display font-bold text-lg mb-1">Nenhum resultado</h4>
+                <p className="text-muted-foreground text-sm font-medium">Tente ajustar seus filtros de busca.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-2 gap-6">
+                {filtered.map(lista => {
+                  const owner = profiles[lista.user_id];
+                  const isFinalizada = lista.status === 'finalizada';
+                  
+                  return (
+                    <div
+                      key={lista.id}
+                      className="group bg-card border border-border/50 rounded-[2.5rem] p-7 hover:border-primary/40 hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] transition-all duration-500 relative overflow-hidden flex flex-col h-[320px]"
+                    >
+                      <div className={`absolute top-0 right-0 w-48 h-48 -mr-24 -mt-24 rounded-full opacity-[0.04] transition-transform duration-1000 group-hover:scale-150 ${isFinalizada ? 'bg-success' : 'bg-primary'}`} />
+                      
+                      <div className="relative z-10 flex flex-col h-full">
+                        <div className="flex items-start justify-between mb-6">
+                          <div className="space-y-2 max-w-[80%]">
+                            <h3 className="font-display font-bold text-xl text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                              {lista.nome}
+                            </h3>
+                            <div className="flex items-center gap-3">
+                              <span className={`text-[9px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-widest ${
+                                isFinalizada ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
+                              }`}>
+                                {lista.status}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1.5 opacity-60">
+                                <Calendar className="w-3.5 h-3.5" />
+                                {new Date(lista.created_at).toLocaleDateString('pt-BR')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 mb-8">
+                          <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-[1.5rem] ring-1 ring-black/[0.02] group-hover:bg-primary/[0.03] transition-colors duration-500">
+                            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-display font-bold text-sm shadow-inner">
+                              {owner?.nome?.charAt(0) || '?'}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-bold text-foreground truncate">{owner?.nome || 'Usuário'}</span>
+                              <span className="text-[10px] text-muted-foreground font-medium truncate opacity-70">{owner?.email}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-6 px-2">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold">
+                              <Package className="w-4 h-4 text-primary/40" />
+                              <span className="text-foreground">{lista.produtos.length}</span> <span className="opacity-60 uppercase tracking-tighter text-[10px]">Produtos</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold">
+                              <Users className="w-4 h-4 text-primary/40" />
+                              <span className="text-foreground">{lista.produtos.length > 0 ? 'Monitorado' : 'Vazio'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mt-auto">
+                          <Button 
+                            variant="secondary" 
+                            size="lg" 
+                            onClick={() => openLista(lista)}
+                            className="bg-muted/50 hover:bg-primary hover:text-primary-foreground rounded-[1.25rem] transition-all duration-300 font-display font-bold text-xs h-12"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            DETALHES
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="lg" 
+                            onClick={async () => {
+                              await openLista(lista);
+                              setActiveTab('analise');
+                              toast.info('Modo Relatório', { description: 'Exporte os resultados na aba Análise.' });
+                            }}
+                            className="border-border/50 hover:border-primary/50 hover:bg-primary/5 rounded-[1.25rem] transition-all duration-300 font-display font-bold text-xs h-12"
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            ANÁLISE
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 };
