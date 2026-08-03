@@ -243,17 +243,14 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           )}
         </div>
         
-        {/* Resize handle */}
         <div
           className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-primary/30 active:bg-primary/50 z-10"
-          onMouseDown={(e) => handleResizeStart(visualColIdx, e)}
+          onMouseDown={(e) => handleColResizeStart(e, visualColIdx)}
         />
       </div>
     );
   };
 
-  // Rest of the component structure remains, but I'll ensure the header uses these modern styles.
-  // ... existing logic ...
 
 
   // Filter columns based on state filter and remove empty empresa columns, then add fillers
