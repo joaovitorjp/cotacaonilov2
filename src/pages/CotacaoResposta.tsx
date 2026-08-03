@@ -416,6 +416,19 @@ const CotacaoResposta = () => {
 
       <div className="flex-1 overflow-auto px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto space-y-2">
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-3 mb-2 text-primary">
+              <AlertCircle className="w-5 h-5" />
+              <h2 className="font-display font-bold uppercase tracking-wider text-sm">Aviso Importante</h2>
+            </div>
+            <p className="text-sm font-medium text-foreground">
+              Os preços desta cotação devem ser preenchidos obrigatoriamente como:
+              <span className="block mt-1 text-lg font-display font-black text-primary">
+                {tipoPreco === 'IPI_ST' ? 'PREÇO COM IPI + ST' : 'PREÇO DE NOTA'}
+              </span>
+            </p>
+          </div>
+
           <div className="bg-muted/50 border border-border rounded-lg p-3 mb-3">
             <p className="text-xs text-muted-foreground">
               {estados === 'AMBOS' ? (
