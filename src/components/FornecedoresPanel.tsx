@@ -203,9 +203,13 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
               <div key={f.id} className="px-3 py-2.5 bg-card border border-border rounded-lg">
                 {editingId === f.id ? (
                   <div className="space-y-2">
-                    <Input value={editNome} onChange={e => setEditNome(e.target.value)} placeholder="Nome *" className="h-8 text-sm" />
-                    <Input value={editWhatsapp} onChange={e => setEditWhatsapp(e.target.value)} placeholder="WhatsApp *" className="h-8 text-sm" inputMode="tel" />
-                    <Input value={editContato} onChange={e => setEditContato(e.target.value)} placeholder="Contato (opcional)" className="h-8 text-sm" />
+                    <Input value={editNome} onChange={e => setEditNome(e.target.value)} placeholder="Empresa *" className="h-8 text-sm" />
+                    <Input value={editNomeRepresentante} onChange={e => setEditNomeRepresentante(e.target.value)} placeholder="Representante" className="h-8 text-sm" />
+                    <div className="grid grid-cols-2 gap-1">
+                      <Input value={editWhatsapp} onChange={e => setEditWhatsapp(e.target.value)} placeholder="WhatsApp *" className="h-8 text-sm" inputMode="tel" />
+                      <Input value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="E-mail" className="h-8 text-sm" type="email" />
+                    </div>
+                    <Input value={editContato} onChange={e => setEditContato(e.target.value)} placeholder="Obs" className="h-8 text-sm" />
                     <div className="grid grid-cols-2 gap-1">
                       <Input value={editCodigoInternoCISS} onChange={e => setEditCodigoInternoCISS(e.target.value)} placeholder="CISS" className="h-8 text-xs" />
                       <Input value={editCodigoInternoCONSINCO} onChange={e => setEditCodigoInternoCONSINCO(e.target.value)} placeholder="CONSINCO" className="h-8 text-xs" />
@@ -223,10 +227,11 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
                   <div className="flex items-center gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="font-display font-bold text-foreground text-sm truncate">{f.nome}</p>
+                      {f.nome_representante && <p className="text-xs font-medium text-primary/80 truncate">{f.nome_representante}</p>}
                       <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                        <Phone className="w-3 h-3" /> {f.whatsapp}
+                        <Phone className="w-3 h-3" /> {f.whatsapp} {f.email && <span className="text-muted-foreground/50 ml-1">| {f.email}</span>}
                       </p>
-                      {f.contato && <p className="text-xs text-muted-foreground truncate">{f.contato}</p>}
+                      {f.contato && <p className="text-[10px] text-muted-foreground truncate italic">{f.contato}</p>}
                       {(f.codigo_interno_ciss || f.codigo_interno_consinco) && (
                         <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
                           {f.codigo_interno_ciss && <p className="text-[10px] font-bold text-primary truncate">CISS: {f.codigo_interno_ciss}</p>}
