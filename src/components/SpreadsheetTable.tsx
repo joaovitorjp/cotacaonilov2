@@ -323,10 +323,11 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           if (measured >= 50) return;
           measured++;
           const el = cell as HTMLElement;
-          const text = el.textContent || '';
+          const text = el.innerText || el.textContent || '';
           if (!text.trim()) return;
           ctx.font = '12px system-ui, sans-serif';
-          const w = ctx.measureText(text).width + 20; // padding
+          const w = ctx.measureText(text.trim()).width + 24; // padding
+
           if (w > maxContentW) maxContentW = w;
         });
 
