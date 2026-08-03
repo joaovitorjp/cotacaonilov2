@@ -398,9 +398,11 @@ const Index = () => {
       resposta: d.resposta as any[],
     }));
 
-    const fornsMap: Record<string, string> = {};
+    const fornsMapCISS: Record<string, string> = {};
+    const fornsMapCONSINCO: Record<string, string> = {};
     (fornsData ?? []).forEach(f => {
-      fornsMap[f.nome] = f.codigo_interno || '';
+      fornsMapCISS[f.nome] = f.codigo_interno_ciss || '';
+      fornsMapCONSINCO[f.nome] = f.codigo_interno_consinco || '';
     });
 
     const parsePrice = (raw: any): number => {
@@ -449,6 +451,7 @@ const Index = () => {
         
         if (type === 'CISS') {
           // CSV CISS (Existing format)
+          const codFornecedor = fornsMapCISS[empresa] || '';
           const csvLinesCISS = items.map(item => {
             const precoFormatted = item.preco.toFixed(2).replace('.', ',');
             return `${item.codigo_barras};1;${precoFormatted}`;
@@ -463,7 +466,7 @@ const Index = () => {
           totalArquivos++;
         } else {
           // CSV CONSINCO (New format)
-          const codFornecedor = fornsMap[empresa] || '';
+          const codFornecedor = fornsMapCONSINCO[empresa] || '';
           const csvLinesCONSINCO = items.map(item => {
             const precoFormatted = item.preco.toFixed(2); // format 3.45 (dot separator)
             // Col A: codFornecedor, B: "", C: "", D: barcode, E: "", F: "1", G: price, H-K: "0"
