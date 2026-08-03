@@ -126,6 +126,7 @@ const CotacaoResposta = () => {
       const preenchidosGO = showGO ? Object.values(pricesGO).filter(p => p && String(p).trim() !== '').length : 0;
       const chips: { label: string; value: string; tone?: 'primary' | 'success' | 'muted' }[] = [
         { label: 'Produtos', value: String(produtos.length), tone: 'primary' },
+        { label: 'Formato', value: tipoPreco === 'IPI_ST' ? 'IPI + ST' : 'PREÇO DE NOTA', tone: 'muted' },
       ];
       if (showMT) chips.push({ label: 'Preenchidos MT', value: `${preenchidosMT}/${produtos.length}`, tone: 'success' });
       if (showGO) chips.push({ label: 'Preenchidos GO', value: `${preenchidosGO}/${produtos.length}`, tone: 'success' });
