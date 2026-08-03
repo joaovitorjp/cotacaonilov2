@@ -29,6 +29,8 @@ interface SpreadsheetTableProps {
   onDeleteResposta?: (empresa: string) => Promise<void>;
   onAfterSave?: () => void;
   onAddEmpresa?: (empresa: string, states: ('MT' | 'GO')[]) => Promise<void>;
+  onAddProduto?: (rowIndex: number) => void;
+  onDeleteProduto?: (rowIndex: number) => void;
 }
 
 const parsePrice = (val: string | number): number => {
@@ -73,7 +75,7 @@ interface ColDef {
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   produtos, respostas, readOnly = false, editableColumn, onPriceChange,
   editPrices = {}, highlightLowest = false, onSave, listaId, onDeleteResposta,
-  onAfterSave, onAddEmpresa,
+  onAfterSave, onAddEmpresa, onAddProduto, onDeleteProduto,
 }) => {
   const { user } = useAuth();
   const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
@@ -1095,7 +1097,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           onDragOver={e => handleRowDragOver(e, idx)}
           onDrop={e => handleRowDrop(e, idx)}
           onDragEnd={handleRowDragEnd}
-          onContextMenu={e => handleContextMenu(e, 'row', undefined, idx)}
+          onContextMenu={e => {
+            if (readOnly) return;
+            handleContextMenu(e, 'row', undefined, idx);
+          }}
         >
           {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
           <div
@@ -1123,7 +1128,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             onClick: (e: React.MouseEvent) => handleCellClick(idx, visualColIdx, e),
             onMouseDown: (e: React.MouseEvent) => handleCellMouseDown(idx, visualColIdx, e),
             onMouseEnter: () => handleCellMouseEnter(idx, visualColIdx),
-            onContextMenu: (e: React.MouseEvent) => handleContextMenu(e, 'cell', colIdx, idx),
+            onContextMenu: (e: React.MouseEvent) => {
+              if (readOnly) return;
+              handleContextMenu(e, 'cell', colIdx, idx);
+            },
             'data-cell': `${idx}-${visualColIdx}`,
           };
 
@@ -1478,15 +1486,28 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               </>
             )}
 
-            {(contextMenu.type === 'row' || contextMenu.type === 'cell') && contextMenu.rowIdx !== undefined && (
+            {(contextMenu.type === 'row' || contextMenu.type === 'cell') && contextMenu.rowIdx !== undefined && !readOnly && (
               <>
-                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mover Linha</div>
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Linha</div>
                 <button onClick={() => moveRow('up')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowUp className="w-3.5 h-3.5" /> Mover para Cima
                 </button>
                 <button onClick={() => moveRow('down')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowDown className="w-3.5 h-3.5" /> Mover para Baixo
                 </button>
+                
+                {!readOnly && onAddProduto && (
+                  <button onClick={() => { onAddProduto(contextMenu.rowIdx!); setContextMenu(null); }} 
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
+                    <Plus className="w-3.5 h-3.5" /> Adicionar Produto
+                  </button>
+                )}
+                {!readOnly && onDeleteProduto && contextMenu.rowIdx! < produtos.length && (
+                  <button onClick={() => { onDeleteProduto(contextMenu.rowIdx!); setContextMenu(null); }} 
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-destructive">
+                    <Trash2 className="w-3.5 h-3.5" /> Excluir Produto
+                  </button>
+                )}
               </>
             )}
           </div>

@@ -683,6 +683,19 @@ const Index = () => {
               toast.success(`Coluna "${empresa}" adicionada em ${states.join(' e ')}!`);
             }
           } : undefined}
+          onAddProduto={!isFinalized && currentLista ? (rowIndex) => {
+            const newProd = { codigo_interno: '', descricao: 'Novo Produto', codigo_barras: '' };
+            const newProdutos = [...currentLista.produtos];
+            newProdutos.splice(rowIndex + 1, 0, newProd);
+            setCurrentLista({ ...currentLista, produtos: newProdutos });
+            toast.info('Produto adicionado. Lembre-se de salvar as alterações.');
+          } : undefined}
+          onDeleteProduto={!isFinalized && currentLista ? (rowIndex) => {
+            const newProdutos = [...currentLista.produtos];
+            newProdutos.splice(rowIndex, 1);
+            setCurrentLista({ ...currentLista, produtos: newProdutos });
+            toast.info('Produto removido. Lembre-se de salvar as alterações.');
+          } : undefined}
         />
       ) : (
         <AnalisePrecosPanel
