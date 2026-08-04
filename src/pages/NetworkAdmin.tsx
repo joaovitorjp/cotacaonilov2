@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Users, UserPlus, Shield, ArrowLeft, Loader2, Trash2, Folder, FileText, Package, ChevronRight, LayoutGrid } from "lucide-react";
+import { Users, UserPlus, Shield, ArrowLeft, Loader2, Trash2, Folder, FileText, Package, ChevronRight, LayoutGrid, Edit, Eye } from "lucide-react";
 
 const NetworkAdminPanel = () => {
   const { networkId } = useParams();
@@ -20,6 +20,7 @@ const NetworkAdminPanel = () => {
   const [quotations, setQuotations] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['root']);
+  const [editingItem, setEditingItem] = useState<{ type: 'user' | 'quotation' | 'supplier', id: string, data: any } | null>(null);
 
   useEffect(() => {
     if (networkId) {
@@ -168,116 +169,246 @@ const NetworkAdminPanel = () => {
           className="flex items-center gap-2"
           onClick={() => setActiveTab('explorer')}
         >
-          <LayoutGrid className="h-4 w-4" /> Explorador de Arquivos
+          <LayoutGrid className="h-4 w-4" /> Explorador de Dados
         </Button>
         <Button 
           variant={activeTab === 'users' ? 'default' : 'outline'} 
           className="flex items-center gap-2"
           onClick={() => setActiveTab('users')}
         >
-          <Users className="h-4 w-4" /> Gestão de Usuários
+          <Users className="h-4 w-4" /> Painel de Gestão
         </Button>
       </div>
 
       {activeTab === 'explorer' ? (
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="bg-slate-50 border-b border-slate-200">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Folder className="h-5 w-5 text-sky-600" /> 
-              Diretório da Rede: {network?.slug}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="flex flex-col">
-              <div 
-                className="flex items-center gap-2 p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
-                onClick={() => setExpandedFolders(prev => prev.includes('root') ? prev.filter(f => f !== 'root') : [...prev, 'root'])}
-              >
-                <ChevronRight className={`h-4 w-4 transition-transform ${expandedFolders.includes('root') ? 'rotate-90' : ''}`} />
-                <Folder className="h-5 w-5 text-amber-500 fill-amber-500" />
-                <span className="font-semibold text-slate-700">{network?.name}</span>
+        <div className="grid md:grid-cols-3 gap-6">
+          <Card className="md:col-span-1 border-slate-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b border-slate-200 py-4">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Folder className="h-4 w-4 text-sky-600" /> 
+                Navegação
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 max-h-[600px] overflow-y-auto">
+              <div className="flex flex-col">
+                <div 
+                  className="flex items-center gap-2 p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
+                  onClick={() => setExpandedFolders(prev => prev.includes('root') ? prev.filter(f => f !== 'root') : [...prev, 'root'])}
+                >
+                  <ChevronRight className={`h-4 w-4 transition-transform ${expandedFolders.includes('root') ? 'rotate-90' : ''}`} />
+                  <Folder className="h-5 w-5 text-amber-500 fill-amber-500" />
+                  <span className="font-semibold text-slate-700 truncate">{network?.name}</span>
+                </div>
+
+                {expandedFolders.includes('root') && (
+                  <div className="ml-4 border-l border-slate-200">
+                    <div className="flex flex-col">
+                      <div 
+                        className="flex items-center gap-2 p-2 hover:bg-slate-50 cursor-pointer text-sm"
+                        onClick={() => setExpandedFolders(prev => prev.includes('users') ? prev.filter(f => f !== 'users') : [...prev, 'users'])}
+                      >
+                        <ChevronRight className={`h-3 w-3 transition-transform ${expandedFolders.includes('users') ? 'rotate-90' : ''}`} />
+                        <Folder className="h-4 w-4 text-sky-400 fill-sky-400" />
+                        <span className="text-slate-600 font-medium">Usuários ({users.length})</span>
+                      </div>
+                      {expandedFolders.includes('users') && (
+                        <div className="ml-6 border-l border-slate-100">
+                          {users.map(u => (
+                            <div 
+                              key={u.id} 
+                              className="flex items-center justify-between p-2 hover:bg-sky-50 text-xs text-slate-500 cursor-pointer group"
+                              onClick={() => setEditingItem({ type: 'user', id: u.id, data: u })}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <Shield className="h-3 w-3 text-slate-400" />
+                                <span className="truncate">{u.nome || u.email}</span>
+                              </div>
+                              <Eye className="h-3 w-3 opacity-0 group-hover:opacity-100 text-sky-500" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col">
+                      <div 
+                        className="flex items-center gap-2 p-2 hover:bg-slate-50 cursor-pointer text-sm"
+                        onClick={() => setExpandedFolders(prev => prev.includes('quotations') ? prev.filter(f => f !== 'quotations') : [...prev, 'quotations'])}
+                      >
+                        <ChevronRight className={`h-3 w-3 transition-transform ${expandedFolders.includes('quotations') ? 'rotate-90' : ''}`} />
+                        <Folder className="h-4 w-4 text-sky-400 fill-sky-400" />
+                        <span className="text-slate-600 font-medium">Cotações ({quotations.length})</span>
+                      </div>
+                      {expandedFolders.includes('quotations') && (
+                        <div className="ml-6 border-l border-slate-100">
+                          {quotations.map(q => (
+                            <div 
+                              key={q.id} 
+                              className="flex items-center justify-between p-2 hover:bg-sky-50 text-xs text-slate-500 cursor-pointer group"
+                              onClick={() => setEditingItem({ type: 'quotation', id: q.id, data: q })}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <FileText className="h-3 w-3 text-slate-400" />
+                                <span className="truncate">{q.nome}</span>
+                              </div>
+                              <Eye className="h-3 w-3 opacity-0 group-hover:opacity-100 text-sky-500" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col">
+                      <div 
+                        className="flex items-center gap-2 p-2 hover:bg-slate-50 cursor-pointer text-sm"
+                        onClick={() => setExpandedFolders(prev => prev.includes('suppliers') ? prev.filter(f => f !== 'suppliers') : [...prev, 'suppliers'])}
+                      >
+                        <ChevronRight className={`h-3 w-3 transition-transform ${expandedFolders.includes('suppliers') ? 'rotate-90' : ''}`} />
+                        <Folder className="h-4 w-4 text-sky-400 fill-sky-400" />
+                        <span className="text-slate-600 font-medium">Fornecedores ({suppliers.length})</span>
+                      </div>
+                      {expandedFolders.includes('suppliers') && (
+                        <div className="ml-6 border-l border-slate-100">
+                          {suppliers.map(s => (
+                            <div 
+                              key={s.id} 
+                              className="flex items-center justify-between p-2 hover:bg-sky-50 text-xs text-slate-500 cursor-pointer group"
+                              onClick={() => setEditingItem({ type: 'supplier', id: s.id, data: s })}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <Package className="h-3 w-3 text-slate-400" />
+                                <span className="truncate">{s.nome}</span>
+                              </div>
+                              <Eye className="h-3 w-3 opacity-0 group-hover:opacity-100 text-sky-500" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
+            </CardContent>
+          </Card>
 
-              {expandedFolders.includes('root') && (
-                <div className="ml-6 border-l border-slate-200">
-                  <div className="flex flex-col">
-                    <div 
-                      className="flex items-center gap-2 p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
-                      onClick={() => setExpandedFolders(prev => prev.includes('users') ? prev.filter(f => f !== 'users') : [...prev, 'users'])}
-                    >
-                      <ChevronRight className={`h-4 w-4 transition-transform ${expandedFolders.includes('users') ? 'rotate-90' : ''}`} />
-                      <Folder className="h-5 w-5 text-sky-400 fill-sky-400" />
-                      <span className="text-slate-600">Usuários ({users.length})</span>
+          <Card className="md:col-span-2 border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50 border-b border-slate-200 py-4">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Edit className="h-4 w-4 text-sky-600" /> 
+                Visualização e Edição
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {!editingItem ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                  <Eye className="h-12 w-12 mb-4 opacity-20" />
+                  <p>Selecione um item no explorador para visualizar ou editar</p>
+                </div>
+              ) : (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-800">{editingItem.data.nome || editingItem.data.email}</h3>
+                      <p className="text-sm text-slate-500 uppercase font-semibold mt-1">
+                        ID: {editingItem.id} | Tipo: {editingItem.type}
+                      </p>
                     </div>
-                    {expandedFolders.includes('users') && (
-                      <div className="ml-9 border-l border-slate-100">
-                        {users.map(u => (
-                          <div key={u.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 text-sm text-slate-500">
-                            <Shield className="h-3 w-3 text-slate-400" />
-                            <span>{u.nome || u.email}</span>
-                            <span className="text-[10px] bg-slate-100 px-1 rounded uppercase">{u.user_roles?.[0]?.role}</span>
-                          </div>
-                        ))}
-                      </div>
+                    <Button variant="outline" size="sm" onClick={() => setEditingItem(null)}>Fechar</Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    {editingItem.type === 'user' && (
+                      <>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">E-mail</label>
+                          <p className="text-sm font-medium">{editingItem.data.email}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Cargo</label>
+                          <p className="text-sm font-medium">{editingItem.data.cargo || '-'}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Permissão Atual</label>
+                          <p className="text-sm font-medium uppercase text-sky-600">{editingItem.data.user_roles?.[0]?.role || 'user'}</p>
+                        </div>
+                      </>
+                    )}
+                    {editingItem.type === 'quotation' && (
+                      <>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Nome</label>
+                          <p className="text-sm font-medium">{editingItem.data.nome}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Criado em</label>
+                          <p className="text-sm font-medium">{new Date(editingItem.data.created_at).toLocaleString()}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Status</label>
+                          <p className="text-sm font-medium uppercase">{editingItem.data.finalizada ? 'Finalizada' : 'Aberta'}</p>
+                        </div>
+                      </>
+                    )}
+                    {editingItem.type === 'supplier' && (
+                      <>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Nome</label>
+                          <p className="text-sm font-medium">{editingItem.data.nome}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Estado</label>
+                          <p className="text-sm font-medium">{editingItem.data.estado}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Representante</label>
+                          <p className="text-sm font-medium">{editingItem.data.nome_representante || '-'}</p>
+                        </div>
+                      </>
                     )}
                   </div>
 
-                  <div className="flex flex-col">
-                    <div 
-                      className="flex items-center gap-2 p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
-                      onClick={() => setExpandedFolders(prev => prev.includes('quotations') ? prev.filter(f => f !== 'quotations') : [...prev, 'quotations'])}
+                  <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={async () => {
+                        if (confirm(`Excluir este(a) ${editingItem.type}?`)) {
+                          let table = editingItem.type === 'user' ? 'profiles' : 
+                                     editingItem.type === 'quotation' ? 'listas' : 'fornecedores';
+                          
+                          // Custom logic for user removal (unlinking)
+                          if (editingItem.type === 'user') {
+                            await handleRemoveUser(editingItem.id);
+                          } else {
+                            const { error } = await (supabase as any).from(table).delete().eq('id', editingItem.id);
+                            if (error) toast.error("Erro ao excluir: " + error.message);
+                            else {
+                              toast.success("Item excluído");
+                              fetchNetworkData();
+                            }
+                          }
+                          setEditingItem(null);
+                        }
+                      }}
                     >
-                      <ChevronRight className={`h-4 w-4 transition-transform ${expandedFolders.includes('quotations') ? 'rotate-90' : ''}`} />
-                      <Folder className="h-5 w-5 text-sky-400 fill-sky-400" />
-                      <span className="text-slate-600">Cotações ({quotations.length})</span>
-                    </div>
-                    {expandedFolders.includes('quotations') && (
-                      <div className="ml-9 border-l border-slate-100">
-                        {quotations.length === 0 ? (
-                          <div className="p-2 text-xs text-slate-400 italic">Pasta vazia</div>
-                        ) : (
-                          quotations.map(q => (
-                            <div key={q.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 text-sm text-slate-500">
-                              <FileText className="h-3 w-3 text-slate-400" />
-                              <span>{q.nome}</span>
-                              <span className="text-[10px] text-slate-400">{new Date(q.created_at).toLocaleDateString()}</span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col">
-                    <div 
-                      className="flex items-center gap-2 p-3 hover:bg-slate-50 cursor-pointer"
-                      onClick={() => setExpandedFolders(prev => prev.includes('suppliers') ? prev.filter(f => f !== 'suppliers') : [...prev, 'suppliers'])}
+                      Excluir Registro
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="bg-sky-600"
+                      onClick={() => {
+                        toast.info("Função de edição avançada em desenvolvimento para este módulo.");
+                      }}
                     >
-                      <ChevronRight className={`h-4 w-4 transition-transform ${expandedFolders.includes('suppliers') ? 'rotate-90' : ''}`} />
-                      <Folder className="h-5 w-5 text-sky-400 fill-sky-400" />
-                      <span className="text-slate-600">Fornecedores ({suppliers.length})</span>
-                    </div>
-                    {expandedFolders.includes('suppliers') && (
-                      <div className="ml-9 border-l border-slate-100">
-                        {suppliers.length === 0 ? (
-                          <div className="p-2 text-xs text-slate-400 italic">Pasta vazia</div>
-                        ) : (
-                          suppliers.map(s => (
-                            <div key={s.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 text-sm text-slate-500">
-                              <Package className="h-3 w-3 text-slate-400" />
-                              <span>{s.nome}</span>
-                              <span className="text-[10px] text-slate-400">{s.estado}</span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
+                      Salvar Alterações
+                    </Button>
                   </div>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="md:col-span-1 border-slate-200 shadow-sm">
