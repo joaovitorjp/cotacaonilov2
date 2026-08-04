@@ -322,6 +322,7 @@ export type Database = {
           estados: string
           id: string
           lista_id: string
+          network_id: string | null
           respondido: boolean
           tipo_preco: string | null
           token: string
@@ -333,6 +334,7 @@ export type Database = {
           estados?: string
           id?: string
           lista_id: string
+          network_id?: string | null
           respondido?: boolean
           tipo_preco?: string | null
           token?: string
@@ -344,6 +346,7 @@ export type Database = {
           estados?: string
           id?: string
           lista_id?: string
+          network_id?: string | null
           respondido?: boolean
           tipo_preco?: string | null
           token?: string
@@ -355,6 +358,13 @@ export type Database = {
             columns: ["lista_id"]
             isOneToOne: false
             referencedRelation: "listas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "links_cotacao_network_id_fkey"
+            columns: ["network_id"]
+            isOneToOne: false
+            referencedRelation: "networks"
             referencedColumns: ["id"]
           },
         ]
@@ -556,6 +566,7 @@ export type Database = {
           empresa: string
           id: string
           lista_id: string
+          network_id: string | null
           resposta: Json
           user_id: string | null
         }
@@ -564,6 +575,7 @@ export type Database = {
           empresa: string
           id?: string
           lista_id: string
+          network_id?: string | null
           resposta?: Json
           user_id?: string | null
         }
@@ -572,6 +584,7 @@ export type Database = {
           empresa?: string
           id?: string
           lista_id?: string
+          network_id?: string | null
           resposta?: Json
           user_id?: string | null
         }
@@ -581,6 +594,13 @@ export type Database = {
             columns: ["lista_id"]
             isOneToOne: false
             referencedRelation: "listas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "respostas_network_id_fkey"
+            columns: ["network_id"]
+            isOneToOne: false
+            referencedRelation: "networks"
             referencedColumns: ["id"]
           },
         ]
