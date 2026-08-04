@@ -89,6 +89,16 @@ const NetworkAdminPanel = () => {
         .select('*')
         .eq('network_id', networkId);
       setSuppliers(sData || []);
+
+      const { data: auditData } = await (supabase as any)
+        .from('master_audit_logs')
+        .select(`
+          *,
+          profiles:performed_by (nome, email)
+        `)
+        .eq('network_id', networkId)
+        .order('created_at', { ascending: false });
+      setAuditLogs(auditData || []);
     } catch (error: any) {
       toast.error("Erro ao carregar dados: " + error.message);
       navigate('/master');
