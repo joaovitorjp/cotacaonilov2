@@ -43,7 +43,7 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isMaster, setIsMaster] = useState(false);
+  // const [isMaster, setIsMaster] = useState(false); (Removed)
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
@@ -95,10 +95,7 @@ const Index = () => {
       
       const roleList = roles?.map(r => r.role) || [];
       setIsAdmin(roleList.includes('admin'));
-      // For now, let's treat a specific email or any admin as potential master for demo, 
-      // or we can add a 'master' role to the enum in migration if needed.
-      // Assuming 'admin' can see the master link if they are the creator.
-      setIsMaster(roleList.includes('admin') && (user.email === 'compras06@redenilo.com.br' || user.email === 'adrian33@redenilo.com.br' || user.email === 'g41085801@gmail.com'));
+      // setIsMaster removed
     };
 
     checkRoles();
