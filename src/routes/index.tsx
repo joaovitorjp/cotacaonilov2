@@ -1,46 +1,43 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-const SystemAudit = () => {
+const SystemInfo = () => {
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
-      <h1 className="text-3xl font-bold text-sky-900 mb-6 border-b pb-4">Plano de Melhorias - Nilo Atacadista</h1>
+    <div className="p-8 max-w-4xl mx-auto space-y-8 bg-white rounded-2xl shadow-sm border mt-10">
+      <h1 className="text-3xl font-bold text-sky-900 mb-6 border-b pb-4">
+        Ecossistema Nilo Atacadista & Multitenancy
+      </h1>
       
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-sky-700">1. Melhorias de Fluxo (UX)</h2>
-        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-          <li><strong>Onboarding de Fornecedor:</strong> Adicionar uma tour guiada ou vídeo explicativo curto na página de resposta.</li>
-          <li><strong>Validação de Preços:</strong> Alertas visuais quando um preço foge muito da média histórica durante o preenchimento.</li>
-          <li><strong>Dashboard de Decisão:</strong> No painel de análise, adicionar um botão de "Aprovar Cotação" que já gera os pedidos/pedidos de compra automáticos.</li>
-        </ul>
-      </section>
+      <div className="prose prose-sky max-w-none text-slate-700 leading-relaxed">
+        <p className="text-lg">
+          Ok.. temos agora então dois fluxos montados.. o painel do usuario comum onde solicita as cotações e temos o painel do admin aonde gerencia e visualiza as cotações que todos os usuarios comuns fizeram... esse ecossistema é de uma empresa/rede especifica chamada <strong>"Nilo Atacadista"</strong> que possui todos os seus dados salvos separadamente e vinculados a sua rede.
+        </p>
 
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-sky-700">2. Design & Layout (UI)</h2>
-        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-          <li><strong>Micro-interações:</strong> Adicionar feedbacks táteis (vibrate em mobile) e animações suaves ao salvar células da planilha.</li>
-          <li><strong>Dark Mode:</strong> Implementar suporte nativo ao tema escuro para reduzir fadiga visual dos compradores.</li>
-          <li><strong>Densidade de Dados:</strong> Opção de alternar entre visualização "Compacta" e "Confortável" na planilha principal.</li>
-        </ul>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-sky-700">3. Backend & Performance</h2>
-        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-          <li><strong>Otimização de Query:</strong> Implementar paginação real no banco para cotações antigas (evitar carregar centenas de uma vez).</li>
-          <li><strong>Logs de Auditoria:</strong> Tabela para registrar QUEM alterou qual preço e quando (essencial para admin).</li>
-          <li><strong>Notificações Push:</strong> Além do WhatsApp, notificações nativas no browser quando um fornecedor chave responde.</li>
-        </ul>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-sky-700">4. Próximos Passos Sugeridos</h2>
-        <div className="bg-sky-50 p-4 rounded-lg border border-sky-100 italic text-sky-800">
-          "Focar na automação da análise comparativa, permitindo que o sistema sugira a melhor compra baseada não só em preço, mas em histórico de entrega e prazos de pagamento informados."
+        <div className="bg-sky-50 p-6 rounded-xl border border-sky-100 my-8">
+          <h2 className="text-xl font-bold text-sky-800 mt-0">Nova Arquitetura Master Admin</h2>
+          <p>
+            O objetivo agora é criar um outro painel admin master que será um painel que o criador do sistema irá usar.. nele o admin poderá gerar/adicionar uma nova empresa/rede que irá usar o mesmo sistema que contará com o painel dos usuarios comuns e o painel dos admins.. será o mesmo template só que agora com opções de personalização para personalizar todo o ecossistema da nova rede com o nome da empresa e criando um ecosistema de banco de dados separados e vinculados aquela rede em questão..
+          </p>
+          <p>
+            Ao adicionar a nova rede/empresa o painel irá gerar o link da área de login daquela empresa especifica já personalizado com o nome da empresa.. e através desse painel master poderá ser adicionado ou excluido os usuarios de cada rede especifica e selecionando se o usuario é comum ou admin ao incluilo.
+          </p>
         </div>
-      </section>
+
+        <div className="flex gap-4 mt-8">
+          <Link to="/master">
+            <button className="bg-sky-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-sky-700 transition-colors shadow-md">
+              Acessar Painel Master Admin
+            </button>
+          </Link>
+          <Link to="/">
+            <button className="bg-white text-sky-600 border border-sky-200 px-6 py-3 rounded-lg font-semibold hover:bg-sky-50 transition-colors">
+              Voltar ao Dashboard
+            </button>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default SystemAudit;
-
+export default SystemInfo;
