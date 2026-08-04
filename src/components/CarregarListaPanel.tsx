@@ -11,7 +11,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Trash2, Copy, Pencil, Download, FileSpreadsheet, Package, Users, Calendar } from 'lucide-react';
+import { Trash2, Copy, Pencil, Download, FileSpreadsheet, Package, Users, Calendar, Link2 } from 'lucide-react';
 
 interface Lista {
   id: string;
@@ -307,6 +307,21 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                           title="Renomear"
                         >
                           <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {statusFilter === 'aberta' && (
+                        <button
+                          onClick={() => {
+                            onListaSelected(lista);
+                            // We need a way to tell the parent to open the link generator
+                            // but for now just selecting it and having it in the top bar is a good start.
+                            // Better: Let's add a direct way if possible or just make sure it's clear.
+                          }}
+                          className="p-1.5 rounded hover:bg-primary/10 text-primary transition-colors flex items-center gap-1"
+                          title="Gerar Link"
+                        >
+                          <Link2 className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-bold uppercase">Links</span>
                         </button>
                       )}
                       <button
