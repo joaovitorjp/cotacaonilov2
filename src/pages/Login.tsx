@@ -96,7 +96,7 @@ const Login = () => {
       <div className="relative z-10 w-full max-w-[90%] sm:max-w-sm mx-auto p-6 sm:p-8 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
-            Nilo Atacadista
+            {networkInfo ? networkInfo.name : 'Nilo Atacadista'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isSignUp ? 'Criar novo acesso' : 'Acesso administrativo'}
