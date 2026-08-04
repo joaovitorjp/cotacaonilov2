@@ -43,11 +43,21 @@ const NetworkAdminPanel = () => {
 
       const { data: usersData, error: usersError } = await (supabase as any)
         .from('profiles')
-        .select('*, user_roles(role)')
+        .select('*')
         .eq('network_id', networkId);
 
       if (usersError) throw usersError;
-      setUsers(usersData || []);
+      
+      const { data: rolesData } = await (supabase as any)
+        .from('user_roles')
+        .select('*');
+
+      const profilesWithRoles = (usersData || []).map(profile => ({
+        ...profile,
+        user_roles: (rolesData || []).filter(r => r.user_id === profile.id)
+      }));
+
+      setUsers(profilesWithRoles);
 
       const { data: qData } = await (supabase as any)
         .from('listas')
@@ -504,9 +514,13 @@ const NetworkAdminPanel = () => {
                           const table = editingItem.type === 'user' ? 'profiles' : 
                                        editingItem.type === 'quotation' ? 'listas' : 'fornecedores';
                           
+                          // Clone the data to remove non-table fields like user_roles
+                          const updateData = { ...editingItem.data };
+                          delete updateData.user_roles;
+                          
                           const { error } = await (supabase as any)
                             .from(table)
-                            .update(editingItem.data)
+                            .update(updateData)
                             .eq('id', editingItem.id);
                           
                           if (error) throw error;
