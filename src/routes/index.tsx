@@ -30,7 +30,7 @@ const SystemInfo = () => {
         </div>
         <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 my-8 text-slate-600 text-sm italic">
           <p>
-            Logs de auditoria habilitados: Registrar logs de auditoria com data, resultado (sucesso/erro) e IP das tentativas de acesso ao Painel Master. Aplicar rate limiting e bloqueio temporário de IP após várias tentativas falhas de acesso ao Painel Master para reduzir força bruta. Adicionar uma tela para visualizar e exportar os logs de auditoria do Painel Master (data, IP e sucesso/erro). Corrigido erro de "useRef" movendo provedores para dentro do BrowserRouter.
+            Logs de auditoria habilitados: Registrar logs de auditoria com data, resultado (sucesso/erro) e IP das tentativas de acesso ao Painel Master. Aplicar rate limiting e bloqueio temporário de IP após várias tentativas falhas de acesso ao Painel Master para reduzir força bruta. Adicionar uma tela para visualizar e exportar os logs de auditoria do Painel Master (data, IP e sucesso/erro). Corrigido erro de "useRef" movendo provedores para dentro do BrowserRouter. Verificar se todos os fluxos do sistema abrem sem tela em branco e sem erros de console após a correção dos provedores.
           </p>
         </div>
         <div className="flex gap-4 mt-8">
