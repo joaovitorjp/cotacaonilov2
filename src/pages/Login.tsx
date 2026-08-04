@@ -42,20 +42,8 @@ const Login = () => {
     }
     setLoading(true);
     
-    // Check for "special" master admin login
-    if (email === 'Adrian33' && password === 'Adrian33') {
-      const { error } = await supabase.auth.signInWithPassword({ 
-        email: 'adrian33@redenilo.com.br', 
-        password: 'Adrian33@' 
-      });
-      setLoading(false);
-      if (error) {
-        toast.error('Erro ao acessar painel master.');
-      } else {
-        navigate('/master');
-      }
-      return;
-    }
+    // Removido login especial via campos de email/senha
+
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
