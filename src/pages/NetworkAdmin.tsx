@@ -187,23 +187,23 @@ const NetworkAdminPanel = () => {
         </div>
 
         <div className="flex gap-4 mb-6">
-        <Button 
-          variant={activeTab === 'explorer' ? 'default' : 'outline'} 
-          className="flex items-center gap-2"
-          onClick={() => setActiveTab('explorer')}
-        >
-          <LayoutGrid className="h-4 w-4" /> Explorador de Dados
-        </Button>
-        <Button 
-          variant={activeTab === 'users' ? 'default' : 'outline'} 
-          className="flex items-center gap-2"
-          onClick={() => setActiveTab('users')}
-        >
-          <Users className="h-4 w-4" /> Painel de Gestão
-        </Button>
-      </div>
+          <Button 
+            variant={activeTab === 'explorer' ? 'default' : 'outline'} 
+            className="flex items-center gap-2"
+            onClick={() => setActiveTab('explorer')}
+          >
+            <LayoutGrid className="h-4 w-4" /> Explorador de Dados
+          </Button>
+          <Button 
+            variant={activeTab === 'users' ? 'default' : 'outline'} 
+            className="flex items-center gap-2"
+            onClick={() => setActiveTab('users')}
+          >
+            <Users className="h-4 w-4" /> Painel de Gestão
+          </Button>
+        </div>
 
-      {activeTab === 'explorer' ? (
+        {activeTab === 'explorer' ? (
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="md:col-span-1 border-slate-200 shadow-sm overflow-hidden">
             <CardHeader className="bg-slate-50 border-b border-slate-200 py-4">
