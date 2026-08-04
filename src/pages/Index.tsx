@@ -521,13 +521,20 @@ const Index = () => {
   useEffect(() => {
     if (!user) return;
     
+    let isFetching = false;
     const fetchProfile = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('nome, avatar_url')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (data) setProfile(data);
+      if (isFetching) return;
+      isFetching = true;
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('nome, avatar_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (data) setProfile(data);
+      } finally {
+        isFetching = false;
+      }
     };
 
     fetchProfile();
@@ -541,7 +548,7 @@ const Index = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'profiles',
           filter: `user_id=eq.${user.id}`,
