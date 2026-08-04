@@ -51,17 +51,15 @@ const NetworkAdminPanel = () => {
       setUsers(usersData || []);
 
       // Fetch quotations for this network
-      const { data: qData } = await supabase
-        .from('listas')
+      const { data: qData } = await (supabase.from('listas' as any)
         .select('*')
-        .eq('network_id' as any, networkId);
+        .eq('network_id' as any, networkId) as any);
       setQuotations(qData || []);
 
       // Fetch suppliers for this network
-      const { data: sData } = await supabase
-        .from('fornecedores')
+      const { data: sData } = await (supabase.from('fornecedores' as any)
         .select('*')
-        .eq('network_id' as any, networkId);
+        .eq('network_id' as any, networkId) as any);
       setSuppliers(sData || []);
     } catch (error: any) {
       toast.error("Erro ao carregar dados: " + error.message);
