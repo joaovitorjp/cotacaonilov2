@@ -770,6 +770,73 @@ const NetworkAdminPanel = () => {
         </div>
       )}
       </div>
+      {/* Modal de Detalhes da Auditoria */}
+      <Dialog open={!!selectedAuditLog} onOpenChange={(open) => !open && setSelectedAuditLog(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-sky-600" />
+              Detalhes do Evento de Auditoria
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedAuditLog && (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Ação</label>
+                  <p className="text-sm font-semibold uppercase text-sky-700">{selectedAuditLog.action_type.replace('_', ' ')}</p>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Data/Hora</label>
+                  <p className="text-sm">{new Date(selectedAuditLog.created_at).toLocaleString('pt-BR')}</p>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Entidade</label>
+                  <p className="text-sm font-medium">{selectedAuditLog.entity_type} (ID: {selectedAuditLog.entity_id})</p>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Executor</label>
+                  <p className="text-sm font-medium">{selectedAuditLog.profiles?.nome || 'Admin Master'} ({selectedAuditLog.profiles?.email || '-'})</p>
+                </div>
+              </div>
+
+              {selectedAuditLog.details?.before && selectedAuditLog.details?.after ? (
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <h4 className="text-sm font-bold text-slate-700">Comparação (Antes vs Depois)</h4>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <div className="bg-red-50 p-3 rounded border border-red-100">
+                        <span className="text-[10px] font-bold text-red-600 uppercase">Anterior</span>
+                        <pre className="mt-2 text-[10px] text-red-700 overflow-x-auto whitespace-pre-wrap">
+                          {JSON.stringify(selectedAuditLog.details.before, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="bg-emerald-50 p-3 rounded border border-emerald-100">
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase">Atualizado</span>
+                        <pre className="mt-2 text-[10px] text-emerald-700 overflow-x-auto whitespace-pre-wrap">
+                          {JSON.stringify(selectedAuditLog.details.after, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : selectedAuditLog.details ? (
+                <div className="space-y-2 pt-4 border-t border-slate-100">
+                  <h4 className="text-sm font-bold text-slate-700">Detalhes Técnicos</h4>
+                  <div className="bg-slate-50 p-3 rounded border border-slate-200">
+                    <pre className="text-[10px] text-slate-600 overflow-x-auto whitespace-pre-wrap">
+                      {JSON.stringify(selectedAuditLog.details, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
