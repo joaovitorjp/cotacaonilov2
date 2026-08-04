@@ -39,23 +39,46 @@ const MasterAdminPanel = () => {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 bg-slate-50 min-h-screen">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Painel Master Admin</h1>
-          <p className="text-slate-500">Gerenciamento de Redes e Ecossistemas</p>
+    <div className="bg-slate-50 min-h-screen">
+      {/* Barra de Menus Superior */}
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 px-8 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/master')}>
+            <Building2 className="h-6 w-6 text-sky-600" />
+            <span className="font-bold text-lg text-slate-800 tracking-tight">Master Admin</span>
+          </div>
+          <div className="h-4 w-[1px] bg-slate-200" />
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" className="text-slate-600 hover:text-sky-600 font-medium" onClick={() => navigate('/master')}>
+              Redes
+            </Button>
+            <Button variant="ghost" size="sm" className="text-slate-600 hover:text-sky-600 font-medium" onClick={() => navigate('/master/logs')}>
+              Audit Log
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Button 
             variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => navigate('/master/logs')}
+            size="sm"
+            className="flex items-center gap-2 border-slate-200 text-slate-600"
+            onClick={() => navigate('/')}
           >
-            <History className="h-4 w-4" /> Logs de Auditoria
+            Sair do Master
           </Button>
-          <Building2 className="h-10 w-10 text-sky-600" />
+          <div className="h-8 w-8 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 font-bold text-xs border border-sky-200">
+            MA
+          </div>
         </div>
-      </div>
+      </nav>
+
+      <div className="p-8 max-w-6xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Gerenciamento de Redes</h1>
+            <p className="text-slate-500">Ecossistemas ativos no sistema Nilo Atacadista</p>
+          </div>
+        </div>
 
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">

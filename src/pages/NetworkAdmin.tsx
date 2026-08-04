@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Users, UserPlus, Shield, ArrowLeft, Loader2, Trash2, Folder, FileText, Package, ChevronRight, LayoutGrid, Edit, Eye } from "lucide-react";
+import { Users, UserPlus, Shield, ArrowLeft, Loader2, Trash2, Folder, FileText, Package, ChevronRight, LayoutGrid, Edit, Eye, Save, ToggleLeft, ToggleRight, Building2 } from "lucide-react";
 
 const NetworkAdminPanel = () => {
   const { networkId } = useParams();
@@ -21,6 +21,7 @@ const NetworkAdminPanel = () => {
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['root']);
   const [editingItem, setEditingItem] = useState<{ type: 'user' | 'quotation' | 'supplier', id: string, data: any } | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
     if (networkId) {
@@ -148,20 +149,42 @@ const NetworkAdminPanel = () => {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 bg-slate-50 min-h-screen">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={() => navigate('/master')}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
-        </Button>
-      </div>
-
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Admin: {network?.name}</h1>
-          <p className="text-slate-500">Gerenciar usuários e permissões da rede</p>
+    <div className="bg-slate-50 min-h-screen">
+      {/* Barra de Menus Superior */}
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 px-8 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/master')}>
+            <Building2 className="h-6 w-6 text-sky-600" />
+            <span className="font-bold text-lg text-slate-800 tracking-tight">Master Admin</span>
+          </div>
+          <div className="h-4 w-[1px] bg-slate-200" />
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" className="text-slate-600 hover:text-sky-600 font-medium" onClick={() => navigate('/master')}>
+              Redes
+            </Button>
+            <Button variant="ghost" size="sm" className="text-slate-600 hover:text-sky-600 font-medium" onClick={() => navigate('/master/logs')}>
+              Audit Log
+            </Button>
+          </div>
         </div>
-        <Shield className="h-10 w-10 text-sky-600" />
-      </div>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" className="text-slate-400" onClick={() => navigate('/master')}>
+            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+          </Button>
+          <div className="h-8 w-8 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 font-bold text-xs border border-sky-200">
+            MA
+          </div>
+        </div>
+      </nav>
+
+      <div className="p-8 max-w-6xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Admin: {network?.name}</h1>
+            <p className="text-slate-500">Gestão profunda de dados e ecossistema</p>
+          </div>
+          <Shield className="h-10 w-10 text-sky-600" />
+        </div>
 
       <div className="flex gap-4 mb-6">
         <Button 
@@ -293,10 +316,25 @@ const NetworkAdminPanel = () => {
 
           <Card className="md:col-span-2 border-slate-200 shadow-sm">
             <CardHeader className="bg-slate-50 border-b border-slate-200 py-4">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Edit className="h-4 w-4 text-sky-600" /> 
-                Visualização e Edição
-              </CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-base flex items-center gap-2">
+                  {isEditMode ? <Edit className="h-4 w-4 text-sky-600" /> : <Eye className="h-4 w-4 text-sky-600" />}
+                  {isEditMode ? 'Modo Edição' : 'Modo Visualização'}
+                </CardTitle>
+                {editingItem && (
+                  <div 
+                    className="flex items-center gap-2 cursor-pointer select-none"
+                    onClick={() => setIsEditMode(!isEditMode)}
+                  >
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Alternar Modo</span>
+                    {isEditMode ? (
+                      <ToggleRight className="h-6 w-6 text-sky-600" />
+                    ) : (
+                      <ToggleLeft className="h-6 w-6 text-slate-400" />
+                    )}
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-6">
               {!editingItem ? (
@@ -321,11 +359,27 @@ const NetworkAdminPanel = () => {
                       <>
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">E-mail</label>
-                          <p className="text-sm font-medium">{editingItem.data.email}</p>
+                          {isEditMode ? (
+                            <Input 
+                              value={editingItem.data.email} 
+                              className="h-8 text-sm" 
+                              onChange={(e) => setEditingItem({...editingItem, data: {...editingItem.data, email: e.target.value}})}
+                            />
+                          ) : (
+                            <p className="text-sm font-medium">{editingItem.data.email}</p>
+                          )}
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Cargo</label>
-                          <p className="text-sm font-medium">{editingItem.data.cargo || '-'}</p>
+                          {isEditMode ? (
+                            <Input 
+                              value={editingItem.data.cargo || ''} 
+                              className="h-8 text-sm" 
+                              onChange={(e) => setEditingItem({...editingItem, data: {...editingItem.data, cargo: e.target.value}})}
+                            />
+                          ) : (
+                            <p className="text-sm font-medium">{editingItem.data.cargo || '-'}</p>
+                          )}
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Permissão Atual</label>
@@ -335,9 +389,17 @@ const NetworkAdminPanel = () => {
                     )}
                     {editingItem.type === 'quotation' && (
                       <>
-                        <div className="space-y-1">
+                        <div className="space-y-1 col-span-2">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Nome</label>
-                          <p className="text-sm font-medium">{editingItem.data.nome}</p>
+                          {isEditMode ? (
+                            <Input 
+                              value={editingItem.data.nome} 
+                              className="h-8 text-sm" 
+                              onChange={(e) => setEditingItem({...editingItem, data: {...editingItem.data, nome: e.target.value}})}
+                            />
+                          ) : (
+                            <p className="text-sm font-medium">{editingItem.data.nome}</p>
+                          )}
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Criado em</label>
@@ -345,23 +407,61 @@ const NetworkAdminPanel = () => {
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Status</label>
-                          <p className="text-sm font-medium uppercase">{editingItem.data.finalizada ? 'Finalizada' : 'Aberta'}</p>
+                          {isEditMode ? (
+                            <select 
+                              className="w-full h-8 px-2 py-0 bg-white border border-slate-200 rounded text-xs"
+                              value={editingItem.data.finalizada ? 'true' : 'false'}
+                              onChange={(e) => setEditingItem({...editingItem, data: {...editingItem.data, finalizada: e.target.value === 'true'}})}
+                            >
+                              <option value="false">Aberta</option>
+                              <option value="true">Finalizada</option>
+                            </select>
+                          ) : (
+                            <p className="text-sm font-medium uppercase">{editingItem.data.finalizada ? 'Finalizada' : 'Aberta'}</p>
+                          )}
                         </div>
                       </>
                     )}
                     {editingItem.type === 'supplier' && (
                       <>
-                        <div className="space-y-1">
+                        <div className="space-y-1 col-span-2">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Nome</label>
-                          <p className="text-sm font-medium">{editingItem.data.nome}</p>
+                          {isEditMode ? (
+                            <Input 
+                              value={editingItem.data.nome} 
+                              className="h-8 text-sm" 
+                              onChange={(e) => setEditingItem({...editingItem, data: {...editingItem.data, nome: e.target.value}})}
+                            />
+                          ) : (
+                            <p className="text-sm font-medium">{editingItem.data.nome}</p>
+                          )}
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Estado</label>
-                          <p className="text-sm font-medium">{editingItem.data.estado}</p>
+                          {isEditMode ? (
+                            <select 
+                              className="w-full h-8 px-2 py-0 bg-white border border-slate-200 rounded text-xs"
+                              value={editingItem.data.estado}
+                              onChange={(e) => setEditingItem({...editingItem, data: {...editingItem.data, estado: e.target.value}})}
+                            >
+                              <option value="MT">MT</option>
+                              <option value="GO">GO</option>
+                            </select>
+                          ) : (
+                            <p className="text-sm font-medium">{editingItem.data.estado}</p>
+                          )}
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Representante</label>
-                          <p className="text-sm font-medium">{editingItem.data.nome_representante || '-'}</p>
+                          {isEditMode ? (
+                            <Input 
+                              value={editingItem.data.nome_representante || ''} 
+                              className="h-8 text-sm" 
+                              onChange={(e) => setEditingItem({...editingItem, data: {...editingItem.data, nome_representante: e.target.value}})}
+                            />
+                          ) : (
+                            <p className="text-sm font-medium">{editingItem.data.nome_representante || '-'}</p>
+                          )}
                         </div>
                       </>
                     )}
@@ -397,10 +497,30 @@ const NetworkAdminPanel = () => {
                       variant="default" 
                       size="sm" 
                       className="bg-sky-600"
-                      onClick={() => {
-                        toast.info("Função de edição avançada em desenvolvimento para este módulo.");
+                      disabled={!isEditMode}
+                      onClick={async () => {
+                        setIsLoading(true);
+                        try {
+                          const table = editingItem.type === 'user' ? 'profiles' : 
+                                       editingItem.type === 'quotation' ? 'listas' : 'fornecedores';
+                          
+                          const { error } = await (supabase as any)
+                            .from(table)
+                            .update(editingItem.data)
+                            .eq('id', editingItem.id);
+                          
+                          if (error) throw error;
+                          toast.success("Alterações salvas com sucesso!");
+                          fetchNetworkData();
+                          setIsEditMode(false);
+                        } catch (err: any) {
+                          toast.error("Erro ao salvar: " + err.message);
+                        } finally {
+                          setIsLoading(false);
+                        }
                       }}
                     >
+                      <Save className="h-4 w-4 mr-2" />
                       Salvar Alterações
                     </Button>
                   </div>
