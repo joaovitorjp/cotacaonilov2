@@ -774,6 +774,7 @@ const Index = () => {
       )}
       <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
       <PerfilPanel open={perfilOpen} onOpenChange={setPerfilOpen} />
+      </div>
     </div>
   );
 };
