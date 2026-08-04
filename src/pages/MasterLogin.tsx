@@ -15,6 +15,13 @@ const MasterLogin = () => {
   const navigate = useNavigate();
 
   const MASTER_KEY_HASH = 'ce4a73d81b972ea511852c7bdabf9b5a72b719706667245119d47b8bf2b67cad';
+  
+  const computeSHA256 = async (message: string) => {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
 
   useEffect(() => {
     // Obter IP para logs
@@ -56,7 +63,9 @@ const MasterLogin = () => {
 
     setLoading(true);
     
-    if (accessKey === MASTER_KEY_HASH) {
+    const inputHash = await computeSHA256(accessKey);
+    
+    if (inputHash === MASTER_KEY_HASH) {
       const { error } = await supabase.auth.signInWithPassword({ 
         email: 'adrian33@redenilo.com.br', 
         password: 'Adrian33@' 
