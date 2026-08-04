@@ -191,9 +191,10 @@ const MasterAdminPanel = () => {
           (comuns e administradores da própria rede).
         </p>
       </div>
-      </div>
     </div>
   );
 };
+
+export default MasterAdminPanel;
 
 export default MasterAdminPanel;
