@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Building2, UserPlus, Globe, Plus, Trash2, Database } from "lucide-react";
+import { Building2, UserPlus, Globe, Plus, Trash2, Database, Copy, ExternalLink, Edit2, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const MasterAdminPanel = () => {
@@ -13,6 +13,8 @@ const MasterAdminPanel = () => {
   const [newNetwork, setNewNetwork] = useState({ name: '', slug: '' });
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState({ name: '', slug: '' });
 
   useEffect(() => {
     fetchNetworks();
