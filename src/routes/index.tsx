@@ -23,6 +23,12 @@ const SystemInfo = () => {
           </p>
         </div>
 
+        <div className="bg-amber-50 p-6 rounded-xl border border-amber-100 my-8 text-amber-900">
+          <p className="font-medium">
+            <strong>Atalho de Acesso Master:</strong> Na área de login do usuario comun e dos admins da rede, utilize o atalho <strong>Ctrl + Alt + 9</strong> para abrir a área de login do painel admin master que controla o gerenciamento das redes.
+          </p>
+        </div>
+
         <div className="flex gap-4 mt-8">
           <Link to="/master">
             <button className="bg-sky-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-sky-700 transition-colors shadow-md">
