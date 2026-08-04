@@ -654,6 +654,15 @@ const Index = () => {
               >
                 Fornecedores
               </button>
+              {isMaster && (
+                <button 
+                  onClick={() => navigate('/master')}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-amber-600 hover:bg-amber-50 transition-colors flex items-center gap-1.5"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Master
+                </button>
+              )}
               {currentLista && !isFinalized && (
                 <button 
                   onClick={() => setGerarLinkOpen(true)}
