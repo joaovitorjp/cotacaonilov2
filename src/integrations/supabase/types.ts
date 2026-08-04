@@ -241,6 +241,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          network_id: string | null
           nome: string
           nome_representante: string | null
           user_id: string | null
@@ -254,6 +255,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          network_id?: string | null
           nome: string
           nome_representante?: string | null
           user_id?: string | null
@@ -267,12 +269,21 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          network_id?: string | null
           nome?: string
           nome_representante?: string | null
           user_id?: string | null
           whatsapp?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fornecedores_network_id_fkey"
+            columns: ["network_id"]
+            isOneToOne: false
+            referencedRelation: "networks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       links_cotacao: {
         Row: {
@@ -322,6 +333,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          network_id: string | null
           nome: string
           prazo: string | null
           produtos: Json
@@ -332,6 +344,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          network_id?: string | null
           nome: string
           prazo?: string | null
           produtos?: Json
@@ -342,12 +355,48 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          network_id?: string | null
           nome?: string
           prazo?: string | null
           produtos?: Json
           status?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listas_network_id_fkey"
+            columns: ["network_id"]
+            isOneToOne: false
+            referencedRelation: "networks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      networks: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -396,6 +445,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          network_id: string | null
           nome: string
           user_id: string
         }
@@ -405,6 +455,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          network_id?: string | null
           nome?: string
           user_id: string
         }
@@ -414,10 +465,19 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          network_id?: string | null
           nome?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_network_id_fkey"
+            columns: ["network_id"]
+            isOneToOne: false
+            referencedRelation: "networks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       respostas: {
         Row: {
