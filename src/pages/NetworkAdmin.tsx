@@ -159,6 +159,8 @@ const NetworkAdminPanel = () => {
 
       if (updateError) throw updateError;
       
+      await logMasterAction('remover', 'profile', userId);
+
       toast.success("Usuário removido da rede");
       fetchNetworkData();
     } catch (error: any) {
