@@ -190,6 +190,7 @@ const MasterAdminPanel = () => {
             Cada rede adicionada terá seu próprio isolamento de dados, personalização visual e gerenciamento independente de usuários 
             (comuns e administradores da própria rede).
           </p>
+        </div>
       </div>
     </div>
   );
