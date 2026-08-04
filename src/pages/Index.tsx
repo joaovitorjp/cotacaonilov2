@@ -528,10 +528,10 @@ const Index = () => {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('nome, avatar_url')
+          .select('nome, avatar_url, cargo')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (data) setProfile(data);
+        if (data) setProfile(data as { nome: string; avatar_url: string | null });
       } finally {
         isFetching = false;
       }
@@ -660,7 +660,7 @@ const Index = () => {
                 <p className="text-[10px] text-slate-400 font-medium leading-none">Configurações</p>
               </div>
               <Avatar className="w-8 h-8 border border-white group-hover:border-primary/20 transition-colors">
-                <AvatarImage src={profile?.avatar_url ? `${profile.avatar_url}?t=${Date.now()}` : ''} />
+                <AvatarImage src={profile?.avatar_url ? `${profile.avatar_url}${profile.avatar_url.includes('?') ? '&' : '?'}t=${Date.now()}` : ''} />
                 <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
                   {profile?.nome ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
                 </AvatarFallback>
