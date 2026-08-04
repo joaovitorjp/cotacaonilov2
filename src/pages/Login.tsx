@@ -22,11 +22,25 @@ const Login = () => {
   const [networkInfo, setNetworkInfo] = useState<any>(null);
 
   useEffect(() => {
+    // Reset network info when search params change to avoid stale state
+    setNetworkInfo(null);
+
     const fetchNetworkInfo = async () => {
       const slug = searchParams.get('network');
       if (slug) {
-        const { data } = await (supabase as any).from('networks').select('*').eq('slug', slug).single();
-        if (data) setNetworkInfo(data);
+        const { data, error } = await supabase
+          .from('networks')
+          .select('*')
+          .eq('slug', slug)
+          .maybeSingle();
+        
+        if (data) {
+          setNetworkInfo(data);
+        } else {
+          setNetworkInfo(null);
+        }
+      } else {
+        setNetworkInfo(null);
       }
     };
     fetchNetworkInfo();
