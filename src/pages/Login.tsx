@@ -26,7 +26,11 @@ const Login = () => {
     setNetworkInfo(null);
 
     const fetchNetworkInfo = async () => {
-      const slug = searchParams.get('network');
+      // Prioridade para o parâmetro na URL, senão tenta inferir da rota /n/:slug
+      const slugFromParam = searchParams.get('network');
+      const slugFromPath = window.location.pathname.startsWith('/n/') ? window.location.pathname.split('/')[2] : null;
+      const slug = slugFromParam || slugFromPath;
+      
       if (slug) {
         const { data, error } = await supabase
           .from('networks')
@@ -50,7 +54,7 @@ const Login = () => {
 
     toast.error(decodeURIComponent(oauthError));
     navigate('/login', { replace: true });
-  }, [searchParams.get('network')]); // Apenas quando o slug da rede mudar
+  }, [searchParams.get('network'), window.location.pathname]); // Apenas quando o slug da rede ou path mudar
 
   useEffect(() => {
     const oauthError = searchParams.get('oauth_error');
