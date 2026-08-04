@@ -68,6 +68,15 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/master/logs"
+              element={
+                <ProtectedRoute>
+                  <MasterAuditLogs />
+                </ProtectedRoute>
+              }
+            />
+
 
             <Route
               path="/master/network/:networkId"
