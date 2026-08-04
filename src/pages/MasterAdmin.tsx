@@ -126,7 +126,7 @@ const MasterAdminPanel = () => {
                   <TableRow>
                     <TableHead>Empresa</TableHead>
                     <TableHead>Slug / Link</TableHead>
-                    <TableHead>Usuários</TableHead>
+                    <TableHead>Gerenciar</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
