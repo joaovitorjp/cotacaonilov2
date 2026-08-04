@@ -560,6 +560,9 @@ const NetworkAdminPanel = () => {
                             .eq('id', editingItem.id);
                           
                           if (error) throw error;
+
+                          await logMasterAction('editar', editingItem.type, editingItem.id, { field_count: Object.keys(updateData).length });
+
                           toast.success("Alterações salvas com sucesso!");
                           fetchNetworkData();
                           setIsEditMode(false);
