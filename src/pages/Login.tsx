@@ -50,6 +50,13 @@ const Login = () => {
 
     toast.error(decodeURIComponent(oauthError));
     navigate('/login', { replace: true });
+  }, [searchParams.get('network')]); // Apenas quando o slug da rede mudar
+
+  useEffect(() => {
+    const oauthError = searchParams.get('oauth_error');
+    if (!oauthError) return;
+    toast.error(decodeURIComponent(oauthError));
+    navigate('/login', { replace: true });
   }, [navigate, searchParams]);
 
   const rawNext = searchParams.get('next') || '';
