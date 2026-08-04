@@ -561,7 +561,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      <ProfileGate />
+      <ProfileGate>
+        <></>
+      </ProfileGate>
       
       {/* Sidebar Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 sticky top-0 h-screen">
