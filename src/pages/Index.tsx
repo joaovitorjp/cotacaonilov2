@@ -632,7 +632,6 @@ const Index = () => {
               Sair
             </button>
           </div>
-          </div>
         )}
 
         {/* Lista info bar with tabs */}
