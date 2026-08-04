@@ -520,6 +520,7 @@ const Index = () => {
 
   useEffect(() => {
     if (!user) return;
+    
     const fetchProfile = async () => {
       const { data } = await supabase
         .from('profiles')
@@ -528,8 +529,34 @@ const Index = () => {
         .maybeSingle();
       if (data) setProfile(data);
     };
+
     fetchProfile();
-  }, [user, perfilOpen]);
+
+    // Listen for updates from PerfilPanel
+    window.addEventListener('profile-updated', fetchProfile);
+    
+    // Also listen for real-time changes to the profiles table
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchProfile();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('profile-updated', fetchProfile);
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   // Check if deadline passed
   const isExpired = currentLista?.prazo ? new Date(currentLista.prazo) < new Date() : false;

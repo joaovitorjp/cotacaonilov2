@@ -80,6 +80,10 @@ const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
 
       if (error) throw error;
       toast.success('Perfil atualizado com sucesso!');
+      
+      // Emit custom event for immediate sync
+      window.dispatchEvent(new CustomEvent('profile-updated'));
+      
       onOpenChange(false);
     } catch (error) {
       console.error('Erro ao salvar perfil:', error);
