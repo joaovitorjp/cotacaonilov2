@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 const MasterLogin = () => {
   const [accessKey, setAccessKey] = useState('');
   const [loading, setLoading] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [blockedUntil, setBlockedUntil] = useState<number | null>(null);
   const [userIp, setUserIp] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -46,6 +48,12 @@ const MasterLogin = () => {
     e.preventDefault();
     if (!accessKey) return;
 
+    if (blockedUntil && Date.now() < blockedUntil) {
+      const remainingSeconds = Math.ceil((blockedUntil - Date.now()) / 1000);
+      toast.error(`Acesso bloqueado temporariamente. Tente novamente em ${remainingSeconds} segundos.`);
+      return;
+    }
+
     setLoading(true);
     
     if (accessKey === MASTER_KEY_HASH) {
@@ -59,12 +67,22 @@ const MasterLogin = () => {
         toast.error('Erro ao autenticar acesso master.');
       } else {
         await logAttempt('success');
+        setAttempts(0);
         toast.success('Acesso Master concedido!');
         navigate('/master');
       }
     } else {
       await logAttempt('failure');
-      toast.error('Chave de acesso inválida.');
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      
+      if (newAttempts >= 5) {
+        const lockTime = Date.now() + 60000; // 1 minuto de bloqueio
+        setBlockedUntil(lockTime);
+        toast.error('Muitas tentativas falhas. Acesso bloqueado por 1 minuto.');
+      } else {
+        toast.error(`Chave de acesso inválida. Tentativa ${newAttempts} de 5.`);
+      }
     }
     setLoading(false);
   };
