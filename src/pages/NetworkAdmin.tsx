@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Users, UserPlus, Shield, ArrowLeft, Loader2, Trash2, Folder, FileText, Package, ChevronRight, LayoutGrid, Edit, Eye, Save, ToggleLeft, ToggleRight, Building2 } from "lucide-react";
+import { Users, UserPlus, Shield, ArrowLeft, Loader2, Trash2, Folder, FileText, Package, ChevronRight, LayoutGrid, Edit, Eye, Save, ToggleLeft, ToggleRight, Building2, History } from "lucide-react";
 
 const NetworkAdminPanel = () => {
   const { networkId } = useParams();
@@ -16,9 +16,10 @@ const NetworkAdminPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', role: 'user' });
-  const [activeTab, setActiveTab] = useState<'users' | 'quotations' | 'suppliers' | 'explorer'>('explorer');
+  const [activeTab, setActiveTab] = useState<'users' | 'quotations' | 'suppliers' | 'explorer' | 'audit'>('explorer');
   const [quotations, setQuotations] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['root']);
   const [editingItem, setEditingItem] = useState<{ type: 'user' | 'quotation' | 'supplier', id: string, data: any } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -28,6 +29,24 @@ const NetworkAdminPanel = () => {
       fetchNetworkData();
     }
   }, [networkId]);
+
+  const logMasterAction = async (actionType: string, entityType: string, entityId: string, details: any = {}) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await (supabase as any).from('master_audit_logs').insert([{
+        network_id: networkId,
+        performed_by: user.id,
+        action_type: actionType,
+        entity_type: entityType,
+        entity_id: entityId,
+        details
+      }]);
+    } catch (error) {
+      console.error("Erro ao registrar log:", error);
+    }
+  };
 
   const fetchNetworkData = async () => {
     setIsLoading(true);
@@ -70,6 +89,16 @@ const NetworkAdminPanel = () => {
         .select('*')
         .eq('network_id', networkId);
       setSuppliers(sData || []);
+
+      const { data: auditData } = await (supabase as any)
+        .from('master_audit_logs')
+        .select(`
+          *,
+          profiles:performed_by (nome, email)
+        `)
+        .eq('network_id', networkId)
+        .order('created_at', { ascending: false });
+      setAuditLogs(auditData || []);
     } catch (error: any) {
       toast.error("Erro ao carregar dados: " + error.message);
       navigate('/master');
@@ -106,6 +135,8 @@ const NetworkAdminPanel = () => {
 
         if (roleError) throw roleError;
 
+        await logMasterAction('vincular', 'profile', profile.id, { email: newUser.email, role: newUser.role });
+
         toast.success("Usuário configurado na rede com sucesso!");
         fetchNetworkData();
         setNewUser({ email: '', role: 'user' });
@@ -128,6 +159,8 @@ const NetworkAdminPanel = () => {
 
       if (updateError) throw updateError;
       
+      await logMasterAction('remover', 'profile', userId);
+
       toast.success("Usuário removido da rede");
       fetchNetworkData();
     } catch (error: any) {
@@ -143,6 +176,9 @@ const NetworkAdminPanel = () => {
         .insert([{ user_id: userId, role: newRole }]);
       
       if (error) throw error;
+
+      await logMasterAction('editar_permissao', 'profile', userId, { newRole });
+
       toast.success("Permissão atualizada");
       fetchNetworkData();
     } catch (error: any) {
@@ -210,6 +246,13 @@ const NetworkAdminPanel = () => {
             onClick={() => setActiveTab('users')}
           >
             <Users className="h-4 w-4" /> Painel de Gestão
+          </Button>
+          <Button 
+            variant={activeTab === 'audit' ? 'default' : 'outline'} 
+            className="flex items-center gap-2"
+            onClick={() => setActiveTab('audit')}
+          >
+            <History className="h-4 w-4" /> Auditoria
           </Button>
         </div>
 
@@ -524,6 +567,9 @@ const NetworkAdminPanel = () => {
                             .eq('id', editingItem.id);
                           
                           if (error) throw error;
+
+                          await logMasterAction('editar', editingItem.type, editingItem.id, { field_count: Object.keys(updateData).length });
+
                           toast.success("Alterações salvas com sucesso!");
                           fetchNetworkData();
                           setIsEditMode(false);
@@ -543,6 +589,65 @@ const NetworkAdminPanel = () => {
             </CardContent>
           </Card>
         </div>
+      ) : activeTab === 'audit' ? (
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="bg-slate-50 border-b border-slate-200 py-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <History className="h-4 w-4 text-sky-600" />
+              Histórico de Alterações (Rede)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Executor</TableHead>
+                  <TableHead>Ação</TableHead>
+                  <TableHead>Entidade</TableHead>
+                  <TableHead>Detalhes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {auditLogs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12 text-slate-400 italic">
+                      Nenhuma alteração registrada nesta rede.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  auditLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="text-xs text-slate-500">
+                        {new Date(log.created_at).toLocaleString('pt-BR')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">{log.profiles?.nome || 'Admin Master'}</div>
+                        <div className="text-[10px] text-slate-400">{log.profiles?.email || '-'}</div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          log.action_type === 'vincular' ? 'bg-emerald-100 text-emerald-700' :
+                          log.action_type === 'remover' ? 'bg-red-100 text-red-700' :
+                          'bg-sky-100 text-sky-700'
+                        }`}>
+                          {log.action_type.replace('_', ' ')}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        <span className="font-semibold">{log.entity_type}</span>
+                        <div className="text-[10px] text-slate-400">ID: {log.entity_id.slice(0, 8)}...</div>
+                      </TableCell>
+                      <TableCell className="text-[10px] text-slate-400 max-w-[200px] truncate">
+                        {log.details ? JSON.stringify(log.details) : '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="md:col-span-1 border-slate-200 shadow-sm">
