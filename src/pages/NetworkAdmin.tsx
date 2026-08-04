@@ -24,6 +24,7 @@ const NetworkAdminPanel = () => {
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['root']);
   const [editingItem, setEditingItem] = useState<{ type: 'user' | 'quotation' | 'supplier', id: string, data: any } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedAuditLog, setSelectedAuditLog] = useState<any>(null);
 
   useEffect(() => {
     if (networkId) {
