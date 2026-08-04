@@ -767,6 +767,7 @@ const Index = () => {
             listaNome={currentLista?.nome}
           />
         )}
+        </div>
       </div>
 
       <ImportListaPanel open={importOpen} onOpenChange={setImportOpen} onImported={() => {}} />
