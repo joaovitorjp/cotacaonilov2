@@ -21,7 +21,23 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon } from 'lucide-react';
+import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon, LucideIcon } from 'lucide-react';
+
+const SidebarLink = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-200 group ${
+      active 
+        ? 'bg-primary text-white shadow-md shadow-primary/20' 
+        : 'text-slate-600 hover:bg-slate-50'
+    }`}
+  >
+    <span className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>
+      {React.cloneElement(icon as React.ReactElement, { size: 20 })}
+    </span>
+    <span className="text-sm font-semibold">{label}</span>
+  </button>
+);
 
 interface Lista {
   id: string;
