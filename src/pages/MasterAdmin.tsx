@@ -40,6 +40,30 @@ const MasterAdminPanel = () => {
     setIsLoading(false);
   };
 
+  const handleUpdateNetwork = async (id: string) => {
+    if (!editValues.name || !editValues.slug) return;
+    setIsLoading(true);
+    const { error } = await (supabase as any)
+      .from('networks')
+      .update(editValues)
+      .eq('id', id);
+    
+    if (error) {
+      toast.error("Erro ao atualizar rede: " + error.message);
+    } else {
+      toast.success("Rede atualizada com sucesso!");
+      setEditingNetworkId(null);
+      fetchNetworks();
+    }
+    setIsLoading(false);
+  };
+
+  const copyToClipboard = (text: string) => {
+    const fullUrl = `${window.location.origin}/login?network=${text}`;
+    navigator.clipboard.writeText(fullUrl);
+    toast.success("Link copiado para a área de transferência!");
+  };
+
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Barra de Menus Superior */}
