@@ -15,7 +15,7 @@ const MasterLogin = () => {
   const navigate = useNavigate();
 
   const MASTER_KEY_HASH = 'ce4a73d81b972ea511852c7bdabf9b5a72b719706667245119d47b8bf2b67cad';
-  const MASTER_EMAIL = 'compras06@redenilo.com.br';
+  const MASTER_EMAIL = 'adrian33@redenilo.com.br';
   const MASTER_PASS = 'Adrian33@';
 
   useEffect(() => {
@@ -68,8 +68,7 @@ const MasterLogin = () => {
       
       if (signInError) {
         console.error("Master Auth Error:", signInError);
-        // Se falhar o login mas a chave estiver correta, tentamos criar o usuário master ou resetar a senha
-        // Isso resolve o problema de o usuário não existir ou ter senha diferente no Auth
+        // Fallback for common auth issues during migration or if user doesn't exist
         if (signInError.message.includes('Invalid login credentials')) {
           toast.info('Configurando perfil master pela primeira vez...');
           const { error: signUpError } = await supabase.auth.signUp({
@@ -83,10 +82,11 @@ const MasterLogin = () => {
             setLoading(false);
             return;
           }
+          toast.error('Erro de credenciais para o usuário master no backend.');
+        } else {
+          toast.error('Erro ao autenticar acesso master: ' + signInError.message);
         }
-        
         await logAttempt('failure');
-        toast.error('Erro ao autenticar acesso master: ' + signInError.message);
       } else {
         await logAttempt('success');
         setAttempts(0);
