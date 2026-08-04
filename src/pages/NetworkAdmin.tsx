@@ -28,7 +28,7 @@ const NetworkAdminPanel = () => {
     try {
       // @ts-ignore
       const { data: netData, error: netError } = await supabase
-        .from('networks')
+        .from('networks' as any)
         .select('*')
         .eq('id', networkId)
         .single();
@@ -41,7 +41,7 @@ const NetworkAdminPanel = () => {
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('*, user_roles(role)')
-        .eq('network_id', networkId);
+        .eq('network_id' as any, networkId);
 
       if (usersError) throw usersError;
       setUsers(usersData || []);
@@ -69,7 +69,7 @@ const NetworkAdminPanel = () => {
         // @ts-ignore
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ network_id: networkId })
+          .update({ network_id: networkId } as any)
           .eq('id', profile.id);
 
         if (updateError) throw updateError;
