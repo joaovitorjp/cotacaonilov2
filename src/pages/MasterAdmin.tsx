@@ -196,5 +196,3 @@ const MasterAdminPanel = () => {
 };
 
 export default MasterAdminPanel;
-
-export default MasterAdminPanel;
