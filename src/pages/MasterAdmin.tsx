@@ -80,7 +80,7 @@ const MasterAdminPanel = () => {
           </div>
         </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -190,6 +190,7 @@ const MasterAdminPanel = () => {
           Cada rede adicionada terá seu próprio isolamento de dados, personalização visual e gerenciamento independente de usuários 
           (comuns e administradores da própria rede).
         </p>
+      </div>
       </div>
     </div>
   );
