@@ -641,3 +641,5 @@ const NetworkAdminPanel = () => {
 };
 
 export default NetworkAdminPanel;
+
+export default NetworkAdminPanel;
