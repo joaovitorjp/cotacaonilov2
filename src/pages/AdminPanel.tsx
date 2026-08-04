@@ -6,7 +6,6 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
-
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import { toast } from 'sonner';
 import { LogOut, Search, Shield, ArrowLeft, FileText, Eye, Package, Users, Calendar, BarChart3, Table as TableIcon } from 'lucide-react';
@@ -80,10 +79,7 @@ const AdminPanel: React.FC = () => {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return listas.filter(l => {
-      // Filtro de status
       if (statusFilter !== 'all' && l.status !== statusFilter) return false;
-      
-      // Filtro de pesquisa
       if (!q) return true;
       const owner = profiles[l.user_id];
       const ownerMatch = owner?.nome?.toLowerCase().includes(q) || owner?.email?.toLowerCase().includes(q);
@@ -205,7 +201,7 @@ const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary/10 selection:text-primary">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/10 selection:text-primary relative">
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-8 py-4 flex items-center justify-between shadow-sm shadow-black/[0.02]">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-primary/10 rounded-2xl">
@@ -242,7 +238,6 @@ const AdminPanel: React.FC = () => {
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
           <aside className="xl:col-span-3 space-y-8">
-
             <div className="bg-card border border-border/50 rounded-[2rem] p-8 shadow-sm ring-1 ring-black/[0.02]">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-primary/10 rounded-xl">
@@ -307,7 +302,8 @@ const AdminPanel: React.FC = () => {
                   return (
                     <div
                       key={lista.id}
-                      className="group bg-card border border-border/50 rounded-[2.5rem] p-7 hover:border-primary/40 hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] transition-all duration-500 relative overflow-hidden flex flex-col h-[320px]"
+                      onClick={() => openLista(lista)}
+                      className="group bg-card border border-border/50 rounded-[2.5rem] p-7 hover:border-primary/40 hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] transition-all duration-500 relative overflow-hidden flex flex-col h-[320px] cursor-pointer"
                     >
                       <div className={`absolute top-0 right-0 w-48 h-48 -mr-24 -mt-24 rounded-full opacity-[0.04] transition-transform duration-1000 group-hover:scale-150 ${isFinalizada ? 'bg-success' : 'bg-primary'}`} />
                       
@@ -345,38 +341,9 @@ const AdminPanel: React.FC = () => {
                           <div className="flex items-center gap-6 px-2">
                             <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold">
                               <Package className="w-4 h-4 text-primary/40" />
-                              <span className="text-foreground">{lista.produtos.length}</span> <span className="opacity-60 uppercase tracking-tighter text-[10px]">Produtos</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold">
-                              <Users className="w-4 h-4 text-primary/40" />
-                              <span className="text-foreground">{lista.produtos.length > 0 ? 'Monitorado' : 'Vazio'}</span>
+                              <span>{lista.produtos.length} Itens</span>
                             </div>
                           </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 mt-auto">
-                          <Button 
-                            variant="secondary" 
-                            size="lg" 
-                            onClick={() => openLista(lista)}
-                            className="bg-muted/50 hover:bg-primary hover:text-primary-foreground rounded-[1.25rem] transition-all duration-300 font-display font-bold text-xs h-12"
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            DETALHES
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="lg" 
-                            onClick={async () => {
-                              await openLista(lista);
-                              setActiveTab('analise');
-                              toast.info('Modo Relatório', { description: 'Exporte os resultados na aba Análise.' });
-                            }}
-                            className="border-border/50 hover:border-primary/50 hover:bg-primary/5 rounded-[1.25rem] transition-all duration-300 font-display font-bold text-xs h-12"
-                          >
-                            <FileText className="w-4 h-4 mr-2" />
-                            ANÁLISE
-                          </Button>
                         </div>
                       </div>
                     </div>
@@ -387,6 +354,17 @@ const AdminPanel: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Atalho secreto para Painel Master */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => navigate('/master')}
+          className="p-3 bg-card/40 backdrop-blur-md border border-border/40 hover:bg-card/60 rounded-full shadow-lg transition-all duration-300 group"
+          title="Acesso Master"
+        >
+          <Shield className="w-5 h-5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+        </button>
+      </div>
     </div>
   );
 };
