@@ -154,6 +154,7 @@ const Index = () => {
     setIsFinalized(false);
     setShowDashboard(true);
     setActiveTab('planilha');
+    setMobileMenuOpen(false);
   };
 
   // 4. CONFIRMATION: Load stats before showing dialog
