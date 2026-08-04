@@ -19,8 +19,7 @@ const MasterAdminPanel = () => {
   }, []);
 
   const fetchNetworks = async () => {
-    // @ts-ignore - networks table created via direct migration
-    const { data, error } = await supabase.from('networks').select('*');
+    const { data, error } = await (supabase as any).from('networks').select('*');
     if (error) toast.error("Erro ao carregar redes");
     else setNetworks(data || []);
   };
@@ -28,8 +27,7 @@ const MasterAdminPanel = () => {
   const handleCreateNetwork = async () => {
     if (!newNetwork.name || !newNetwork.slug) return;
     setIsLoading(true);
-    // @ts-ignore
-    const { error } = await supabase.from('networks').insert([newNetwork]);
+    const { error } = await (supabase as any).from('networks').insert([newNetwork]);
     if (error) {
       toast.error("Erro ao criar rede: " + error.message);
     } else {
@@ -111,24 +109,50 @@ const MasterAdminPanel = () => {
               </TableHeader>
               <TableBody>
                 {networks.map((network) => (
-                  <TableRow key={network.id}>
-                    <TableCell className="font-medium">{network.name}</TableCell>
-                    <TableCell className="text-sky-600 text-sm">
-                      <Button variant="link" className="p-0 h-auto" onClick={() => navigate(`/master/network/${network.id}`)}>
-                        /{network.slug}
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => navigate(`/master/network/${network.id}`)}>
-                        <UserPlus className="h-4 w-4" /> Gerenciar
-                      </Button>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="text-red-500">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  <React.Fragment key={network.id}>
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-slate-400" />
+                          {network.name}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sky-600 text-sm">
+                        <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">/{network.slug}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="flex items-center gap-1 hover:bg-sky-50" 
+                          onClick={() => navigate(`/master/network/${network.id}`)}
+                        >
+                          <UserPlus className="h-4 w-4" /> Gerenciar Usuários
+                        </Button>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-slate-400 hover:text-red-500"
+                            onClick={async () => {
+                              if (confirm(`Deseja realmente excluir a rede ${network.name}? Esta ação é irreversível.`)) {
+                                const { error } = await (supabase as any).from('networks').delete().eq('id', network.id);
+                                if (error) toast.error("Erro ao excluir: " + error.message);
+                                else {
+                                  toast.success("Rede excluída");
+                                  fetchNetworks();
+                                }
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </React.Fragment>
                 ))}
               </TableBody>
             </Table>
