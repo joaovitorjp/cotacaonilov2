@@ -569,8 +569,17 @@ const NetworkAdminPanel = () => {
                             .eq('id', editingItem.id);
                           
                           if (error) throw error;
+                          
+                          // Encontrar dados originais para o diff
+                          const originalData = editingItem.type === 'user' ? users.find(u => u.id === editingItem.id) :
+                                             editingItem.type === 'quotation' ? quotations.find(q => q.id === editingItem.id) :
+                                             suppliers.find(s => s.id === editingItem.id);
 
-                          await logMasterAction('editar', editingItem.type, editingItem.id, { field_count: Object.keys(updateData).length });
+                          await logMasterAction('editar', editingItem.type, editingItem.id, { 
+                            field_count: Object.keys(updateData).length,
+                            before: originalData,
+                            after: updateData
+                          });
 
                           toast.success("Alterações salvas com sucesso!");
                           fetchNetworkData();
