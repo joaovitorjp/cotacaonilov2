@@ -16,6 +16,7 @@ import AdminPanel from "./pages/AdminPanel.tsx";
 import MasterAdmin from "./pages/MasterAdmin.tsx";
 import MasterLogin from "./pages/MasterLogin.tsx";
 import MasterAuditLogs from "./pages/MasterAuditLogs.tsx";
+import MasterProtectedRoute from "./components/MasterProtectedRoute.tsx";
 
 import NetworkAdmin from "./pages/NetworkAdmin.tsx";
 import NetworkRouter from "./pages/NetworkRouter.tsx";
@@ -64,17 +65,17 @@ const App = () => (
             <Route
               path="/master"
               element={
-                <ProtectedRoute>
+                <MasterProtectedRoute>
                   <MasterAdmin />
-                </ProtectedRoute>
+                </MasterProtectedRoute>
               }
             />
             <Route
               path="/master/logs"
               element={
-                <ProtectedRoute>
+                <MasterProtectedRoute>
                   <MasterAuditLogs />
-                </ProtectedRoute>
+                </MasterProtectedRoute>
               }
             />
 
@@ -82,9 +83,9 @@ const App = () => (
             <Route
               path="/master/network/:networkId"
               element={
-                <ProtectedRoute>
+                <MasterProtectedRoute>
                   <NetworkAdmin />
-                </ProtectedRoute>
+                </MasterProtectedRoute>
               }
             />
             {/* Rotas dinâmicas por slug de rede */}

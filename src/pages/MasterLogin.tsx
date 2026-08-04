@@ -58,41 +58,13 @@ const MasterLogin = () => {
 
     setLoading(true);
     
-    if (accessKey === MASTER_KEY_HASH || accessKey === MASTER_PASS) {
-      toast.info('Chave validada. Autenticando usuário master...');
-      
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
-        email: MASTER_EMAIL, 
-        password: MASTER_PASS 
-      });
-      
-      if (signInError) {
-        console.error("Master Auth Error:", signInError);
-        // Fallback for common auth issues during migration or if user doesn't exist
-        if (signInError.message.includes('Invalid login credentials')) {
-          toast.info('Configurando perfil master pela primeira vez...');
-          const { error: signUpError } = await supabase.auth.signUp({
-            email: MASTER_EMAIL,
-            password: MASTER_PASS,
-            options: { data: { nome: 'Master Admin' } }
-          });
-          
-          if (!signUpError) {
-            toast.success('Perfil Master configurado! Tente entrar novamente.');
-            setLoading(false);
-            return;
-          }
-          toast.error('Erro de credenciais para o usuário master no backend.');
-        } else {
-          toast.error('Erro ao autenticar acesso master: ' + signInError.message);
-        }
-        await logAttempt('failure');
-      } else {
-        await logAttempt('success');
-        setAttempts(0);
-        toast.success('Acesso Master concedido!');
-        navigate('/master');
-      }
+    if (accessKey === MASTER_KEY_HASH) {
+      await logAttempt('success');
+      setAttempts(0);
+      toast.success('Acesso Master concedido!');
+      // Usamos sessionStorage para persistir o acesso master nesta sessão sem depender de auth do Supabase
+      sessionStorage.setItem('master_access_token', MASTER_KEY_HASH);
+      navigate('/master');
     } else {
       await logAttempt('failure');
       const newAttempts = attempts + 1;
