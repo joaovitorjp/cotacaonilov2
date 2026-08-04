@@ -70,6 +70,8 @@ const App = () => (
                 <ProtectedRoute>
                   <NetworkAdmin />
                 </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
