@@ -31,8 +31,8 @@ const NetworkAdminPanel = () => {
     setIsLoading(true);
     try {
       // @ts-ignore
-      const { data: netData, error: netError } = await supabase
-        .from('networks' as any)
+      const { data: netData, error: netError } = await (supabase as any)
+        .from('networks')
         .select('*')
         .eq('id', networkId)
         .single();
@@ -41,25 +41,26 @@ const NetworkAdminPanel = () => {
       setNetwork(netData);
 
       // Fetch users for this network
-      // @ts-ignore
-      const { data: usersData, error: usersError } = await supabase
+      const { data: usersData, error: usersError } = await (supabase as any)
         .from('profiles')
         .select('*, user_roles(role)')
-        .eq('network_id' as any, networkId);
+        .eq('network_id', networkId);
 
       if (usersError) throw usersError;
       setUsers(usersData || []);
 
       // Fetch quotations for this network
-      const { data: qData } = await (supabase.from('listas' as any)
+      const { data: qData } = await (supabase as any)
+        .from('listas')
         .select('*')
-        .eq('network_id' as any, networkId) as any);
+        .eq('network_id', networkId);
       setQuotations(qData || []);
 
       // Fetch suppliers for this network
-      const { data: sData } = await (supabase.from('fornecedores' as any)
+      const { data: sData } = await (supabase as any)
+        .from('fornecedores')
         .select('*')
-        .eq('network_id' as any, networkId) as any);
+        .eq('network_id', networkId);
       setSuppliers(sData || []);
     } catch (error: any) {
       toast.error("Erro ao carregar dados: " + error.message);
