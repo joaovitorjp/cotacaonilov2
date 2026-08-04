@@ -661,13 +661,15 @@ const Index = () => {
               className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full border border-slate-100 hover:border-primary/30 hover:bg-slate-50 transition-all group"
             >
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-700 leading-none mb-0.5">{profile?.nome || 'Meu Perfil'}</p>
+                <p className="text-xs font-bold text-slate-700 leading-none mb-0.5">
+                  {isFetchingProfile ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : (profile?.nome || 'Meu Perfil')}
+                </p>
                 <p className="text-[10px] text-slate-400 font-medium leading-none">Configurações</p>
               </div>
               <Avatar className="w-8 h-8 border border-white group-hover:border-primary/20 transition-colors">
                 <AvatarImage src={profile?.avatar_url ? (profile.avatar_url.includes('?') ? `${profile.avatar_url}&t=${Date.now()}` : `${profile.avatar_url}?t=${Date.now()}`) : ''} />
                 <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
-                  {profile?.nome ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
+                  {profile?.nome && !isFetchingProfile ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
                 </AvatarFallback>
               </Avatar>
             </button>
