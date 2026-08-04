@@ -58,6 +58,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/master/login" element={<MasterLogin />} />
             <Route
               path="/master"
               element={
@@ -66,6 +67,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/master/network/:networkId"
               element={

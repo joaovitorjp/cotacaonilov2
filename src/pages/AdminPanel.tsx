@@ -355,16 +355,17 @@ const AdminPanel: React.FC = () => {
         </div>
       </main>
 
-      {/* Atalho secreto para Painel Master */}
+      {/* Ícone de cadeado para área de login Master */}
       <div className="fixed bottom-6 right-6 z-50">
         <button
-          onClick={() => navigate('/master')}
+          onClick={() => navigate('/master/login')}
           className="p-3 bg-card/40 backdrop-blur-md border border-border/40 hover:bg-card/60 rounded-full shadow-lg transition-all duration-300 group"
           title="Acesso Master"
         >
           <Shield className="w-5 h-5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
         </button>
       </div>
+
     </div>
   );
 };

@@ -25,9 +25,10 @@ const SystemInfo = () => {
 
         <div className="bg-amber-50 p-6 rounded-xl border border-amber-100 my-8 text-amber-900">
           <p className="font-medium">
-            <strong>Acesso Master:</strong> Utilize o ícone de escudo (cadeado) no canto inferior direito do painel administrativo ou o atalho <strong>Ctrl + Alt + 9</strong> na tela de login para acessar o gerenciamento de redes.
+            <strong>Acesso Master:</strong> Utilize o ícone de escudo (cadeado) no canto inferior direito do painel administrativo para acessar a tela de chave de acesso.
           </p>
         </div>
+
 
 
         <div className="flex gap-4 mt-8">
