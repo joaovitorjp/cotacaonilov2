@@ -145,7 +145,7 @@ const Login = () => {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              type="email"
+              type="text"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="admin@exemplo.com"
