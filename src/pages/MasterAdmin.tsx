@@ -19,8 +19,7 @@ const MasterAdminPanel = () => {
   }, []);
 
   const fetchNetworks = async () => {
-    // @ts-ignore - networks table created via direct migration
-    const { data, error } = await supabase.from('networks').select('*');
+    const { data, error } = await (supabase as any).from('networks').select('*');
     if (error) toast.error("Erro ao carregar redes");
     else setNetworks(data || []);
   };
@@ -28,8 +27,7 @@ const MasterAdminPanel = () => {
   const handleCreateNetwork = async () => {
     if (!newNetwork.name || !newNetwork.slug) return;
     setIsLoading(true);
-    // @ts-ignore
-    const { error } = await supabase.from('networks').insert([newNetwork]);
+    const { error } = await (supabase as any).from('networks').insert([newNetwork]);
     if (error) {
       toast.error("Erro ao criar rede: " + error.message);
     } else {
@@ -140,7 +138,7 @@ const MasterAdminPanel = () => {
                             className="text-slate-400 hover:text-red-500"
                             onClick={async () => {
                               if (confirm(`Deseja realmente excluir a rede ${network.name}? Esta ação é irreversível.`)) {
-                                const { error } = await supabase.from('networks').delete().eq('id', network.id);
+                                const { error } = await (supabase as any).from('networks').delete().eq('id', network.id);
                                 if (error) toast.error("Erro ao excluir: " + error.message);
                                 else {
                                   toast.success("Rede excluída");
