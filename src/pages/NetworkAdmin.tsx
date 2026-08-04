@@ -176,6 +176,9 @@ const NetworkAdminPanel = () => {
         .insert([{ user_id: userId, role: newRole }]);
       
       if (error) throw error;
+
+      await logMasterAction('editar_permissao', 'profile', userId, { newRole });
+
       toast.success("Permissão atualizada");
       fetchNetworkData();
     } catch (error: any) {
