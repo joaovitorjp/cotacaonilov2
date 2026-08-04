@@ -77,8 +77,8 @@ const MasterAdminPanel = () => {
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Gerenciamento de Redes</h1>
             <p className="text-slate-500">Ecossistemas ativos no sistema Nilo Atacadista</p>
+          </div>
         </div>
-      </div>
 
       <div className="grid md:grid-cols-3 gap-6 px-8">
         <Card className="md:col-span-1">
