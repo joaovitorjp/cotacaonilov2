@@ -59,9 +59,9 @@ const MasterAdminPanel = () => {
   };
 
   const copyToClipboard = (text: string) => {
-    const fullUrl = `${window.location.origin}/login?network=${text}`;
+    const fullUrl = `${window.location.origin}/n/${text}`;
     navigator.clipboard.writeText(fullUrl);
-    toast.success("Link copiado para a área de transferência!");
+    toast.success("Link do ecossistema copiado!");
   };
 
   return (
@@ -195,11 +195,11 @@ const MasterAdminPanel = () => {
                               <Copy className="h-3 w-3" />
                             </Button>
                             <a 
-                              href={`/login?network=${network.slug}`} 
+                              href={`/n/${network.slug}`} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="text-slate-400 hover:text-sky-600"
-                              title="Abrir login da rede"
+                              title="Abrir ecossistema da rede"
                             >
                               <ExternalLink className="h-3 w-3" />
                             </a>
