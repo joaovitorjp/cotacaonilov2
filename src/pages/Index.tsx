@@ -39,7 +39,7 @@ interface RespostaEmpresa {
 }
 
 const Index = () => {
-  const { user, signOut } = useAuth();
+  const { user, network, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -619,7 +619,7 @@ const Index = () => {
                 <Table className="w-5 h-5" />
               </div>
               <h1 className="text-xl font-display font-bold text-slate-800 tracking-tight hidden sm:block">
-                Nilo Atacadista
+                {network ? network.name : 'Nilo Atacadista'}
               </h1>
             </button>
 

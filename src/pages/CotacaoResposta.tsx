@@ -25,6 +25,7 @@ const CotacaoResposta = () => {
   const [listaUserId, setListaUserId] = useState<string | null>(null);
   const [linkId, setLinkId] = useState<string>('');
   const [listaNome, setListaNome] = useState('');
+  const [networkName, setNetworkName] = useState('Nilo Atacadista');
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [pricesMT, setPricesMT] = useState<Record<number, string>>({});
   const [pricesGO, setPricesGO] = useState<Record<number, string>>({});
@@ -70,6 +71,15 @@ const CotacaoResposta = () => {
     setLinkId(linkData.id);
     setEstados((linkData as any).estados || 'AMBOS');
     setTipoPreco((linkData as any).tipo_preco || 'IPI_ST');
+
+    // Fetch network name via user_id of the list
+    if (linkData.user_id) {
+      const { data: profile } = await supabase.from('profiles').select('network_id').eq('user_id', linkData.user_id).maybeSingle();
+      if (profile?.network_id) {
+        const { data: net } = await supabase.from('networks').select('name').eq('id', profile.network_id).maybeSingle();
+        if (net) setNetworkName(net.name);
+      }
+    }
 
     const { data: lista } = await supabase
       .from('listas')
@@ -365,7 +375,7 @@ const CotacaoResposta = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="bg-primary text-primary-foreground px-4 sm:px-6 py-4 shrink-0 shadow-md">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight">Nilo Atacadista</h1>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight">{networkName}</h1>
           <p className="text-primary-foreground/80 text-xs sm:text-sm mt-0.5">
             Cotação: {listaNome}
           </p>

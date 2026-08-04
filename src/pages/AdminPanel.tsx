@@ -31,7 +31,7 @@ interface RespostaEmpresa {
 }
 
 const AdminPanel: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, network, signOut } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
@@ -209,10 +209,10 @@ const AdminPanel: React.FC = () => {
           </div>
           <div>
             <h1 className="text-lg font-display font-bold text-foreground tracking-tight leading-none uppercase">
-              Painel Administrativo
+              {network ? network.name : 'Painel Administrativo'}
             </h1>
             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1.5 opacity-70">
-              Controle Central de Cotações
+              Controle de Cotações {network ? network.name : 'Central'}
             </p>
           </div>
         </div>

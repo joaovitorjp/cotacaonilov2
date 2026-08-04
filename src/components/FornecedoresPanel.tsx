@@ -24,7 +24,7 @@ interface FornecedoresPanelProps {
 }
 
 const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChange }) => {
-  const { user } = useAuth();
+  const { user, network } = useAuth();
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [loading, setLoading] = useState(false);
   const [nome, setNome] = useState('');
@@ -74,6 +74,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome_representante: nomeRepresentante.trim() || null,
       email: email.trim() || null,
       user_id: user?.id,
+      network_id: network?.id,
       codigo_interno_ciss: codigoInternoCISS.trim() || null,
       codigo_interno_consinco: codigoInternoCONSINCO.trim() || null,
     });
