@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Building2, UserPlus, Globe, Plus, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const MasterAdminPanel = () => {
   const [networks, setNetworks] = useState<any[]>([]);
   const [newNetwork, setNewNetwork] = useState({ name: '', slug: '' });
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -103,10 +105,12 @@ const MasterAdminPanel = () => {
                   <TableRow key={network.id}>
                     <TableCell className="font-medium">{network.name}</TableCell>
                     <TableCell className="text-sky-600 text-sm">
-                      /{network.slug}
+                      <Button variant="link" className="p-0 h-auto" onClick={() => navigate(`/master/network/${network.id}`)}>
+                        /{network.slug}
+                      </Button>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => navigate(`/master/network/${network.id}`)}>
                         <UserPlus className="h-4 w-4" /> Gerenciar
                       </Button>
                     </TableCell>
