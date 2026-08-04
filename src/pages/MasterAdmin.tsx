@@ -144,14 +144,24 @@ const MasterAdminPanel = () => {
                           <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">/{network.slug}</span>
                         </TableCell>
                         <TableCell>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="flex items-center gap-1 hover:bg-sky-50" 
-                            onClick={() => navigate(`/master/network/${network.id}`)}
-                          >
-                            <UserPlus className="h-4 w-4" /> Gerenciar Usuários
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="flex items-center gap-1 hover:bg-sky-50" 
+                              onClick={() => navigate(`/master/network/${network.id}`)}
+                            >
+                              <UserPlus className="h-4 w-4" /> Usuários
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="flex items-center gap-1 hover:bg-emerald-50 text-emerald-600" 
+                              onClick={() => navigate(`/master/network/${network.id}`)}
+                            >
+                              <Database className="h-4 w-4" /> Dados
+                            </Button>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
