@@ -15,13 +15,13 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ProfileGate from '@/components/ProfileGate';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon, LucideIcon, Loader2 } from 'lucide-react';
+import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon, LucideIcon, Loader2, ShieldCheck } from 'lucide-react';
 
 
 interface Lista {
@@ -41,6 +41,9 @@ interface RespostaEmpresa {
 const Index = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isMaster, setIsMaster] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
@@ -82,13 +85,30 @@ const Index = () => {
   useEffect(() => {
     fetchUserProfile();
 
+    const checkRoles = async () => {
+      if (!user) return;
+      
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      
+      const roleList = roles?.map(r => r.role) || [];
+      setIsAdmin(roleList.includes('admin'));
+      // For now, let's treat a specific email or any admin as potential master for demo, 
+      // or we can add a 'master' role to the enum in migration if needed.
+      // Assuming 'admin' can see the master link if they are the creator.
+      setIsMaster(roleList.includes('admin') && user.email === 'compras06@redenilo.com.br');
+    };
+
+    checkRoles();
+
     const handleProfileUpdate = () => {
       fetchUserProfile();
     };
 
     window.addEventListener('profile-updated', handleProfileUpdate);
     
-    // Subscribe only to user's profile updates
     const channel = supabase
       .channel('profile-sync')
       .on(
@@ -102,7 +122,7 @@ const Index = () => {
       window.removeEventListener('profile-updated', handleProfileUpdate);
       supabase.removeChannel(channel);
     };
-  }, [user?.id, fetchUserProfile]);
+  }, [user?.id, user?.email, fetchUserProfile]);
 
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
   const [respostas, setRespostas] = useState<RespostaEmpresa[]>([]);
@@ -634,6 +654,15 @@ const Index = () => {
               >
                 Fornecedores
               </button>
+              {isMaster && (
+                <button 
+                  onClick={() => navigate('/master')}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-amber-600 hover:bg-amber-50 transition-colors flex items-center gap-1.5"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Master
+                </button>
+              )}
               {currentLista && !isFinalized && (
                 <button 
                   onClick={() => setGerarLinkOpen(true)}
