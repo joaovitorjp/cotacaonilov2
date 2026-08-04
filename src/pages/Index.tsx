@@ -660,7 +660,7 @@ const Index = () => {
                 <p className="text-[10px] text-slate-400 font-medium leading-none">Configurações</p>
               </div>
               <Avatar className="w-8 h-8 border border-white group-hover:border-primary/20 transition-colors">
-                <AvatarImage src={profile?.avatar_url || ''} />
+                <AvatarImage src={profile?.avatar_url ? `${profile.avatar_url}?t=${Date.now()}` : ''} />
                 <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
                   {profile?.nome ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
                 </AvatarFallback>
