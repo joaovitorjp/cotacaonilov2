@@ -192,7 +192,6 @@ const MasterAdminPanel = () => {
           </p>
         </div>
       </div>
-      </div>
     </div>
   );
 };

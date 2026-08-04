@@ -636,7 +636,6 @@ const NetworkAdminPanel = () => {
         </div>
       )}
       </div>
-      </div>
     </div>
   );
 };
