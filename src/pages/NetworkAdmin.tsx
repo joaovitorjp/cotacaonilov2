@@ -185,8 +185,10 @@ const NetworkAdminPanel = () => {
           </div>
           <Shield className="h-10 w-10 text-sky-600" />
         </div>
+      </div>
 
-      <div className="flex gap-4 mb-6">
+      <div className="px-8 space-y-8">
+        <div className="flex gap-4 mb-6">
         <Button 
           variant={activeTab === 'explorer' ? 'default' : 'outline'} 
           className="flex items-center gap-2"
