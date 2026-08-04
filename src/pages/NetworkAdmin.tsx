@@ -204,8 +204,8 @@ const NetworkAdminPanel = () => {
         </div>
 
         {activeTab === 'explorer' ? (
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card className="md:col-span-1 border-slate-200 shadow-sm overflow-hidden">
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="md:col-span-1 border-slate-200 shadow-sm overflow-hidden">
             <CardHeader className="bg-slate-50 border-b border-slate-200 py-4">
               <CardTitle className="text-base flex items-center gap-2">
                 <Folder className="h-4 w-4 text-sky-600" /> 
