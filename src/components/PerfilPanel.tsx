@@ -131,7 +131,7 @@ const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
           <div className="flex items-center gap-4">
             <div className="relative group">
               <Avatar className="w-20 h-20 border-2 border-primary/20 transition-all group-hover:border-primary/50">
-                <AvatarImage src={avatarUrl ? `${avatarUrl}?t=${Date.now()}` : ''} className="object-cover" />
+                <AvatarImage src={avatarUrl ? `${avatarUrl}${avatarUrl.includes('?') ? '&' : '?'}t=${Date.now()}` : ''} className="object-cover" />
                 <AvatarFallback className="bg-primary/5 text-primary text-2xl font-display">
                   {nome ? nome.substring(0, 1).toUpperCase() : <UserIcon className="w-8 h-8" />}
                 </AvatarFallback>
