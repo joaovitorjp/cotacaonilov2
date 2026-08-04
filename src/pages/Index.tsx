@@ -595,6 +595,15 @@ const Index = () => {
               >
                 Fornecedores
               </button>
+              {currentLista && !isFinalized && (
+                <button 
+                  onClick={() => setGerarLinkOpen(true)}
+                  className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-all shadow-sm shadow-primary/20 flex items-center gap-2 ml-2 animate-in zoom-in-95 duration-200"
+                >
+                  <Link2 className="w-4 h-4" />
+                  Gerar Link
+                </button>
+              )}
             </nav>
           </div>
 
