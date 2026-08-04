@@ -19,10 +19,18 @@ const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Removido atalho de teclado para preenchimento de login master
-
+  const [networkInfo, setNetworkInfo] = useState<any>(null);
 
   useEffect(() => {
+    const fetchNetworkInfo = async () => {
+      const slug = searchParams.get('network');
+      if (slug) {
+        const { data } = await (supabase as any).from('networks').select('*').eq('slug', slug).single();
+        if (data) setNetworkInfo(data);
+      }
+    };
+    fetchNetworkInfo();
+
     const oauthError = searchParams.get('oauth_error');
     if (!oauthError) return;
 
