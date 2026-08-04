@@ -18,6 +18,7 @@ import MasterLogin from "./pages/MasterLogin.tsx";
 import MasterAuditLogs from "./pages/MasterAuditLogs.tsx";
 
 import NetworkAdmin from "./pages/NetworkAdmin.tsx";
+import NetworkRouter from "./pages/NetworkRouter.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            {/* Rotas dinâmicas por slug de rede */}
+            <Route path="/n/:slug" element={<NetworkRouter />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
