@@ -14,6 +14,8 @@ import OAuthConsent from "./pages/OAuthConsent.tsx";
 import Perfil from "./pages/Perfil.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import MasterAdmin from "./pages/MasterAdmin.tsx";
+import MasterLogin from "./pages/MasterLogin.tsx";
+
 import NetworkAdmin from "./pages/NetworkAdmin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
