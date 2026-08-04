@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
@@ -21,7 +21,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon, LucideIcon } from 'lucide-react';
+import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon, LucideIcon, Loader2 } from 'lucide-react';
 
 
 interface Lista {
@@ -49,6 +49,60 @@ const Index = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const [profile, setProfile] = useState<{ nome: string; avatar_url: string | null } | null>(null);
+  const [isFetchingProfile, setIsFetchingProfile] = useState(false);
+  const lastFetchRef = useRef<number>(0);
+
+  const fetchUserProfile = useCallback(async () => {
+    if (!user || isFetchingProfile) return;
+    
+    // Throttle to avoid duplicate fetches
+    const now = Date.now();
+    if (now - lastFetchRef.current < 1000) return;
+    lastFetchRef.current = now;
+
+    setIsFetchingProfile(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('nome, avatar_url')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+    } finally {
+      setIsFetchingProfile(false);
+    }
+  }, [user, isFetchingProfile]);
+
+  useEffect(() => {
+    fetchUserProfile();
+
+    const handleProfileUpdate = () => {
+      fetchUserProfile();
+    };
+
+    window.addEventListener('profile-updated', handleProfileUpdate);
+    
+    // Subscribe only to user's profile updates
+    const channel = supabase
+      .channel('profile-sync')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `user_id=eq.${user?.id}` },
+        () => fetchUserProfile()
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('profile-updated', handleProfileUpdate);
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchUserProfile]);
 
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
   const [respostas, setRespostas] = useState<RespostaEmpresa[]>([]);
@@ -516,55 +570,6 @@ const Index = () => {
     else if (view === 'finalizadas') setFinalizadasOpen(true);
   };
 
-  const [profile, setProfile] = useState<{ nome: string; avatar_url: string | null } | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    
-    let isFetching = false;
-    const fetchProfile = async () => {
-      if (isFetching) return;
-      isFetching = true;
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('nome, avatar_url, cargo')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        if (data) setProfile(data as { nome: string; avatar_url: string | null });
-      } finally {
-        isFetching = false;
-      }
-    };
-
-    fetchProfile();
-
-    // Listen for updates from PerfilPanel
-    window.addEventListener('profile-updated', fetchProfile);
-    
-    // Also listen for real-time changes to the profiles table
-    const channel = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchProfile();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      window.removeEventListener('profile-updated', fetchProfile);
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
   // Check if deadline passed
   const isExpired = currentLista?.prazo ? new Date(currentLista.prazo) < new Date() : false;
 
@@ -656,13 +661,15 @@ const Index = () => {
               className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full border border-slate-100 hover:border-primary/30 hover:bg-slate-50 transition-all group"
             >
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-700 leading-none mb-0.5">{profile?.nome || 'Meu Perfil'}</p>
+                <p className="text-xs font-bold text-slate-700 leading-none mb-0.5">
+                  {isFetchingProfile ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : (profile?.nome || 'Meu Perfil')}
+                </p>
                 <p className="text-[10px] text-slate-400 font-medium leading-none">Configurações</p>
               </div>
               <Avatar className="w-8 h-8 border border-white group-hover:border-primary/20 transition-colors">
-                <AvatarImage src={profile?.avatar_url ? `${profile.avatar_url}${profile.avatar_url.includes('?') ? '&' : '?'}t=${Date.now()}` : ''} />
+                <AvatarImage src={profile?.avatar_url ? (profile.avatar_url.includes('?') ? `${profile.avatar_url}&t=${Date.now()}` : `${profile.avatar_url}?t=${Date.now()}`) : ''} />
                 <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
-                  {profile?.nome ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
+                  {profile?.nome && !isFetchingProfile ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
                 </AvatarFallback>
               </Avatar>
             </button>
