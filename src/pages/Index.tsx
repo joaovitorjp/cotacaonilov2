@@ -23,21 +23,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon, LucideIcon } from 'lucide-react';
 
-const SidebarLink = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-200 group ${
-      active 
-        ? 'bg-primary text-white shadow-md shadow-primary/20' 
-        : 'text-slate-600 hover:bg-slate-50'
-    }`}
-  >
-    <span className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>
-      {React.cloneElement(icon as React.ReactElement, { size: 20 })}
-    </span>
-    <span className="text-sm font-semibold">{label}</span>
-  </button>
-);
 
 interface Lista {
   id: string;
@@ -561,71 +546,100 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <ProfileGate>
         <></>
       </ProfileGate>
       
-      {/* Sidebar Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 sticky top-0 h-screen">
-        <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-md shadow-primary/20">
-            <Table className="w-5 h-5" />
+      {/* Top Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-[1600px] mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <button onClick={handleBackToDashboard} className="flex items-center gap-3 group">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
+                <Table className="w-5 h-5" />
+              </div>
+              <h1 className="text-xl font-display font-bold text-slate-800 tracking-tight hidden sm:block">
+                CISS & CONSINCO
+              </h1>
+            </button>
+
+            <nav className="hidden lg:flex items-center gap-1">
+              <button 
+                onClick={handleBackToDashboard}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${showDashboard ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                Início
+              </button>
+              <button 
+                onClick={() => setImportOpen(true)}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors"
+              >
+                Nova Cotação
+              </button>
+              <button 
+                onClick={() => setCarregarOpen(true)}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors"
+              >
+                Abertas
+              </button>
+              <button 
+                onClick={() => setFinalizadasOpen(true)}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors"
+              >
+                Finalizadas
+              </button>
+              <button 
+                onClick={() => setFornecedoresOpen(true)}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors"
+              >
+                Fornecedores
+              </button>
+            </nav>
           </div>
-          <h1 className="text-xl font-display font-bold text-slate-800 tracking-tight">CISS & CONSINCO</h1>
-        </div>
 
-        <nav className="flex-1 p-4 space-y-2">
-          <SidebarLink icon={<Home />} label="Início" active={showDashboard} onClick={handleBackToDashboard} />
-          
-          <div className="pt-4 pb-2 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ações Rápidas</div>
-          <SidebarLink icon={<Upload />} label="Nova Cotação" onClick={() => setImportOpen(true)} />
-          <SidebarLink icon={<Link2 />} label="Gerar Links" onClick={() => setGerarLinkOpen(true)} />
-          <SidebarLink icon={<Users />} label="Fornecedores" onClick={() => setFornecedoresOpen(true)} />
-          
-          <div className="pt-4 pb-2 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Painéis</div>
-          <SidebarLink icon={<BarChart3 />} label="Análise" active={!showDashboard && activeTab === 'analise'} onClick={() => { if (!showDashboard) setActiveTab('analise'); }} />
-          <SidebarLink icon={<MessageCircle />} label="Assistente IA" onClick={() => setChatOpen(true)} />
-        </nav>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setChatOpen(true)}
+              className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-full transition-colors relative"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </button>
+            
+            <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
 
-        <div className="p-4 border-t border-slate-100">
-          <button 
-            onClick={() => setPerfilOpen(true)}
-            className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-slate-50 transition-colors group"
-          >
-            <Avatar className="w-9 h-9 border border-slate-200 group-hover:border-primary/30 transition-colors">
-              <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
-                {profile?.nome ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 text-left">
-              <p className="text-sm font-semibold text-slate-700 truncate">{profile?.nome || 'Meu Perfil'}</p>
-              <p className="text-[10px] text-slate-400 font-medium">Configurações</p>
-            </div>
-          </button>
-        </div>
-      </aside>
+            <button 
+              onClick={() => setPerfilOpen(true)}
+              className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full border border-slate-100 hover:border-primary/30 hover:bg-slate-50 transition-all group"
+            >
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-bold text-slate-700 leading-none mb-0.5">{profile?.nome || 'Meu Perfil'}</p>
+                <p className="text-[10px] text-slate-400 font-medium leading-none">Configurações</p>
+              </div>
+              <Avatar className="w-8 h-8 border border-white group-hover:border-primary/20 transition-colors">
+                <AvatarImage src={profile?.avatar_url || ''} />
+                <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
+                  {profile?.nome ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
+                </AvatarFallback>
+              </Avatar>
+            </button>
 
-      {/* Mobile Content Wrapper */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Header Mobile */}
-        <header className="md:hidden bg-card border-b border-border px-4 py-3 flex items-center justify-between shrink-0">
-          <button onClick={handleBackToDashboard}>
-            <h1 className="text-lg font-display font-bold tracking-tight">Nilo Atacadista</h1>
-          </button>
-          <div className="flex items-center gap-2">
-            <Avatar className="w-8 h-8 border border-slate-200">
-              <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
-                {profile?.nome ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
-              </AvatarFallback>
-            </Avatar>
-            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="lg:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
-        </header>
+        </div>
+      </header>
+
+      {/* Content Wrapper */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Header Mobile (now redundant but kept simple for small screens if needed, 
+            actually the Top Header above handles it with lg:hidden logic) */}
 
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
