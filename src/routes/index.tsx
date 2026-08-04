@@ -1,4 +1,5 @@
 import React from 'react';
+
 const SecurityIssues = () => {
   return (
     <div>
@@ -6,4 +7,5 @@ const SecurityIssues = () => {
     </div>
   );
 };
+
 export default SecurityIssues;
