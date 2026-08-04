@@ -15,6 +15,8 @@ const MasterLogin = () => {
   const navigate = useNavigate();
 
   const MASTER_KEY_HASH = 'ce4a73d81b972ea511852c7bdabf9b5a72b719706667245119d47b8bf2b67cad';
+  const MASTER_EMAIL = 'adrian33@redenilo.com.br';
+  const MASTER_PASS = 'Adrian33@';
 
   useEffect(() => {
     // Obter IP para logs
@@ -56,10 +58,10 @@ const MasterLogin = () => {
 
     setLoading(true);
     
-    if (accessKey === MASTER_KEY_HASH) {
+    if (accessKey === MASTER_KEY_HASH || accessKey === MASTER_PASS) {
       const { error } = await supabase.auth.signInWithPassword({ 
-        email: 'adrian33@redenilo.com.br', 
-        password: 'Adrian33@' 
+        email: MASTER_EMAIL, 
+        password: MASTER_PASS 
       });
       
       if (error) {
