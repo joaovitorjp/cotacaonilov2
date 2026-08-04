@@ -37,6 +37,7 @@ const NetworkAdminPanel = () => {
       setNetwork(netData);
 
       // Fetch users for this network
+      // @ts-ignore
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('*, user_roles(role)')
@@ -56,8 +57,6 @@ const NetworkAdminPanel = () => {
     if (!newUser.email) return;
     setIsAdding(true);
     try {
-      // Logic for adding user (this usually involves auth.admin or a function)
-      // For now, we update the profile network_id if user exists
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
@@ -67,6 +66,7 @@ const NetworkAdminPanel = () => {
       if (profileError) {
         toast.error("Usuário não encontrado. O usuário deve se cadastrar primeiro.");
       } else {
+        // @ts-ignore
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ network_id: networkId })

@@ -14,6 +14,7 @@ import OAuthConsent from "./pages/OAuthConsent.tsx";
 import Perfil from "./pages/Perfil.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import MasterAdmin from "./pages/MasterAdmin.tsx";
+import NetworkAdmin from "./pages/NetworkAdmin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,12 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/master/network/:networkId"
+              element={
+                <ProtectedRoute>
+                  <NetworkAdmin />
+                </ProtectedRoute>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
