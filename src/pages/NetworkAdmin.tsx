@@ -30,6 +30,24 @@ const NetworkAdminPanel = () => {
     }
   }, [networkId]);
 
+  const logMasterAction = async (actionType: string, entityType: string, entityId: string, details: any = {}) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await (supabase as any).from('master_audit_logs').insert([{
+        network_id: networkId,
+        performed_by: user.id,
+        action_type: actionType,
+        entity_type: entityType,
+        entity_id: entityId,
+        details
+      }]);
+    } catch (error) {
+      console.error("Erro ao registrar log:", error);
+    }
+  };
+
   const fetchNetworkData = async () => {
     setIsLoading(true);
     try {
