@@ -16,9 +16,10 @@ const NetworkAdminPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', role: 'user' });
-  const [activeTab, setActiveTab] = useState<'users' | 'quotations' | 'suppliers' | 'explorer'>('explorer');
+  const [activeTab, setActiveTab] = useState<'users' | 'quotations' | 'suppliers' | 'explorer' | 'audit'>('explorer');
   const [quotations, setQuotations] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['root']);
   const [editingItem, setEditingItem] = useState<{ type: 'user' | 'quotation' | 'supplier', id: string, data: any } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
