@@ -590,6 +590,96 @@ const Index = () => {
 
       {/* Mobile Content Wrapper */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Header Mobile */}
+        <header className="md:hidden bg-card border-b border-border px-4 py-3 flex items-center justify-between shrink-0">
+          <button onClick={handleBackToDashboard}>
+            <h1 className="text-lg font-display font-bold tracking-tight">Nilo Atacadista</h1>
+          </button>
+          <div className="flex items-center gap-2">
+            <Avatar className="w-8 h-8 border border-slate-200">
+              <AvatarImage src={profile?.avatar_url || ''} />
+              <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
+                {profile?.nome ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
+              </AvatarFallback>
+            </Avatar>
+            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
+        </header>
+
+        {/* Mobile menu dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-card border-b border-border px-4 py-2 space-y-1 shrink-0 z-50 shadow-lg animate-in slide-in-from-top duration-200">
+            {navItems.map(item => (
+              <button
+                key={item.label}
+                onClick={() => { item.action(); setMobileMenuOpen(false); }}
+                disabled={item.disabled}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold text-left transition-colors ${
+                  item.disabled ? 'opacity-40 cursor-not-allowed text-slate-400' : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </button>
+            ))}
+            <button
+              onClick={() => { signOut(); setMobileMenuOpen(false); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold text-left text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sair
+            </button>
+          </div>
+        </div>
+
+        {/* Lista info bar with tabs */}
+        {currentLista && !showDashboard && (
+          <div className="shrink-0 border-b border-border bg-white">
+            <div className="bg-slate-50 px-4 sm:px-6 py-2 text-sm text-slate-600 flex items-center gap-2 flex-wrap">
+              <button onClick={handleBackToDashboard} className="text-primary hover:underline text-xs font-semibold">
+                ← Início
+              </button>
+              <span className="text-slate-300">·</span>
+              <span className="font-bold text-slate-800">{currentLista.nome}</span>
+              <span className="text-slate-400 text-xs">
+                {currentLista.produtos.length} itens · {respostas.length} respostas
+              </span>
+              {isFinalized && (
+                <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">
+                  FINALIZADA
+                </span>
+              )}
+            </div>
+            {/* Tabs */}
+            {respostas.length > 0 && (
+              <div className="flex px-4 sm:px-6 border-t border-slate-100">
+                <button
+                  onClick={() => setActiveTab('planilha')}
+                  className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+                    activeTab === 'planilha' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  <Table className="w-3.5 h-3.5" />
+                  Planilha
+                </button>
+                <button
+                  onClick={() => setActiveTab('analise')}
+                  className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+                    activeTab === 'analise' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  Análise
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex-1 overflow-auto bg-slate-50/50">
+
         {showDashboard ? (
           <Dashboard onNavigate={handleDashboardNavigate} />
         ) : activeTab === 'planilha' ? (
