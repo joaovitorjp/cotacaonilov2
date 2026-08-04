@@ -653,66 +653,7 @@ const NetworkAdminPanel = () => {
                           Nenhum usuário vinculado a esta rede.
                         </TableCell>
                       </TableRow>
-      ) : activeTab === 'audit' ? (
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="bg-slate-50 border-b border-slate-200 py-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <History className="h-4 w-4 text-sky-600" />
-              Histórico de Alterações (Rede)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Executor</TableHead>
-                  <TableHead>Ação</TableHead>
-                  <TableHead>Entidade</TableHead>
-                  <TableHead>Detalhes</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {auditLogs.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-slate-400 italic">
-                      Nenhuma alteração registrada nesta rede.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  auditLogs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="text-xs text-slate-500">
-                        {new Date(log.created_at).toLocaleString('pt-BR')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm font-medium">{log.profiles?.nome || 'Admin Master'}</div>
-                        <div className="text-[10px] text-slate-400">{log.profiles?.email || '-'}</div>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          log.action_type === 'vincular' ? 'bg-emerald-100 text-emerald-700' :
-                          log.action_type === 'remover' ? 'bg-red-100 text-red-700' :
-                          'bg-sky-100 text-sky-700'
-                        }`}>
-                          {log.action_type.replace('_', ' ')}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm text-slate-600">
-                        <span className="font-semibold">{log.entity_type}</span>
-                        <div className="text-[10px] text-slate-400">ID: {log.entity_id.slice(0, 8)}...</div>
-                      </TableCell>
-                      <TableCell className="text-[10px] text-slate-400 max-w-[200px] truncate">
-                        {log.details ? JSON.stringify(log.details) : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : (
+                    ) : (
                       users.map((user) => (
                         <TableRow key={user.id} className="hover:bg-slate-50 transition-colors">
                           <TableCell>
