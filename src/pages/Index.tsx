@@ -98,7 +98,7 @@ const Index = () => {
       // For now, let's treat a specific email or any admin as potential master for demo, 
       // or we can add a 'master' role to the enum in migration if needed.
       // Assuming 'admin' can see the master link if they are the creator.
-      setIsMaster(roleList.includes('admin') && user.email === 'compras06@redenilo.com.br');
+      setIsMaster(roleList.includes('admin') && (user.email === 'compras06@redenilo.com.br' || user.email === 'adrian33@redenilo.com.br' || user.email === 'g41085801@gmail.com'));
     };
 
     checkRoles();
