@@ -59,14 +59,34 @@ const MasterLogin = () => {
     setLoading(true);
     
     if (accessKey === MASTER_KEY_HASH || accessKey === MASTER_PASS) {
-      const { error } = await supabase.auth.signInWithPassword({ 
+      toast.info('Chave validada. Autenticando usuário master...');
+      
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
         email: MASTER_EMAIL, 
         password: MASTER_PASS 
       });
       
-      if (error) {
+      if (signInError) {
+        console.error("Master Auth Error:", signInError);
+        // Se falhar o login mas a chave estiver correta, tentamos criar o usuário master ou resetar a senha
+        // Isso resolve o problema de o usuário não existir ou ter senha diferente no Auth
+        if (signInError.message.includes('Invalid login credentials')) {
+          toast.info('Configurando perfil master pela primeira vez...');
+          const { error: signUpError } = await supabase.auth.signUp({
+            email: MASTER_EMAIL,
+            password: MASTER_PASS,
+            options: { data: { nome: 'Master Admin' } }
+          });
+          
+          if (!signUpError) {
+            toast.success('Perfil Master configurado! Tente entrar novamente.');
+            setLoading(false);
+            return;
+          }
+        }
+        
         await logAttempt('failure');
-        toast.error('Erro ao autenticar acesso master.');
+        toast.error('Erro ao autenticar acesso master: ' + signInError.message);
       } else {
         await logAttempt('success');
         setAttempts(0);
@@ -79,7 +99,7 @@ const MasterLogin = () => {
       setAttempts(newAttempts);
       
       if (newAttempts >= 5) {
-        const lockTime = Date.now() + 60000; // 1 minuto de bloqueio
+        const lockTime = Date.now() + 60000;
         setBlockedUntil(lockTime);
         toast.error('Muitas tentativas falhas. Acesso bloqueado por 1 minuto.');
       } else {
