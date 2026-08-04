@@ -570,55 +570,6 @@ const Index = () => {
     else if (view === 'finalizadas') setFinalizadasOpen(true);
   };
 
-  const [profile, setProfile] = useState<{ nome: string; avatar_url: string | null } | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    
-    let isFetching = false;
-    const fetchProfile = async () => {
-      if (isFetching) return;
-      isFetching = true;
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('nome, avatar_url, cargo')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        if (data) setProfile(data as { nome: string; avatar_url: string | null });
-      } finally {
-        isFetching = false;
-      }
-    };
-
-    fetchProfile();
-
-    // Listen for updates from PerfilPanel
-    window.addEventListener('profile-updated', fetchProfile);
-    
-    // Also listen for real-time changes to the profiles table
-    const channel = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchProfile();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      window.removeEventListener('profile-updated', fetchProfile);
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
   // Check if deadline passed
   const isExpired = currentLista?.prazo ? new Date(currentLista.prazo) < new Date() : false;
 
