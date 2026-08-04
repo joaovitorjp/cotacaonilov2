@@ -28,9 +28,11 @@ const SystemInfo = () => {
             <strong>Acesso Master:</strong> Utilize o ícone de escudo (cadeado) no canto inferior direito do painel administrativo para acessar a tela de chave de acesso.
           </p>
         </div>
-
-
-
+        <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 my-8 text-slate-600 text-sm italic">
+          <p>
+            Logs de auditoria habilitados: Registrar logs de auditoria com data, resultado (sucesso/erro) e IP das tentativas de acesso ao Painel Master.
+          </p>
+        </div>
         <div className="flex gap-4 mt-8">
           <Link to="/master">
             <button className="bg-sky-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-sky-700 transition-colors shadow-md">
