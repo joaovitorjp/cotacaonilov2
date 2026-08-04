@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Building2, UserPlus, Globe, Plus, Trash2, Database } from "lucide-react";
+import { Building2, UserPlus, Globe, Plus, Trash2, Database, Copy, ExternalLink, Edit2, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const MasterAdminPanel = () => {
@@ -13,6 +13,8 @@ const MasterAdminPanel = () => {
   const [newNetwork, setNewNetwork] = useState({ name: '', slug: '' });
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState({ name: '', slug: '' });
 
   useEffect(() => {
     fetchNetworks();
@@ -36,6 +38,30 @@ const MasterAdminPanel = () => {
       fetchNetworks();
     }
     setIsLoading(false);
+  };
+
+  const handleUpdateNetwork = async (id: string) => {
+    if (!editValues.name || !editValues.slug) return;
+    setIsLoading(true);
+    const { error } = await (supabase as any)
+      .from('networks')
+      .update(editValues)
+      .eq('id', id);
+    
+    if (error) {
+      toast.error("Erro ao atualizar rede: " + error.message);
+    } else {
+      toast.success("Rede atualizada com sucesso!");
+      setEditingNetworkId(null);
+      fetchNetworks();
+    }
+    setIsLoading(false);
+  };
+
+  const copyToClipboard = (text: string) => {
+    const fullUrl = `${window.location.origin}/login?network=${text}`;
+    navigator.clipboard.writeText(fullUrl);
+    toast.success("Link copiado para a área de transferência!");
   };
 
   return (
@@ -132,60 +158,133 @@ const MasterAdminPanel = () => {
                 </TableHeader>
                 <TableBody>
                   {networks.map((network) => (
-                    <React.Fragment key={network.id}>
-                      <TableRow>
-                        <TableCell className="font-medium">
+                    <TableRow key={network.id} className="hover:bg-slate-50 transition-colors">
+                      <TableCell className="font-medium">
+                        {editingNetworkId === network.id ? (
+                          <Input 
+                            value={editValues.name}
+                            onChange={(e) => setEditValues({...editValues, name: e.target.value})}
+                            className="h-8 text-sm"
+                          />
+                        ) : (
                           <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4 text-slate-400" />
                             {network.name}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-sky-600 text-sm">
-                          <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">/{network.slug}</span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingNetworkId === network.id ? (
+                          <Input 
+                            value={editValues.slug}
+                            onChange={(e) => setEditValues({...editValues, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
+                            className="h-8 text-sm"
+                          />
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="bg-slate-100 px-2 py-0.5 rounded text-xs text-sky-600 font-mono">
+                              /{network.slug}
+                            </span>
                             <Button 
                               variant="ghost" 
-                              size="sm" 
-                              className="flex items-center gap-1 hover:bg-sky-50" 
-                              onClick={() => navigate(`/master/network/${network.id}`)}
+                              size="icon" 
+                              className="h-6 w-6 text-slate-400 hover:text-sky-600"
+                              onClick={() => copyToClipboard(network.slug)}
+                              title="Copiar link de acesso"
                             >
-                              <UserPlus className="h-4 w-4" /> Usuários
+                              <Copy className="h-3 w-3" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="flex items-center gap-1 hover:bg-emerald-50 text-emerald-600" 
-                              onClick={() => navigate(`/master/network/${network.id}`)}
+                            <a 
+                              href={`/login?network=${network.slug}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-slate-400 hover:text-sky-600"
+                              title="Abrir login da rede"
                             >
-                              <Database className="h-4 w-4" /> Dados
-                            </Button>
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-slate-400 hover:text-red-500"
-                              onClick={async () => {
-                                if (confirm(`Deseja realmente excluir a rede ${network.name}? Esta ação é irreversível.`)) {
-                                  const { error } = await (supabase as any).from('networks').delete().eq('id', network.id);
-                                  if (error) toast.error("Erro ao excluir: " + error.message);
-                                  else {
-                                    toast.success("Rede excluída");
-                                    fetchNetworks();
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-2 flex items-center gap-1 hover:bg-sky-50 text-sky-600" 
+                            onClick={() => navigate(`/master/network/${network.id}`)}
+                          >
+                            <UserPlus className="h-3.5 w-3.5" /> 
+                            <span className="hidden lg:inline">Usuários</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-2 flex items-center gap-1 hover:bg-emerald-50 text-emerald-600" 
+                            onClick={() => navigate(`/master/network/${network.id}`)}
+                          >
+                            <Database className="h-3.5 w-3.5" />
+                            <span className="hidden lg:inline">Dados</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          {editingNetworkId === network.id ? (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
+                                onClick={() => handleUpdateNetwork(network.id)}
+                                disabled={isLoading}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-slate-400 hover:bg-slate-100"
+                                onClick={() => setEditingNetworkId(null)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-slate-400 hover:text-sky-600"
+                                onClick={() => {
+                                  setEditingNetworkId(network.id);
+                                  setEditValues({ name: network.name, slug: network.slug });
+                                }}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-slate-400 hover:text-red-500"
+                                onClick={async () => {
+                                  if (confirm(`Deseja realmente excluir a rede ${network.name}? Esta ação é irreversível.`)) {
+                                    const { error } = await (supabase as any).from('networks').delete().eq('id', network.id);
+                                    if (error) toast.error("Erro ao excluir: " + error.message);
+                                    else {
+                                      toast.success("Rede excluída");
+                                      fetchNetworks();
+                                    }
                                   }
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>

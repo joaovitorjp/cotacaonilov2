@@ -19,10 +19,18 @@ const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Removido atalho de teclado para preenchimento de login master
-
+  const [networkInfo, setNetworkInfo] = useState<any>(null);
 
   useEffect(() => {
+    const fetchNetworkInfo = async () => {
+      const slug = searchParams.get('network');
+      if (slug) {
+        const { data } = await (supabase as any).from('networks').select('*').eq('slug', slug).single();
+        if (data) setNetworkInfo(data);
+      }
+    };
+    fetchNetworkInfo();
+
     const oauthError = searchParams.get('oauth_error');
     if (!oauthError) return;
 
@@ -88,7 +96,7 @@ const Login = () => {
       <div className="relative z-10 w-full max-w-[90%] sm:max-w-sm mx-auto p-6 sm:p-8 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
-            Nilo Atacadista
+            {networkInfo ? networkInfo.name : 'Nilo Atacadista'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isSignUp ? 'Criar novo acesso' : 'Acesso administrativo'}
