@@ -15,6 +15,7 @@ import Perfil from "./pages/Perfil.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import MasterAdmin from "./pages/MasterAdmin.tsx";
 import MasterLogin from "./pages/MasterLogin.tsx";
+import MasterAuditLogs from "./pages/MasterAuditLogs.tsx";
 
 import NetworkAdmin from "./pages/NetworkAdmin.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -67,6 +68,15 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/master/logs"
+              element={
+                <ProtectedRoute>
+                  <MasterAuditLogs />
+                </ProtectedRoute>
+              }
+            />
+
 
             <Route
               path="/master/network/:networkId"

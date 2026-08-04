@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Building2, UserPlus, Globe, Plus, Trash2 } from "lucide-react";
+import { Building2, UserPlus, Globe, Plus, Trash2, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const MasterAdminPanel = () => {
@@ -47,7 +47,16 @@ const MasterAdminPanel = () => {
           <h1 className="text-3xl font-bold text-slate-900">Painel Master Admin</h1>
           <p className="text-slate-500">Gerenciamento de Redes e Ecossistemas</p>
         </div>
-        <Building2 className="h-10 w-10 text-sky-600" />
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => navigate('/master/logs')}
+          >
+            <History className="h-4 w-4" /> Logs de Auditoria
+          </Button>
+          <Building2 className="h-10 w-10 text-sky-600" />
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
