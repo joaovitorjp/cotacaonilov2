@@ -651,15 +651,7 @@ const Index = () => {
               >
                 Fornecedores
               </button>
-              {isMaster && (
-                <button 
-                  onClick={() => navigate('/master')}
-                  className="px-4 py-2 rounded-lg text-sm font-bold text-amber-600 hover:bg-amber-50 transition-colors flex items-center gap-1.5"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  Master
-                </button>
-              )}
+              {/* Master link removed */}
               {currentLista && !isFinalized && (
                 <button 
                   onClick={() => setGerarLinkOpen(true)}
@@ -885,18 +877,7 @@ const Index = () => {
       <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
       <PerfilPanel open={perfilOpen} onOpenChange={setPerfilOpen} />
 
-      {/* Ícone de cadeado para área de login Master no Dashboard */}
-      {isAdmin && (
-        <div className="fixed bottom-6 right-6 z-40">
-          <button
-            onClick={() => navigate('/master/login')}
-            className="p-3 bg-card/40 backdrop-blur-md border border-border/40 hover:bg-card/60 rounded-full shadow-lg transition-all duration-300 group"
-            title="Acesso Master"
-          >
-            <ShieldCheck className="w-5 h-5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
-          </button>
-        </div>
-      )}
+      {/* Master lock icon removed */}
 
     </div>
   );

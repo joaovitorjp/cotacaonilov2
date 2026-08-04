@@ -50,19 +50,17 @@ const Login = () => {
     }
     setLoading(true);
     
-    // Removido login especial via campos de email/senha
+    // Network isolation
+    const { data: profile } = await supabase.from('profiles').select('network_id').eq('email', email).maybeSingle();
+    
+    // Default to Nilo if no network specified
+    const networkSlug = searchParams.get('network') || 'nilo';
+    const { data: net } = await (supabase as any).from('networks').select('id').eq('slug', networkSlug).single();
 
-    const slug = searchParams.get('network');
-    if (slug) {
-      const { data: net } = await (supabase as any).from('networks').select('id').eq('slug', slug).single();
-      if (net) {
-        const { data: profile } = await supabase.from('profiles').select('network_id').eq('email', email).maybeSingle();
-        if (profile && profile.network_id !== net.id) {
-          toast.error('Este usuário não pertence a esta rede.');
-          setLoading(false);
-          return;
-        }
-      }
+    if (net && profile && profile.network_id && profile.network_id !== net.id) {
+      toast.error('Este usuário não pertence a esta rede.');
+      setLoading(false);
+      return;
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
