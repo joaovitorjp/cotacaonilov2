@@ -80,7 +80,7 @@ const MasterAdminPanel = () => {
           </div>
         </div>
 
-      <div className="grid md:grid-cols-3 gap-6 px-8">
+        <div className="grid md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
