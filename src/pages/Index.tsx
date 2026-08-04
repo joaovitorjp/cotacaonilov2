@@ -560,9 +560,14 @@ const Index = () => {
 
         {/* Mobile menu toggle */}
         <div className="flex md:hidden items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
-            <LogOut className="h-4 w-4" />
-          </Button>
+          {profile && (
+            <Avatar className="w-8 h-8 border border-slate-200">
+              <AvatarImage src={profile.avatar_url || ''} />
+              <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
+                {profile.nome ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
+              </AvatarFallback>
+            </Avatar>
+          )}
           <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
