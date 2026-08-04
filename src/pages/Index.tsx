@@ -39,7 +39,7 @@ interface RespostaEmpresa {
 }
 
 const Index = () => {
-  const { user, signOut } = useAuth();
+  const { user, network, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);

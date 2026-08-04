@@ -75,7 +75,7 @@ const TIPO_PRECO_LABELS: Record<TipoPrecoOption, string> = {
 };
 
 const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, listaId }) => {
-  const { user } = useAuth();
+  const { user, network } = useAuth();
   const [empresa, setEmpresa] = useState('');
   const [loading, setLoading] = useState(false);
   const [generatedLinks, setGeneratedLinks] = useState<GeneratedLink[]>([]);
@@ -236,7 +236,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     const remetente = userNome ? `\n\nEnviado por: ${userNome}` : '';
     const avisoPreco = tipoPreco ? `\n\nATENÇÃO: Os preços devem ser preenchidos como: ${TIPO_PRECO_LABELS[tipoPreco]}` : '';
     const body = `Olá!\n\nSegue o link para responder a cotação ${cotacaoLabel}:${avisoPreco}\n\nLink de resposta:\n${link}${remetente}`;
-    const subject = `Cotação de Preços - ${listaNome || 'Rede Nilo'}`;
+    const subject = `Cotação de Preços - ${listaNome || (network ? network.name : 'Rede Nilo')}`;
     return { subject: encodeURIComponent(subject), body: encodeURIComponent(body) };
   };
 

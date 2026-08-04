@@ -52,6 +52,18 @@ const Login = () => {
     
     // Removido login especial via campos de email/senha
 
+    const slug = searchParams.get('network');
+    if (slug) {
+      const { data: net } = await (supabase as any).from('networks').select('id').eq('slug', slug).single();
+      if (net) {
+        const { data: profile } = await supabase.from('profiles').select('network_id').eq('email', email).maybeSingle();
+        if (profile && profile.network_id !== net.id) {
+          toast.error('Este usuário não pertence a esta rede.');
+          setLoading(false);
+          return;
+        }
+      }
+    }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
