@@ -205,7 +205,7 @@ const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary/10 selection:text-primary">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/10 selection:text-primary relative">
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-8 py-4 flex items-center justify-between shadow-sm shadow-black/[0.02]">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-primary/10 rounded-2xl">
