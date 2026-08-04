@@ -528,10 +528,10 @@ const Index = () => {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('nome, avatar_url')
+          .select('nome, avatar_url, cargo')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (data) setProfile(data);
+        if (data) setProfile(data as { nome: string; avatar_url: string | null });
       } finally {
         isFetching = false;
       }

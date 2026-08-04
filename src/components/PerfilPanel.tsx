@@ -114,7 +114,7 @@ const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
         .from('profiles')
         .getPublicUrl(filePath);
 
-      setAvatarUrl(publicUrl);
+      setAvatarUrl(`${publicUrl}${publicUrl.includes('?') ? '&' : '?'}t=${Date.now()}`);
       toast.success('Foto carregada! Clique em salvar para confirmar.');
     } catch (error) {
       console.error('Erro no upload:', error);
