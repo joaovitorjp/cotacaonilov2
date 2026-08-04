@@ -247,6 +247,13 @@ const NetworkAdminPanel = () => {
           >
             <Users className="h-4 w-4" /> Painel de Gestão
           </Button>
+          <Button 
+            variant={activeTab === 'audit' ? 'default' : 'outline'} 
+            className="flex items-center gap-2"
+            onClick={() => setActiveTab('audit')}
+          >
+            <History className="h-4 w-4" /> Auditoria
+          </Button>
         </div>
 
         {activeTab === 'explorer' ? (
