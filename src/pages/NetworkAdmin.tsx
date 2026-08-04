@@ -514,9 +514,13 @@ const NetworkAdminPanel = () => {
                           const table = editingItem.type === 'user' ? 'profiles' : 
                                        editingItem.type === 'quotation' ? 'listas' : 'fornecedores';
                           
+                          // Clone the data to remove non-table fields like user_roles
+                          const updateData = { ...editingItem.data };
+                          delete updateData.user_roles;
+                          
                           const { error } = await (supabase as any)
                             .from(table)
-                            .update(editingItem.data)
+                            .update(updateData)
                             .eq('id', editingItem.id);
                           
                           if (error) throw error;
