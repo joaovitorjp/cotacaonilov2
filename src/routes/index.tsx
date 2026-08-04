@@ -3,7 +3,7 @@ import React from 'react';
 const SecurityIssues = () => {
   return (
     <div>
-      Load the security issues from the scan results and fix the selected issues.
+      Verificar se o avatar aparece imediatamente após o upload e o salvamento em todas as telas (cabeçalho e PerfilPanel).. ainda nao está aparecendo.
     </div>
   );
 };
