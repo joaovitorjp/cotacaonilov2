@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Users, UserPlus, Shield, ArrowLeft, Loader2, Trash2, Folder, FileText, Package, ChevronRight, LayoutGrid, Edit, Eye, Save, ToggleLeft, ToggleRight, Building2 } from "lucide-react";
+import { Users, UserPlus, Shield, ArrowLeft, Loader2, Trash2, Folder, FileText, Package, ChevronRight, LayoutGrid, Edit, Eye, Save, ToggleLeft, ToggleRight, Building2, History } from "lucide-react";
 
 const NetworkAdminPanel = () => {
   const { networkId } = useParams();
