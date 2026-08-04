@@ -560,7 +560,7 @@ const Index = () => {
                 <Table className="w-5 h-5" />
               </div>
               <h1 className="text-xl font-display font-bold text-slate-800 tracking-tight hidden sm:block">
-                CISS & CONSINCO
+                Nilo Atacadista
               </h1>
             </button>
 
