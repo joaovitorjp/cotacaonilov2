@@ -135,6 +135,8 @@ const NetworkAdminPanel = () => {
 
         if (roleError) throw roleError;
 
+        await logMasterAction('vincular', 'profile', profile.id, { email: newUser.email, role: newUser.role });
+
         toast.success("Usuário configurado na rede com sucesso!");
         fetchNetworkData();
         setNewUser({ email: '', role: 'user' });
