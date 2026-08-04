@@ -514,6 +514,84 @@ const Index = () => {
     else if (view === 'finalizadas') setFinalizadasOpen(true);
   };
 
+  const [profile, setProfile] = useState<{ nome: string; avatar_url: string | null } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchProfile = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('nome, avatar_url')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) setProfile(data);
+    };
+    fetchProfile();
+  }, [user, perfilOpen]);
+
+  // Check if deadline passed
+  const isExpired = currentLista?.prazo ? new Date(currentLista.prazo) < new Date() : false;
+
+  const navItems = [
+    { label: 'Início', icon: Home, action: handleBackToDashboard },
+    { label: 'Importar', icon: Upload, action: () => { setImportOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Abertas', icon: FolderOpen, action: () => { setCarregarOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Gerar Link', icon: Link2, action: () => { setGerarLinkOpen(true); setMobileMenuOpen(false); }, disabled: !currentLista || isFinalized },
+    { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Chat IA', icon: MessageCircle, action: () => { setChatOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Perfil', icon: UserIcon, action: () => { setPerfilOpen(true); setMobileMenuOpen(false); } },
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+      <ProfileGate />
+      
+      {/* Sidebar Desktop */}
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 sticky top-0 h-screen">
+        <div className="p-6 border-b border-slate-100 flex items-center gap-3">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-md shadow-primary/20">
+            <Table className="w-5 h-5" />
+          </div>
+          <h1 className="text-xl font-display font-bold text-slate-800 tracking-tight">CISS & CONSINCO</h1>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-2">
+          <SidebarLink icon={<Home />} label="Início" active={showDashboard} onClick={handleBackToDashboard} />
+          
+          <div className="pt-4 pb-2 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ações Rápidas</div>
+          <SidebarLink icon={<Upload />} label="Nova Cotação" onClick={() => setImportOpen(true)} />
+          <SidebarLink icon={<Link2 />} label="Gerar Links" onClick={() => setGerarLinkOpen(true)} />
+          <SidebarLink icon={<Users />} label="Fornecedores" onClick={() => setFornecedoresOpen(true)} />
+          
+          <div className="pt-4 pb-2 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Painéis</div>
+          <SidebarLink icon={<BarChart3 />} label="Análise" active={!showDashboard && activeTab === 'analise'} onClick={() => { if (!showDashboard) setActiveTab('analise'); }} />
+          <SidebarLink icon={<MessageCircle />} label="Assistente IA" onClick={() => setChatOpen(true)} />
+        </nav>
+
+        <div className="p-4 border-t border-slate-100">
+          <button 
+            onClick={() => setPerfilOpen(true)}
+            className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-slate-50 transition-colors group"
+          >
+            <Avatar className="w-9 h-9 border border-slate-200 group-hover:border-primary/30 transition-colors">
+              <AvatarImage src={profile?.avatar_url || ''} />
+              <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
+                {profile?.nome ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-semibold text-slate-700 truncate">{profile?.nome || 'Meu Perfil'}</p>
+              <p className="text-[10px] text-slate-400 font-medium">Configurações</p>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile Content Wrapper */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+
+
   // Check if deadline passed
   const isExpired = currentLista?.prazo ? new Date(currentLista.prazo) < new Date() : false;
 
