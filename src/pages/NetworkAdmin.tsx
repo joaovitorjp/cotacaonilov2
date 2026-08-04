@@ -628,7 +628,11 @@ const NetworkAdminPanel = () => {
                   </TableRow>
                 ) : (
                   auditLogs.map((log) => (
-                    <TableRow key={log.id}>
+                    <TableRow 
+                      key={log.id} 
+                      className="hover:bg-slate-50 cursor-pointer transition-colors"
+                      onClick={() => setSelectedAuditLog(log)}
+                    >
                       <TableCell className="text-xs text-slate-500">
                         {new Date(log.created_at).toLocaleString('pt-BR')}
                       </TableCell>
@@ -650,7 +654,7 @@ const NetworkAdminPanel = () => {
                         <div className="text-[10px] text-slate-400">ID: {log.entity_id.slice(0, 8)}...</div>
                       </TableCell>
                       <TableCell className="text-[10px] text-slate-400 max-w-[200px] truncate">
-                        {log.details ? JSON.stringify(log.details) : '-'}
+                        {log.details ? (typeof log.details === 'string' ? log.details : JSON.stringify(log.details)) : '-'}
                       </TableCell>
                     </TableRow>
                   ))
