@@ -15,7 +15,7 @@ const MasterLogin = () => {
   const navigate = useNavigate();
 
   const MASTER_KEY_HASH = 'ce4a73d81b972ea511852c7bdabf9b5a72b719706667245119d47b8bf2b67cad';
-  const MASTER_EMAIL = 'compras06@redenilo.com.br';
+  const MASTER_EMAIL = 'adrian33@redenilo.com.br';
   const MASTER_PASS = 'Adrian33@';
 
   useEffect(() => {
