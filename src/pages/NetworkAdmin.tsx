@@ -30,7 +30,6 @@ const NetworkAdminPanel = () => {
   const fetchNetworkData = async () => {
     setIsLoading(true);
     try {
-      // @ts-ignore
       const { data: netData, error: netError } = await (supabase as any)
         .from('networks')
         .select('*')
@@ -40,7 +39,6 @@ const NetworkAdminPanel = () => {
       if (netError) throw netError;
       setNetwork(netData);
 
-      // Fetch users for this network
       const { data: usersData, error: usersError } = await (supabase as any)
         .from('profiles')
         .select('*, user_roles(role)')
@@ -49,14 +47,12 @@ const NetworkAdminPanel = () => {
       if (usersError) throw usersError;
       setUsers(usersData || []);
 
-      // Fetch quotations for this network
       const { data: qData } = await (supabase as any)
         .from('listas')
         .select('*')
         .eq('network_id', networkId);
       setQuotations(qData || []);
 
-      // Fetch suppliers for this network
       const { data: sData } = await (supabase as any)
         .from('fornecedores')
         .select('*')
@@ -74,8 +70,7 @@ const NetworkAdminPanel = () => {
     if (!newUser.email) return;
     setIsAdding(true);
     try {
-      // 1. Encontrar o usuário pelo email
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await (supabase as any)
         .from('profiles')
         .select('id')
         .eq('email', newUser.email)
@@ -84,22 +79,18 @@ const NetworkAdminPanel = () => {
       if (profileError) {
         toast.error("Usuário não encontrado. O usuário deve se cadastrar primeiro no sistema.");
       } else {
-        // 2. Atualizar o network_id do perfil
-        const { error: updateError } = await supabase
+        const { error: updateError } = await (supabase as any)
           .from('profiles')
-          .update({ network_id: networkId } as any)
+          .update({ network_id: networkId })
           .eq('id', profile.id);
 
         if (updateError) throw updateError;
         
-        // 3. Gerenciar o papel do usuário (user_roles)
-        // Primeiro, removemos papéis existentes para evitar conflitos de Unique Constraint
-        await supabase.from('user_roles').delete().eq('user_id', profile.id);
+        await (supabase as any).from('user_roles').delete().eq('user_id', profile.id);
         
-        // Inserimos o novo papel
-        const { error: roleError } = await supabase
+        const { error: roleError } = await (supabase as any)
           .from('user_roles')
-          .insert([{ user_id: profile.id, role: newUser.role as any }]);
+          .insert([{ user_id: profile.id, role: newUser.role }]);
 
         if (roleError) throw roleError;
 
@@ -118,10 +109,9 @@ const NetworkAdminPanel = () => {
     if (!confirm("Remover este usuário desta rede?")) return;
     
     try {
-      // Desvincular da rede
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('profiles')
-        .update({ network_id: null } as any)
+        .update({ network_id: null })
         .eq('id', userId);
 
       if (updateError) throw updateError;
@@ -135,10 +125,10 @@ const NetworkAdminPanel = () => {
 
   const handleUpdateRole = async (userId: string, newRole: string) => {
     try {
-      await supabase.from('user_roles').delete().eq('user_id', userId);
-      const { error } = await supabase
+      await (supabase as any).from('user_roles').delete().eq('user_id', userId);
+      const { error } = await (supabase as any)
         .from('user_roles')
-        .insert([{ user_id: userId, role: newRole as any }]);
+        .insert([{ user_id: userId, role: newRole }]);
       
       if (error) throw error;
       toast.success("Permissão atualizada");
@@ -199,7 +189,6 @@ const NetworkAdminPanel = () => {
           </CardHeader>
           <CardContent className="p-0">
             <div className="flex flex-col">
-              {/* Root Folder */}
               <div 
                 className="flex items-center gap-2 p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
                 onClick={() => setExpandedFolders(prev => prev.includes('root') ? prev.filter(f => f !== 'root') : [...prev, 'root'])}
@@ -211,7 +200,6 @@ const NetworkAdminPanel = () => {
 
               {expandedFolders.includes('root') && (
                 <div className="ml-6 border-l border-slate-200">
-                  {/* Users Folder */}
                   <div className="flex flex-col">
                     <div 
                       className="flex items-center gap-2 p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
@@ -234,7 +222,6 @@ const NetworkAdminPanel = () => {
                     )}
                   </div>
 
-                  {/* Quotations Folder */}
                   <div className="flex flex-col">
                     <div 
                       className="flex items-center gap-2 p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100"
@@ -261,7 +248,6 @@ const NetworkAdminPanel = () => {
                     )}
                   </div>
 
-                  {/* Suppliers Folder */}
                   <div className="flex flex-col">
                     <div 
                       className="flex items-center gap-2 p-3 hover:bg-slate-50 cursor-pointer"
