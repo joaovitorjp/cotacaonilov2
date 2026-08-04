@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Package, Clock, CheckCircle2, Users } from 'lucide-react';
+import { Package, Clock, CheckCircle2, Users, Link2 } from 'lucide-react';
 
 interface DashboardStats {
   abertas: number;
