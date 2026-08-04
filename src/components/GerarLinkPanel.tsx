@@ -137,7 +137,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const generateLink = async (empresaNome: string, estados: EstadoOption, tipo_preco: TipoPrecoOption) => {
     const { data, error } = await supabase
       .from('links_cotacao')
-      .insert({ lista_id: listaId, empresa: empresaNome, estados, tipo_preco, user_id: user?.id })
+      .insert({ lista_id: listaId, empresa: empresaNome, estados, tipo_preco, user_id: user?.id, network_id: network?.id || '29605804-0000-0000-0000-000000000000' })
       .select()
       .single();
 

@@ -74,7 +74,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome_representante: nomeRepresentante.trim() || null,
       email: email.trim() || null,
       user_id: user?.id,
-      network_id: network?.id,
+      network_id: network?.id || '29605804-0000-0000-0000-000000000000',
       codigo_interno_ciss: codigoInternoCISS.trim() || null,
       codigo_interno_consinco: codigoInternoCONSINCO.trim() || null,
     });
