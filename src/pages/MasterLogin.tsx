@@ -15,8 +15,6 @@ const MasterLogin = () => {
   const navigate = useNavigate();
 
   const MASTER_KEY_HASH = 'ce4a73d81b972ea511852c7bdabf9b5a72b719706667245119d47b8bf2b67cad';
-  const MASTER_EMAIL = 'adrian33@redenilo.com.br';
-  const MASTER_PASS = 'Adrian33@';
 
   useEffect(() => {
     // Obter IP para logs
@@ -59,19 +57,27 @@ const MasterLogin = () => {
     setLoading(true);
     
     if (accessKey === MASTER_KEY_HASH) {
-      await logAttempt('success');
-      setAttempts(0);
-      toast.success('Acesso Master concedido!');
-      // Usamos sessionStorage para persistir o acesso master nesta sessão sem depender de auth do Supabase
-      sessionStorage.setItem('master_access_token', MASTER_KEY_HASH);
-      navigate('/master');
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email: 'adrian33@redenilo.com.br', 
+        password: 'Adrian33@' 
+      });
+      
+      if (error) {
+        await logAttempt('failure');
+        toast.error('Erro ao autenticar acesso master.');
+      } else {
+        await logAttempt('success');
+        setAttempts(0);
+        toast.success('Acesso Master concedido!');
+        navigate('/master');
+      }
     } else {
       await logAttempt('failure');
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
       
       if (newAttempts >= 5) {
-        const lockTime = Date.now() + 60000;
+        const lockTime = Date.now() + 60000; // 1 minuto de bloqueio
         setBlockedUntil(lockTime);
         toast.error('Muitas tentativas falhas. Acesso bloqueado por 1 minuto.');
       } else {

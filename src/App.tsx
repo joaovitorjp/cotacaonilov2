@@ -16,10 +16,8 @@ import AdminPanel from "./pages/AdminPanel.tsx";
 import MasterAdmin from "./pages/MasterAdmin.tsx";
 import MasterLogin from "./pages/MasterLogin.tsx";
 import MasterAuditLogs from "./pages/MasterAuditLogs.tsx";
-import MasterProtectedRoute from "./components/MasterProtectedRoute.tsx";
 
 import NetworkAdmin from "./pages/NetworkAdmin.tsx";
-import NetworkRouter from "./pages/NetworkRouter.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -65,17 +63,17 @@ const App = () => (
             <Route
               path="/master"
               element={
-                <MasterProtectedRoute>
+                <ProtectedRoute>
                   <MasterAdmin />
-                </MasterProtectedRoute>
+                </ProtectedRoute>
               }
             />
             <Route
               path="/master/logs"
               element={
-                <MasterProtectedRoute>
+                <ProtectedRoute>
                   <MasterAuditLogs />
-                </MasterProtectedRoute>
+                </ProtectedRoute>
               }
             />
 
@@ -83,13 +81,11 @@ const App = () => (
             <Route
               path="/master/network/:networkId"
               element={
-                <MasterProtectedRoute>
+                <ProtectedRoute>
                   <NetworkAdmin />
-                </MasterProtectedRoute>
+                </ProtectedRoute>
               }
             />
-            {/* Rotas dinâmicas por slug de rede */}
-            <Route path="/n/:slug" element={<NetworkRouter />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

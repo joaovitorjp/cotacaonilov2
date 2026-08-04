@@ -22,29 +22,11 @@ const Login = () => {
   const [networkInfo, setNetworkInfo] = useState<any>(null);
 
   useEffect(() => {
-    // Reset network info when search params change to avoid stale state
-    setNetworkInfo(null);
-
     const fetchNetworkInfo = async () => {
-      // Prioridade para o parâmetro na URL, senão tenta inferir da rota /n/:slug
-      const slugFromParam = searchParams.get('network');
-      const slugFromPath = window.location.pathname.startsWith('/n/') ? window.location.pathname.split('/')[2] : null;
-      const slug = slugFromParam || slugFromPath;
-      
+      const slug = searchParams.get('network');
       if (slug) {
-        const { data, error } = await supabase
-          .from('networks')
-          .select('*')
-          .eq('slug', slug)
-          .maybeSingle();
-        
-        if (data) {
-          setNetworkInfo(data);
-        } else {
-          setNetworkInfo(null);
-        }
-      } else {
-        setNetworkInfo(null);
+        const { data } = await (supabase as any).from('networks').select('*').eq('slug', slug).single();
+        if (data) setNetworkInfo(data);
       }
     };
     fetchNetworkInfo();
@@ -52,13 +34,6 @@ const Login = () => {
     const oauthError = searchParams.get('oauth_error');
     if (!oauthError) return;
 
-    toast.error(decodeURIComponent(oauthError));
-    navigate('/login', { replace: true });
-  }, [searchParams.get('network'), window.location.pathname]); // Apenas quando o slug da rede ou path mudar
-
-  useEffect(() => {
-    const oauthError = searchParams.get('oauth_error');
-    if (!oauthError) return;
     toast.error(decodeURIComponent(oauthError));
     navigate('/login', { replace: true });
   }, [navigate, searchParams]);
