@@ -49,6 +49,60 @@ const Index = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const [profile, setProfile] = useState<{ nome: string; avatar_url: string | null } | null>(null);
+  const [isFetchingProfile, setIsFetchingProfile] = useState(false);
+  const lastFetchRef = useRef<number>(0);
+
+  const fetchUserProfile = useCallback(async () => {
+    if (!user || isFetchingProfile) return;
+    
+    // Throttle to avoid duplicate fetches
+    const now = Date.now();
+    if (now - lastFetchRef.current < 1000) return;
+    lastFetchRef.current = now;
+
+    setIsFetchingProfile(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('nome, avatar_url')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+    } finally {
+      setIsFetchingProfile(false);
+    }
+  }, [user, isFetchingProfile]);
+
+  useEffect(() => {
+    fetchUserProfile();
+
+    const handleProfileUpdate = () => {
+      fetchUserProfile();
+    };
+
+    window.addEventListener('profile-updated', handleProfileUpdate);
+    
+    // Subscribe only to user's profile updates
+    const channel = supabase
+      .channel('profile-sync')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `user_id=eq.${user?.id}` },
+        () => fetchUserProfile()
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('profile-updated', handleProfileUpdate);
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchUserProfile]);
 
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
   const [respostas, setRespostas] = useState<RespostaEmpresa[]>([]);
