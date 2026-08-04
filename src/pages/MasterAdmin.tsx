@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Building2, UserPlus, Globe, Plus, Trash2, History } from "lucide-react";
+import { Building2, UserPlus, Globe, Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const MasterAdminPanel = () => {
@@ -81,115 +81,116 @@ const MasterAdminPanel = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Plus className="h-5 w-5" /> Nova Rede
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Nome da Empresa</label>
-              <Input 
-                placeholder="Ex: Rede Preço Baixo" 
-                value={newNetwork.name}
-                onChange={(e) => setNewNetwork({...newNetwork, name: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Slug (URL)</label>
-              <Input 
-                placeholder="ex: preco-baixo" 
-                value={newNetwork.slug}
-                onChange={(e) => setNewNetwork({...newNetwork, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
-              />
-            </div>
-            <Button 
-              className="w-full bg-sky-600 hover:bg-sky-700" 
-              onClick={handleCreateNetwork}
-              disabled={isLoading}
-            >
-              Criar Ecossistema
-            </Button>
-          </CardContent>
-        </Card>
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Plus className="h-5 w-5" /> Nova Rede
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nome da Empresa</label>
+                <Input 
+                  placeholder="Ex: Rede Preço Baixo" 
+                  value={newNetwork.name}
+                  onChange={(e) => setNewNetwork({...newNetwork, name: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Slug (URL)</label>
+                <Input 
+                  placeholder="ex: preco-baixo" 
+                  value={newNetwork.slug}
+                  onChange={(e) => setNewNetwork({...newNetwork, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
+                />
+              </div>
+              <Button 
+                className="w-full bg-sky-600 hover:bg-sky-700" 
+                onClick={handleCreateNetwork}
+                disabled={isLoading}
+              >
+                Criar Ecossistema
+              </Button>
+            </CardContent>
+          </Card>
 
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Globe className="h-5 w-5" /> Redes Ativas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>Slug / Link</TableHead>
-                  <TableHead>Usuários</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {networks.map((network) => (
-                  <React.Fragment key={network.id}>
-                    <TableRow>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-slate-400" />
-                          {network.name}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sky-600 text-sm">
-                        <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">/{network.slug}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="flex items-center gap-1 hover:bg-sky-50" 
-                          onClick={() => navigate(`/master/network/${network.id}`)}
-                        >
-                          <UserPlus className="h-4 w-4" /> Gerenciar Usuários
-                        </Button>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Globe className="h-5 w-5" /> Redes Ativas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Slug / Link</TableHead>
+                    <TableHead>Usuários</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {networks.map((network) => (
+                    <React.Fragment key={network.id}>
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-slate-400" />
+                            {network.name}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sky-600 text-sm">
+                          <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">/{network.slug}</span>
+                        </TableCell>
+                        <TableCell>
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="text-slate-400 hover:text-red-500"
-                            onClick={async () => {
-                              if (confirm(`Deseja realmente excluir a rede ${network.name}? Esta ação é irreversível.`)) {
-                                const { error } = await (supabase as any).from('networks').delete().eq('id', network.id);
-                                if (error) toast.error("Erro ao excluir: " + error.message);
-                                else {
-                                  toast.success("Rede excluída");
-                                  fetchNetworks();
-                                }
-                              }
-                            }}
+                            className="flex items-center gap-1 hover:bg-sky-50" 
+                            onClick={() => navigate(`/master/network/${network.id}`)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <UserPlus className="h-4 w-4" /> Gerenciar Usuários
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Resumo do Ecossistema</h3>
-        <p className="text-slate-600 text-sm leading-relaxed">
-          Este painel permite que você, como criador do sistema, escale a plataforma para outras redes de supermercados ou atacados. 
-          Cada rede adicionada terá seu próprio isolamento de dados, personalização visual e gerenciamento independente de usuários 
-          (comuns e administradores da própria rede).
-        </p>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-slate-400 hover:text-red-500"
+                              onClick={async () => {
+                                if (confirm(`Deseja realmente excluir a rede ${network.name}? Esta ação é irreversível.`)) {
+                                  const { error } = await (supabase as any).from('networks').delete().eq('id', network.id);
+                                  if (error) toast.error("Erro ao excluir: " + error.message);
+                                  else {
+                                    toast.success("Rede excluída");
+                                    fetchNetworks();
+                                  }
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="text-lg font-semibold mb-4">Resumo do Ecossistema</h3>
+          <p className="text-slate-600 text-sm leading-relaxed">
+            Este painel permite que você, como criador do sistema, escale a plataforma para outras redes de supermercados ou atacados. 
+            Cada rede adicionada terá seu próprio isolamento de dados, personalização visual e gerenciamento independente de usuários 
+            (comuns e administradores da própria rede).
+          </p>
+        </div>
       </div>
     </div>
   );
