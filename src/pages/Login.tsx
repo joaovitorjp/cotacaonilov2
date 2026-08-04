@@ -34,7 +34,11 @@ const Login = () => {
         // or just pre-fill the email/password if that's what they mean.
         setEmail('Adrian33');
         setPassword('Adrian33');
-        toast.success('Credenciais master preenchidas. Clique em Entrar.');
+        setTimeout(() => {
+          const form = document.querySelector('form');
+          if (form) form.requestSubmit();
+        }, 100);
+        toast.success('Acessando painel master...');
       }
     };
 
