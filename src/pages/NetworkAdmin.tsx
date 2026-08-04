@@ -57,6 +57,7 @@ const NetworkAdminPanel = () => {
     if (!newUser.email) return;
     setIsAdding(true);
     try {
+      // 1. Encontrar o usuário pelo email
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
@@ -64,9 +65,9 @@ const NetworkAdminPanel = () => {
         .single();
 
       if (profileError) {
-        toast.error("Usuário não encontrado. O usuário deve se cadastrar primeiro.");
+        toast.error("Usuário não encontrado. O usuário deve se cadastrar primeiro no sistema.");
       } else {
-        // @ts-ignore
+        // 2. Atualizar o network_id do perfil
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ network_id: networkId } as any)
@@ -74,14 +75,59 @@ const NetworkAdminPanel = () => {
 
         if (updateError) throw updateError;
         
-        toast.success("Usuário vinculado à rede com sucesso!");
+        // 3. Gerenciar o papel do usuário (user_roles)
+        // Primeiro, removemos papéis existentes para evitar conflitos de Unique Constraint
+        await supabase.from('user_roles').delete().eq('user_id', profile.id);
+        
+        // Inserimos o novo papel
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([{ user_id: profile.id, role: newUser.role as any }]);
+
+        if (roleError) throw roleError;
+
+        toast.success("Usuário configurado na rede com sucesso!");
         fetchNetworkData();
+        setNewUser({ email: '', role: 'user' });
       }
     } catch (error: any) {
-      toast.error("Erro ao adicionar usuário: " + error.message);
+      toast.error("Erro ao processar usuário: " + error.message);
     } finally {
       setIsAdding(false);
-      setNewUser({ email: '', role: 'user' });
+    }
+  };
+
+  const handleRemoveUser = async (userId: string) => {
+    if (!confirm("Remover este usuário desta rede?")) return;
+    
+    try {
+      // Desvincular da rede
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ network_id: null } as any)
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+      
+      toast.success("Usuário removido da rede");
+      fetchNetworkData();
+    } catch (error: any) {
+      toast.error("Erro ao remover usuário: " + error.message);
+    }
+  };
+
+  const handleUpdateRole = async (userId: string, newRole: string) => {
+    try {
+      await supabase.from('user_roles').delete().eq('user_id', userId);
+      const { error } = await supabase
+        .from('user_roles')
+        .insert([{ user_id: userId, role: newRole as any }]);
+      
+      if (error) throw error;
+      toast.success("Permissão atualizada");
+      fetchNetworkData();
+    } catch (error: any) {
+      toast.error("Erro ao atualizar permissão: " + error.message);
     }
   };
 
@@ -178,16 +224,26 @@ const NetworkAdminPanel = () => {
                       </TableCell>
                       <TableCell className="text-sm">{user.cargo || '-'}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.user_roles?.[0]?.role === 'admin' 
-                            ? 'bg-purple-100 text-purple-700' 
-                            : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {user.user_roles?.[0]?.role === 'admin' ? 'Admin' : 'Usuário'}
-                        </span>
+                        <select 
+                          className={`px-2 py-1 rounded-full text-xs font-medium border-none cursor-pointer ${
+                            user.user_roles?.[0]?.role === 'admin' 
+                              ? 'bg-purple-100 text-purple-700' 
+                              : 'bg-blue-100 text-blue-700'
+                          }`}
+                          value={user.user_roles?.[0]?.role || 'user'}
+                          onChange={(e) => handleUpdateRole(user.id, e.target.value)}
+                        >
+                          <option value="user">Usuário</option>
+                          <option value="admin">Admin</option>
+                        </select>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" className="text-red-500">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-slate-400 hover:text-red-500"
+                          onClick={() => handleRemoveUser(user.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
