@@ -400,7 +400,6 @@ const NetworkAdminPanel = () => {
         </div>
       )}
     </div>
-    </div>
   );
 };
 
