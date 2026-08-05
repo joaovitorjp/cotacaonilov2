@@ -820,7 +820,7 @@ const Index = () => {
               const marker = [{ __manual_states: states }] as any;
               const { error } = await supabase
                 .from('respostas')
-                .insert({ lista_id: currentLista.id, empresa, resposta: marker, user_id: user?.id });
+                .insert({ lista_id: currentLista.id, empresa, resposta: marker, user_id: user?.id, empresa_id: '29605804-0000-0000-0000-000000000000' } as any);
               if (error) {
                 toast.error('Erro ao adicionar fornecedor.');
               } else {

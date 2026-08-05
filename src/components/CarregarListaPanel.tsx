@@ -152,7 +152,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
     try {
       const { data: novaLista, error } = await supabase
         .from('listas')
-        .insert({ nome: duplicateName.trim(), produtos: duplicateTarget.produtos as any, status: 'aberta', user_id: user?.id })
+        .insert({ nome: duplicateName.trim(), produtos: duplicateTarget.produtos as any, status: 'aberta', user_id: user?.id, empresa_id: '29605804-0000-0000-0000-000000000000' } as any)
         .select().single();
       if (error || !novaLista) throw error;
 
@@ -173,7 +173,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
             ...(sel.go && item.preco_go !== undefined ? { preco_go: item.preco_go } : {}),
           })),
         }));
-        await supabase.from('respostas').insert(inserts);
+        await supabase.from('respostas').insert(inserts as any);
       }
 
       toast.success(`Lista replicada como "${novaLista.nome}".`);
