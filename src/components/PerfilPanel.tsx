@@ -73,8 +73,9 @@ const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
             email: user.email ?? emailLocal, 
             nome: cleanNome,
             cargo: cargo.trim(),
-            avatar_url: avatarUrl
-          },
+            avatar_url: avatarUrl,
+            empresa_id: '29605804-0000-0000-0000-000000000000'
+          } as any,
           { onConflict: 'user_id' }
         );
 
