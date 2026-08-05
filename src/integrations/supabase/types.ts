@@ -157,6 +157,33 @@ export type Database = {
         }
         Relationships: []
       }
+      empresas: {
+        Row: {
+          cnpj: string | null
+          cor_primaria: string | null
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          nome: string
+        }
+        Insert: {
+          cnpj?: string | null
+          cor_primaria?: string | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          nome: string
+        }
+        Update: {
+          cnpj?: string | null
+          cor_primaria?: string | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+        }
+        Relationships: []
+      }
       estoques_manuais: {
         Row: {
           created_at: string
@@ -270,6 +297,7 @@ export type Database = {
           contato: string | null
           created_at: string
           email: string | null
+          empresa_id: string
           id: string
           network_id: string | null
           nome: string
@@ -284,6 +312,7 @@ export type Database = {
           contato?: string | null
           created_at?: string
           email?: string | null
+          empresa_id: string
           id?: string
           network_id?: string | null
           nome: string
@@ -298,6 +327,7 @@ export type Database = {
           contato?: string | null
           created_at?: string
           email?: string | null
+          empresa_id?: string
           id?: string
           network_id?: string | null
           nome?: string
@@ -306,6 +336,13 @@ export type Database = {
           whatsapp?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fornecedores_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fornecedores_network_id_fkey"
             columns: ["network_id"]
@@ -319,6 +356,7 @@ export type Database = {
         Row: {
           created_at: string
           empresa: string
+          empresa_id: string
           estados: string
           id: string
           lista_id: string
@@ -331,6 +369,7 @@ export type Database = {
         Insert: {
           created_at?: string
           empresa: string
+          empresa_id: string
           estados?: string
           id?: string
           lista_id: string
@@ -343,6 +382,7 @@ export type Database = {
         Update: {
           created_at?: string
           empresa?: string
+          empresa_id?: string
           estados?: string
           id?: string
           lista_id?: string
@@ -353,6 +393,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "links_cotacao_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "links_cotacao_lista_id_fkey"
             columns: ["lista_id"]
@@ -372,6 +419,7 @@ export type Database = {
       listas: {
         Row: {
           created_at: string
+          empresa_id: string
           id: string
           network_id: string | null
           nome: string
@@ -383,6 +431,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          empresa_id: string
           id?: string
           network_id?: string | null
           nome: string
@@ -394,6 +443,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          empresa_id?: string
           id?: string
           network_id?: string | null
           nome?: string
@@ -404,6 +454,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "listas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "listas_network_id_fkey"
             columns: ["network_id"]
@@ -525,7 +582,9 @@ export type Database = {
           cargo: string | null
           created_at: string
           email: string
+          empresa_id: string
           id: string
+          is_super_admin: boolean | null
           network_id: string | null
           nome: string
           user_id: string
@@ -535,7 +594,9 @@ export type Database = {
           cargo?: string | null
           created_at?: string
           email?: string
+          empresa_id: string
           id?: string
+          is_super_admin?: boolean | null
           network_id?: string | null
           nome?: string
           user_id: string
@@ -545,12 +606,21 @@ export type Database = {
           cargo?: string | null
           created_at?: string
           email?: string
+          empresa_id?: string
           id?: string
+          is_super_admin?: boolean | null
           network_id?: string | null
           nome?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_network_id_fkey"
             columns: ["network_id"]
@@ -564,6 +634,7 @@ export type Database = {
         Row: {
           created_at: string
           empresa: string
+          empresa_id: string
           id: string
           lista_id: string
           network_id: string | null
@@ -573,6 +644,7 @@ export type Database = {
         Insert: {
           created_at?: string
           empresa: string
+          empresa_id: string
           id?: string
           lista_id: string
           network_id?: string | null
@@ -582,6 +654,7 @@ export type Database = {
         Update: {
           created_at?: string
           empresa?: string
+          empresa_id?: string
           id?: string
           lista_id?: string
           network_id?: string | null
@@ -589,6 +662,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "respostas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "respostas_lista_id_fkey"
             columns: ["lista_id"]
