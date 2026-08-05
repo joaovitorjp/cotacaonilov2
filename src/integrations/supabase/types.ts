@@ -165,6 +165,7 @@ export type Database = {
           id: string
           logo_url: string | null
           nome: string
+          slug: string | null
         }
         Insert: {
           cnpj?: string | null
@@ -173,6 +174,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome: string
+          slug?: string | null
         }
         Update: {
           cnpj?: string | null
@@ -181,6 +183,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome?: string
+          slug?: string | null
         }
         Relationships: []
       }
