@@ -43,7 +43,7 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
-  // const [isMaster, setIsMaster] = useState(false); (Removed)
+  const [isMaster, setIsMaster] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
@@ -95,7 +95,7 @@ const Index = () => {
       
       const roleList = roles?.map(r => r.role) || [];
       setIsAdmin(roleList.includes('admin'));
-      // setIsMaster removed
+      setIsMaster(roleList.includes('admin')); // In this system admin = master for now as requested per history
     };
 
     checkRoles();
@@ -109,7 +109,7 @@ const Index = () => {
     const channel = supabase
       .channel('profile-sync')
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `user_id=eq.${user?.id}` },
         () => fetchUserProfile()
       )
@@ -162,7 +162,7 @@ const Index = () => {
     const channel = supabase
       .channel(`respostas-${currentLista.id}`)
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         {
           event: 'INSERT',
           schema: 'public',
@@ -176,7 +176,7 @@ const Index = () => {
         }
       )
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         {
           event: 'UPDATE',
           schema: 'public',
@@ -877,7 +877,15 @@ const Index = () => {
       <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
       <PerfilPanel open={perfilOpen} onOpenChange={setPerfilOpen} />
 
-      {/* Master lock icon removed */}
+      {isMaster && (
+        <button
+          onClick={() => navigate('/master-login')}
+          className="fixed bottom-4 right-4 p-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full text-slate-400 hover:text-primary transition-all z-50 shadow-lg"
+          title="Painel Master"
+        >
+          <LucideIcon name="lock" className="w-4 h-4" />
+        </button>
+      )}
 
     </div>
   );
