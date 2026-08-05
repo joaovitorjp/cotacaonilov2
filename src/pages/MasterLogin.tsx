@@ -29,15 +29,15 @@ const MasterLogin = () => {
       await supabase.from('audit_logs').insert({ 
         action: 'MASTER_LOGIN', 
         details: 'Login bem-sucedido', 
-        ip 
-      });
+        status: 'sucesso'
+      } as any);
       navigate('/master');
     } else {
       await supabase.from('audit_logs').insert({ 
         action: 'MASTER_LOGIN_FAILED', 
         details: 'Chave inválida', 
-        ip 
-      });
+        status: 'erro'
+      } as any);
       toast.error('Chave de acesso inválida.');
     }
     setLoading(false);

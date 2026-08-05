@@ -15,8 +15,6 @@ import Perfil from "./pages/Perfil.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import MasterAdmin from "./pages/MasterAdmin.tsx";
 import MasterLogin from "./pages/MasterLogin.tsx";
-
-// Network admin removed
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -58,7 +56,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            {/* Master routes removed */}
+            <Route path="/master-login" element={<MasterLogin />} />
+            <Route path="/master" element={<MasterAdmin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
