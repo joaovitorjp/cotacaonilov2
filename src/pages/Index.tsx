@@ -39,11 +39,11 @@ interface RespostaEmpresa {
 }
 
 const Index = () => {
-  const { user, network, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isMaster, setIsMaster] = useState(false);
+  
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
@@ -95,7 +95,6 @@ const Index = () => {
       
       const roleList = roles?.map(r => r.role) || [];
       setIsAdmin(roleList.includes('admin'));
-      setIsMaster(roleList.includes('admin')); // In this system admin = master for now as requested per history
     };
 
     checkRoles();
