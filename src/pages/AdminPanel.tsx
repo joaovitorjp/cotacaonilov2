@@ -31,7 +31,7 @@ interface RespostaEmpresa {
 }
 
 const AdminPanel: React.FC = () => {
-  const { user, network, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
@@ -209,10 +209,10 @@ const AdminPanel: React.FC = () => {
           </div>
           <div>
             <h1 className="text-lg font-display font-bold text-foreground tracking-tight leading-none uppercase">
-              {network ? network.name : 'Painel Administrativo'}
+              Painel Administrativo
             </h1>
             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1.5 opacity-70">
-              Controle de Cotações {network ? network.name : 'Central'}
+              Controle de Cotações Central
             </p>
           </div>
         </div>
@@ -355,16 +355,6 @@ const AdminPanel: React.FC = () => {
         </div>
       </main>
 
-      {/* Ícone de cadeado para área de login Master */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => navigate('/master/login')}
-          className="p-3 bg-card/40 backdrop-blur-md border border-border/40 hover:bg-card/60 rounded-full shadow-lg transition-all duration-300 group"
-          title="Acesso Master"
-        >
-          <Shield className="w-5 h-5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
-        </button>
-      </div>
 
     </div>
   );

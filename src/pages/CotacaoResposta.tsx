@@ -72,14 +72,8 @@ const CotacaoResposta = () => {
     setEstados((linkData as any).estados || 'AMBOS');
     setTipoPreco((linkData as any).tipo_preco || 'IPI_ST');
 
-    // Fetch network name via user_id of the list
-    if (linkData.user_id) {
-      const { data: profile } = await supabase.from('profiles').select('network_id').eq('user_id', linkData.user_id).maybeSingle();
-      if (profile?.network_id) {
-        const { data: net } = await supabase.from('networks').select('name').eq('id', profile.network_id).maybeSingle();
-        if (net) setNetworkName(net.name);
-      }
-    }
+    // Network name is fixed to Nilo Atacadista as per single-tenant requirement
+    setNetworkName('Nilo Atacadista');
 
     const { data: lista } = await supabase
       .from('listas')
@@ -209,7 +203,7 @@ const CotacaoResposta = () => {
           empresa,
           resposta,
           ...(listaUserId ? { user_id: listaUserId } : {}),
-          empresa_id: '29605804-0000-0000-0000-000000000000'
+          empresa_id: '29605804-0000-0000-0000-000000000000' as any,
         } as any);
       }
 

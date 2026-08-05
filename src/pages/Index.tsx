@@ -39,11 +39,11 @@ interface RespostaEmpresa {
 }
 
 const Index = () => {
-  const { user, network, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isMaster, setIsMaster] = useState(false);
+  
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
@@ -95,7 +95,6 @@ const Index = () => {
       
       const roleList = roles?.map(r => r.role) || [];
       setIsAdmin(roleList.includes('admin'));
-      setIsMaster(roleList.includes('admin')); // In this system admin = master for now as requested per history
     };
 
     checkRoles();
@@ -616,7 +615,7 @@ const Index = () => {
                 <Table className="w-5 h-5" />
               </div>
               <h1 className="text-xl font-display font-bold text-slate-800 tracking-tight hidden sm:block">
-                {network ? network.name : 'Nilo Atacadista'}
+                Nilo Atacadista
               </h1>
             </button>
 
@@ -820,7 +819,7 @@ const Index = () => {
               const marker = [{ __manual_states: states }] as any;
               const { error } = await supabase
                 .from('respostas')
-                .insert({ lista_id: currentLista.id, empresa, resposta: marker, user_id: user?.id, empresa_id: '29605804-0000-0000-0000-000000000000' } as any);
+                .insert({ lista_id: currentLista.id, empresa, resposta: marker, user_id: user?.id, empresa_id: '29605804-0000-0000-0000-000000000000' as any });
               if (error) {
                 toast.error('Erro ao adicionar fornecedor.');
               } else {
@@ -877,15 +876,6 @@ const Index = () => {
       <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
       <PerfilPanel open={perfilOpen} onOpenChange={setPerfilOpen} />
 
-      {isMaster && (
-        <button
-          onClick={() => navigate('/master-login')}
-          className="fixed bottom-4 right-4 p-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full text-slate-400 hover:text-primary transition-all z-50 shadow-lg"
-          title="Painel Master"
-        >
-          <Home className="w-4 h-4" />
-        </button>
-      )}
 
     </div>
   );
