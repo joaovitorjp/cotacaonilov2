@@ -22,8 +22,6 @@ const CotacaoResposta = () => {
   const [error, setError] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [listaId, setListaId] = useState('');
-  const [listaUserId, setListaUserId] = useState<string | null>(null);
-  const [linkId, setLinkId] = useState<string>('');
   const [listaNome, setListaNome] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [pricesMT, setPricesMT] = useState<Record<number, string>>({});
@@ -65,7 +63,6 @@ const CotacaoResposta = () => {
     if (linkData.respondido) setLinkRespondido(true);
     setEmpresa(linkData.empresa);
     setListaId(linkData.lista_id);
-    setLinkId(linkData.id);
     setEstados((linkData as any).estados || 'AMBOS');
 
     if (lista.status === 'finalizada') { setError('Esta cotação já foi encerrada.'); setLoading(false); return; }
