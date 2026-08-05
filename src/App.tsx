@@ -15,6 +15,8 @@ import Perfil from "./pages/Perfil.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import MasterAdmin from "./pages/MasterAdmin.tsx";
 import MasterLogin from "./pages/MasterLogin.tsx";
+import MasterAuditLogs from "./pages/MasterAuditLogs.tsx";
+import NetworkAdmin from "./pages/NetworkAdmin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -58,6 +60,8 @@ const App = () => (
             />
             <Route path="/master-login" element={<MasterLogin />} />
             <Route path="/master" element={<MasterAdmin />} />
+            <Route path="/master/audit" element={<MasterAuditLogs />} />
+            <Route path="/master/networks" element={<NetworkAdmin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
