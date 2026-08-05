@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
-import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin, Trash2, Mail } from 'lucide-react';
+import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,6 @@ interface Fornecedor {
   nome: string;
   contato: string | null;
   whatsapp: string;
-  email?: string | null;
 }
 
 interface GeneratedLink {
@@ -30,9 +29,7 @@ interface GeneratedLink {
   link: string;
   copied: boolean;
   whatsapp?: string;
-  email?: string;
   estados?: string;
-  tipo_preco?: 'IPI_ST' | 'NOTA';
 }
 
 interface ExistingLink {
@@ -41,13 +38,10 @@ interface ExistingLink {
   empresa: string;
   respondido: boolean;
   whatsapp?: string;
-  email?: string;
   estados?: string;
-  tipo_preco?: 'IPI_ST' | 'NOTA';
 }
 
 type EstadoOption = 'AMBOS' | 'MT' | 'GO';
-type TipoPrecoOption = 'IPI_ST' | 'NOTA';
 
 interface GerarLinkPanelProps {
   open: boolean;
@@ -69,11 +63,6 @@ const ESTADO_LABELS: Record<EstadoOption, string> = {
   'GO': 'Apenas GO',
 };
 
-const TIPO_PRECO_LABELS: Record<TipoPrecoOption, string> = {
-  'IPI_ST': 'PREÇO COM IPI + ST',
-  'NOTA': 'PREÇO DE NOTA',
-};
-
 const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, listaId }) => {
   const { user } = useAuth();
   const [empresa, setEmpresa] = useState('');
@@ -82,7 +71,6 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [existingLinks, setExistingLinks] = useState<ExistingLink[]>([]);
   const [selectedEstado, setSelectedEstado] = useState<EstadoOption>('AMBOS');
-  const [selectedTipoPreco, setSelectedTipoPreco] = useState<TipoPrecoOption>('IPI_ST');
   const [listaNome, setListaNome] = useState<string>('');
   const [userNome, setUserNome] = useState<string>('');
   const [linkToDelete, setLinkToDelete] = useState<ExistingLink | null>(null);
@@ -98,11 +86,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
         setListaNome((data as any)?.nome ?? '');
       });
       if (user?.id) {
-        supabase.from('profiles').select('nome, cargo').eq('user_id', user.id).maybeSingle().then(({ data }) => {
-          const profile = data as any;
-          const nomeStr = (profile?.nome ?? '').trim();
-          const cargoStr = (profile?.cargo ?? '').trim();
-          setUserNome(cargoStr ? `${nomeStr} (${cargoStr})` : nomeStr);
+        supabase.from('profiles').select('nome').eq('user_id', user.id).maybeSingle().then(({ data }) => {
+          setUserNome(((data as any)?.nome ?? '').trim());
         });
       }
       loadExistingLinks();
@@ -113,31 +98,26 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const loadExistingLinks = async () => {
     const { data: links } = await supabase
       .from('links_cotacao')
-      .select('id, token, empresa, respondido, estados, tipo_preco')
+      .select('id, token, empresa, respondido, estados')
       .eq('lista_id', listaId)
       .order('created_at', { ascending: false });
 
     if (links) {
-      const { data: forns } = await supabase.from('fornecedores').select('nome, whatsapp, email');
-      const fornWMap: Record<string, string> = {};
-      const fornEMap: Record<string, string> = {};
-      (forns ?? []).forEach((f: any) => { 
-        fornWMap[f.nome] = f.whatsapp; 
-        if (f.email) fornEMap[f.nome] = f.email;
-      });
+      const { data: forns } = await supabase.from('fornecedores').select('nome, whatsapp');
+      const fornMap: Record<string, string> = {};
+      (forns ?? []).forEach((f: any) => { fornMap[f.nome] = f.whatsapp; });
 
       setExistingLinks(links.map((l: any) => ({
         ...l,
-        whatsapp: fornWMap[l.empresa],
-        email: fornEMap[l.empresa],
+        whatsapp: fornMap[l.empresa],
       })));
     }
   };
 
-  const generateLink = async (empresaNome: string, estados: EstadoOption, tipo_preco: TipoPrecoOption) => {
+  const generateLink = async (empresaNome: string, estados: EstadoOption) => {
     const { data, error } = await supabase
       .from('links_cotacao')
-      .insert({ lista_id: listaId, empresa: empresaNome, estados, tipo_preco, user_id: user?.id, network_id: '29605804-0000-0000-0000-000000000000', empresa_id: '29605804-0000-0000-0000-000000000000' } as any)
+      .insert({ lista_id: listaId, empresa: empresaNome, estados, user_id: user?.id })
       .select()
       .single();
 
@@ -149,8 +129,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     if (!empresa.trim()) return;
     setLoading(true);
     try {
-      const link = await generateLink(empresa.trim(), selectedEstado, selectedTipoPreco);
-      setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false, estados: selectedEstado, tipo_preco: selectedTipoPreco }]);
+      const link = await generateLink(empresa.trim(), selectedEstado);
+      setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false, estados: selectedEstado }]);
       setEmpresa('');
       toast.success('Link gerado!');
       loadExistingLinks();
@@ -166,8 +146,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       return;
     }
     try {
-      const link = await generateLink(f.nome, selectedEstado, selectedTipoPreco);
-      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, email: f.email ?? undefined, estados: selectedEstado, tipo_preco: selectedTipoPreco }]);
+      const link = await generateLink(f.nome, selectedEstado);
+      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado }]);
       toast.success(`Link gerado para ${f.nome}!`);
       loadExistingLinks();
     } catch {
@@ -186,8 +166,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     let count = 0;
     for (const f of pendentes) {
       try {
-        const link = await generateLink(f.nome, selectedEstado, selectedTipoPreco);
-        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, email: f.email ?? undefined, estados: selectedEstado, tipo_preco: selectedTipoPreco }]);
+        const link = await generateLink(f.nome, selectedEstado);
+        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado }]);
         count++;
       } catch { /* skip */ }
     }
@@ -210,47 +190,24 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     toast.success('Todos os links copiados!');
   };
 
-  const buildWhatsAppMessage = (link: string, tipoPreco?: 'IPI_ST' | 'NOTA') => {
+  const buildWhatsAppMessage = (link: string) => {
     const cotacaoLabel = listaNome ? `"${listaNome}"` : '';
     const remetente = userNome ? `\n\nEnviado por: ${userNome}` : '';
-    const avisoPreco = tipoPreco ? `\n\n*ATENÇÃO:* Os preços devem ser preenchidos como: *${TIPO_PRECO_LABELS[tipoPreco]}*` : '';
-    const msg = `Olá! Segue o link para responder a cotação ${cotacaoLabel}:${avisoPreco}\n${link}${remetente}`.replace(/ {2,}/g, ' ');
+    const msg = `Olá! Segue o link para responder a cotação ${cotacaoLabel}:\n${link}${remetente}`.replace(/ {2,}/g, ' ');
     return encodeURIComponent(msg);
   };
 
-  const handleShareWhatsApp = (empresa: string, token: string, whatsapp?: string, tipoPreco?: 'IPI_ST' | 'NOTA') => {
+  const handleShareWhatsApp = (empresa: string, token: string, whatsapp?: string) => {
     const phone = whatsapp ? whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
     const link = `${getPublicBaseUrl()}/cotacao/${token}`;
-    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(link, tipoPreco)}`, '_blank');
+    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(link)}`, '_blank');
   };
 
   const handleShareWhatsAppGenerated = (item: GeneratedLink) => {
     const phone = item.whatsapp ? item.whatsapp.replace(/\D/g, '') : '';
     const fullPhone = phone.startsWith('55') ? phone : `55${phone}`;
-    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(item.link, item.tipo_preco)}`, '_blank');
-  };
-
-  const buildEmailMessage = (link: string, tipoPreco?: 'IPI_ST' | 'NOTA') => {
-    const cotacaoLabel = listaNome ? `"${listaNome}"` : '';
-    const remetente = userNome ? `\n\nEnviado por: ${userNome}` : '';
-    const avisoPreco = tipoPreco ? `\n\nATENÇÃO: Os preços devem ser preenchidos como: ${TIPO_PRECO_LABELS[tipoPreco]}` : '';
-    const body = `Olá!\n\nSegue o link para responder a cotação ${cotacaoLabel}:${avisoPreco}\n\nLink de resposta:\n${link}${remetente}`;
-    const subject = `Cotação de Preços - ${listaNome || 'Rede Nilo'}`;
-    return { subject: encodeURIComponent(subject), body: encodeURIComponent(body) };
-  };
-
-  const handleShareEmail = (empresa: string, token: string, email?: string, tipoPreco?: 'IPI_ST' | 'NOTA') => {
-    if (!email) return;
-    const link = `${getPublicBaseUrl()}/cotacao/${token}`;
-    const { subject, body } = buildEmailMessage(link, tipoPreco);
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-  };
-
-  const handleShareEmailGenerated = (item: GeneratedLink) => {
-    if (!item.email) return;
-    const { subject, body } = buildEmailMessage(item.link, item.tipo_preco);
-    window.location.href = `mailto:${item.email}?subject=${subject}&body=${body}`;
+    window.open(`https://wa.me/${fullPhone}?text=${buildWhatsAppMessage(item.link)}`, '_blank');
   };
 
   const handleDeleteLink = async () => {
@@ -313,32 +270,6 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
               O fornecedor verá apenas os campos de preço do(s) estado(s) selecionado(s).
-            </p>
-          </div>
-
-          {/* Price type selector */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Check className="w-3.5 h-3.5 text-muted-foreground" />
-              <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">Formato do Preço</p>
-            </div>
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-              {(['IPI_ST', 'NOTA'] as TipoPrecoOption[]).map(opt => (
-                <button
-                  key={opt}
-                  onClick={() => setSelectedTipoPreco(opt)}
-                  className={`flex-1 px-3 py-2 rounded-md text-xs font-display font-bold transition-colors ${
-                    selectedTipoPreco === opt
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-                  }`}
-                >
-                  {TIPO_PRECO_LABELS[opt]}
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Este aviso será exibido para o fornecedor ao abrir o link.
             </p>
           </div>
 
@@ -420,11 +351,6 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                             {item.estados}
                           </span>
                         )}
-                        {item.tipo_preco && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-bold shrink-0">
-                            {item.tipo_preco === 'IPI_ST' ? 'IPI+ST' : 'NOTA'}
-                          </span>
-                        )}
                       </div>
                       <div className="flex items-center gap-1">
                         {item.whatsapp && (
@@ -434,15 +360,6 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                             title="Enviar via WhatsApp"
                           >
                             <MessageCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                        {item.email && (
-                          <button
-                            onClick={() => handleShareEmailGenerated(item)}
-                            className="p-1.5 rounded transition-colors text-blue-600 hover:bg-blue-500/10"
-                            title="Enviar via E-mail"
-                          >
-                            <Mail className="w-4 h-4" />
                           </button>
                         )}
                         <button
@@ -479,33 +396,18 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                             {link.estados}
                           </span>
                         )}
-                        {link.tipo_preco && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-bold shrink-0">
-                            {link.tipo_preco === 'IPI_ST' ? 'IPI+ST' : 'NOTA'}
-                          </span>
-                        )}
                       </div>
                       <p className="text-[10px] text-muted-foreground">Ainda não respondeu</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       {link.whatsapp && (
                         <button
-                          onClick={() => handleShareWhatsApp(link.empresa, link.token, link.whatsapp, link.tipo_preco)}
+                          onClick={() => handleShareWhatsApp(link.empresa, link.token, link.whatsapp)}
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-display font-bold text-green-600 bg-green-500/10 hover:bg-green-500/20 transition-colors"
                           title="Reenviar via WhatsApp"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
                           <MessageCircle className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      {link.email && (
-                        <button
-                          onClick={() => handleShareEmail(link.empresa, link.token, link.email, link.tipo_preco)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-display font-bold text-blue-600 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
-                          title="Reenviar via E-mail"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          <Mail className="w-3.5 h-3.5" />
                         </button>
                       )}
                       <button
@@ -547,11 +449,6 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                     {link.estados && link.estados !== 'AMBOS' && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-bold shrink-0">
                         {link.estados}
-                      </span>
-                    )}
-                    {link.tipo_preco && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-bold shrink-0">
-                        {link.tipo_preco === 'IPI_ST' ? 'IPI+ST' : 'NOTA'}
                       </span>
                     )}
                     <button

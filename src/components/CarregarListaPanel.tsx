@@ -11,7 +11,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Trash2, Copy, Pencil, Download, FileSpreadsheet, Package, Users, Calendar, Link2 } from 'lucide-react';
+import { Trash2, Copy, Pencil, Download, FileSpreadsheet, Package, Users, Calendar } from 'lucide-react';
 
 interface Lista {
   id: string;
@@ -33,12 +33,11 @@ interface CarregarListaPanelProps {
   statusFilter: 'aberta' | 'finalizada';
   title: string;
   onExport?: (lista: Lista) => void;
-  onDownloadCISS?: (lista: Lista) => void;
-  onDownloadCONSINCO?: (lista: Lista) => void;
+  onDownloadResultados?: (lista: Lista) => void;
 }
 
 const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
-  open, onOpenChange, onListaSelected, statusFilter, title, onExport, onDownloadCISS, onDownloadCONSINCO,
+  open, onOpenChange, onListaSelected, statusFilter, title, onExport, onDownloadResultados,
 }) => {
   const { user } = useAuth();
   const [listas, setListas] = useState<Lista[]>([]);
@@ -152,7 +151,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
     try {
       const { data: novaLista, error } = await supabase
         .from('listas')
-        .insert({ nome: duplicateName.trim(), produtos: duplicateTarget.produtos as any, status: 'aberta', user_id: user?.id, empresa_id: '29605804-0000-0000-0000-000000000000' } as any)
+        .insert({ nome: duplicateName.trim(), produtos: duplicateTarget.produtos as any, status: 'aberta', user_id: user?.id })
         .select().single();
       if (error || !novaLista) throw error;
 
@@ -173,7 +172,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
             ...(sel.go && item.preco_go !== undefined ? { preco_go: item.preco_go } : {}),
           })),
         }));
-        await supabase.from('respostas').insert(inserts as any);
+        await supabase.from('respostas').insert(inserts);
       }
 
       toast.success(`Lista replicada como "${novaLista.nome}".`);
@@ -309,21 +308,6 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      {statusFilter === 'aberta' && (
-                        <button
-                          onClick={() => {
-                            onListaSelected(lista);
-                            // We need a way to tell the parent to open the link generator
-                            // but for now just selecting it and having it in the top bar is a good start.
-                            // Better: Let's add a direct way if possible or just make sure it's clear.
-                          }}
-                          className="p-1.5 rounded hover:bg-primary/10 text-primary transition-colors flex items-center gap-1"
-                          title="Gerar Link"
-                        >
-                          <Link2 className="w-3.5 h-3.5" />
-                          <span className="text-[10px] font-bold uppercase">Links</span>
-                        </button>
-                      )}
                       <button
                         onClick={() => handleReplicate(lista)}
                         className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
@@ -340,24 +324,14 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                           <FileSpreadsheet className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      {statusFilter === 'finalizada' && onDownloadCISS && (
+                      {statusFilter === 'finalizada' && onDownloadResultados && (
                         <button
-                          onClick={() => onDownloadCISS(lista)}
+                          onClick={() => onDownloadResultados(lista)}
                           className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
-                          title="Exportar CSV Ganhadores (CISS)"
+                          title="Baixar CSV ganhadores"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline text-[11px] font-display uppercase font-bold">CSV CISS</span>
-                        </button>
-                      )}
-                      {statusFilter === 'finalizada' && onDownloadCONSINCO && (
-                        <button
-                          onClick={() => onDownloadCONSINCO(lista)}
-                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
-                          title="Exportar CSV Ganhadores (CONSINCO)"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline text-[11px] font-display uppercase font-bold">CSV CONSINCO</span>
+                          <span className="hidden sm:inline text-[11px] font-display">CSV</span>
                         </button>
                       )}
                       <div className="flex-1" />

@@ -57,7 +57,6 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
         produtos,
         status: 'aberta',
         user_id: user?.id,
-        network_id: '29605804-0000-0000-0000-000000000000', // Default to Nilo
       };
 
       // 5. DEADLINE: Add prazo if set

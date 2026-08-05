@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Package, Clock, CheckCircle2, Users, Link2 } from 'lucide-react';
+import { Package, Clock, CheckCircle2, Users } from 'lucide-react';
 
 interface DashboardStats {
   abertas: number;
@@ -137,18 +137,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 >
                   {lista.status === 'finalizada' ? 'Finalizada' : 'Aberta'}
                 </span>
-                {lista.status === 'aberta' && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onNavigate('carregar'); // This opens the sheet where they can see the links
-                    }}
-                    className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors"
-                    title="Gerar Link"
-                  >
-                    <Link2 className="w-4 h-4" />
-                  </button>
-                )}
               </div>
             ))}
           </div>

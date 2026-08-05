@@ -12,10 +12,6 @@ interface Fornecedor {
   nome: string;
   contato: string | null;
   whatsapp: string;
-  nome_representante?: string | null;
-  email?: string | null;
-  codigo_interno_ciss?: string | null;
-  codigo_interno_consinco?: string | null;
 }
 
 interface FornecedoresPanelProps {
@@ -30,10 +26,6 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
   const [nome, setNome] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [contato, setContato] = useState('');
-  const [nomeRepresentante, setNomeRepresentante] = useState('');
-  const [email, setEmail] = useState('');
-  const [codigoInternoCISS, setCodigoInternoCISS] = useState('');
-  const [codigoInternoCONSINCO, setCodigoInternoCONSINCO] = useState('');
   const [adding, setAdding] = useState(false);
 
   // Edit state
@@ -41,10 +33,6 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
   const [editNome, setEditNome] = useState('');
   const [editWhatsapp, setEditWhatsapp] = useState('');
   const [editContato, setEditContato] = useState('');
-  const [editNomeRepresentante, setEditNomeRepresentante] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editCodigoInternoCISS, setEditCodigoInternoCISS] = useState('');
-  const [editCodigoInternoCONSINCO, setEditCodigoInternoCONSINCO] = useState('');
 
   useEffect(() => {
     if (open) fetchFornecedores();
@@ -71,14 +59,8 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome: nome.trim(),
       whatsapp: cleanWhatsapp,
       contato: contato.trim() || null,
-      nome_representante: nomeRepresentante.trim() || null,
-      email: email.trim() || null,
       user_id: user?.id,
-      network_id: '29605804-0000-0000-0000-000000000000',
-      codigo_interno_ciss: codigoInternoCISS.trim() || null,
-      codigo_interno_consinco: codigoInternoCONSINCO.trim() || null,
-      empresa_id: '29605804-0000-0000-0000-000000000000'
-    } as any);
+    });
     if (error) {
       toast.error('Erro ao adicionar fornecedor.');
     } else {
@@ -86,10 +68,6 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       setNome('');
       setWhatsapp('');
       setContato('');
-      setNomeRepresentante('');
-      setEmail('');
-      setCodigoInternoCISS('');
-      setCodigoInternoCONSINCO('');
       fetchFornecedores();
     }
     setAdding(false);
@@ -109,10 +87,6 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
     setEditNome(f.nome);
     setEditWhatsapp(f.whatsapp);
     setEditContato(f.contato || '');
-    setEditNomeRepresentante(f.nome_representante || '');
-    setEditEmail(f.email || '');
-    setEditCodigoInternoCISS(f.codigo_interno_ciss || '');
-    setEditCodigoInternoCONSINCO(f.codigo_interno_consinco || '');
   };
 
   const cancelEdit = () => {
@@ -130,26 +104,13 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome: editNome.trim(),
       whatsapp: cleanWhatsapp,
       contato: editContato.trim() || null,
-      nome_representante: editNomeRepresentante.trim() || null,
-      email: editEmail.trim() || null,
-      codigo_interno_ciss: editCodigoInternoCISS.trim() || null,
-      codigo_interno_consinco: editCodigoInternoCONSINCO.trim() || null,
     }).eq('id', editingId);
 
     if (error) {
       toast.error('Erro ao salvar.');
     } else {
       toast.success('Fornecedor atualizado.');
-      setFornecedores(prev => prev.map(f => f.id === editingId ? { 
-        ...f, 
-        nome: editNome.trim(), 
-        whatsapp: cleanWhatsapp, 
-        contato: editContato.trim() || null,
-        nome_representante: editNomeRepresentante.trim() || null,
-        email: editEmail.trim() || null,
-        codigo_interno_ciss: editCodigoInternoCISS.trim() || null, 
-        codigo_interno_consinco: editCodigoInternoCONSINCO.trim() || null 
-      } : f));
+      setFornecedores(prev => prev.map(f => f.id === editingId ? { ...f, nome: editNome.trim(), whatsapp: cleanWhatsapp, contato: editContato.trim() || null } : f));
       setEditingId(null);
     }
   };
@@ -168,26 +129,18 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
 
         {/* Add form */}
         <div className="px-6 pt-4 pb-2 space-y-2 border-b border-border">
-          <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome Fantasia da Empresa *" />
-          <Input value={nomeRepresentante} onChange={e => setNomeRepresentante(e.target.value)} placeholder="Nome do Representante" />
-          <div className="grid grid-cols-2 gap-2">
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={whatsapp}
-                onChange={e => setWhatsapp(e.target.value)}
-                placeholder="WhatsApp c/ DDD *"
-                className="pl-9"
-                inputMode="tel"
-              />
-            </div>
-            <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="E-mail de contato" type="email" />
+          <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome do fornecedor *" />
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={whatsapp}
+              onChange={e => setWhatsapp(e.target.value)}
+              placeholder="WhatsApp com DDD * (ex: 11999998888)"
+              className="pl-9"
+              inputMode="tel"
+            />
           </div>
-          <Input value={contato} onChange={e => setContato(e.target.value)} placeholder="Observações (opcional)" />
-          <div className="grid grid-cols-2 gap-2">
-            <Input value={codigoInternoCISS} onChange={e => setCodigoInternoCISS(e.target.value)} placeholder="Cód. Interno CISS" />
-            <Input value={codigoInternoCONSINCO} onChange={e => setCodigoInternoCONSINCO(e.target.value)} placeholder="Cód. Interno CONSINCO" />
-          </div>
+          <Input value={contato} onChange={e => setContato(e.target.value)} placeholder="Contato / e-mail (opcional)" />
           <Button onClick={handleAdd} disabled={adding || !nome.trim() || !whatsapp.trim()} className="w-full" size="sm">
             <Plus className="w-4 h-4 mr-1" />
             {adding ? 'Adicionando...' : 'Adicionar'}
@@ -205,17 +158,9 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
               <div key={f.id} className="px-3 py-2.5 bg-card border border-border rounded-lg">
                 {editingId === f.id ? (
                   <div className="space-y-2">
-                    <Input value={editNome} onChange={e => setEditNome(e.target.value)} placeholder="Empresa *" className="h-8 text-sm" />
-                    <Input value={editNomeRepresentante} onChange={e => setEditNomeRepresentante(e.target.value)} placeholder="Representante" className="h-8 text-sm" />
-                    <div className="grid grid-cols-2 gap-1">
-                      <Input value={editWhatsapp} onChange={e => setEditWhatsapp(e.target.value)} placeholder="WhatsApp *" className="h-8 text-sm" inputMode="tel" />
-                      <Input value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="E-mail" className="h-8 text-sm" type="email" />
-                    </div>
-                    <Input value={editContato} onChange={e => setEditContato(e.target.value)} placeholder="Obs" className="h-8 text-sm" />
-                    <div className="grid grid-cols-2 gap-1">
-                      <Input value={editCodigoInternoCISS} onChange={e => setEditCodigoInternoCISS(e.target.value)} placeholder="CISS" className="h-8 text-xs" />
-                      <Input value={editCodigoInternoCONSINCO} onChange={e => setEditCodigoInternoCONSINCO(e.target.value)} placeholder="CONSINCO" className="h-8 text-xs" />
-                    </div>
+                    <Input value={editNome} onChange={e => setEditNome(e.target.value)} placeholder="Nome *" className="h-8 text-sm" />
+                    <Input value={editWhatsapp} onChange={e => setEditWhatsapp(e.target.value)} placeholder="WhatsApp *" className="h-8 text-sm" inputMode="tel" />
+                    <Input value={editContato} onChange={e => setEditContato(e.target.value)} placeholder="Contato (opcional)" className="h-8 text-sm" />
                     <div className="flex gap-1 justify-end">
                       <button onClick={cancelEdit} className="p-1.5 rounded hover:bg-muted text-muted-foreground transition-colors">
                         <X className="w-4 h-4" />
@@ -229,17 +174,10 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
                   <div className="flex items-center gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="font-display font-bold text-foreground text-sm truncate">{f.nome}</p>
-                      {f.nome_representante && <p className="text-xs font-medium text-primary/80 truncate">{f.nome_representante}</p>}
                       <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                        <Phone className="w-3 h-3" /> {f.whatsapp} {f.email && <span className="text-muted-foreground/50 ml-1">| {f.email}</span>}
+                        <Phone className="w-3 h-3" /> {f.whatsapp}
                       </p>
-                      {f.contato && <p className="text-[10px] text-muted-foreground truncate italic">{f.contato}</p>}
-                      {(f.codigo_interno_ciss || f.codigo_interno_consinco) && (
-                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
-                          {f.codigo_interno_ciss && <p className="text-[10px] font-bold text-primary truncate">CISS: {f.codigo_interno_ciss}</p>}
-                          {f.codigo_interno_consinco && <p className="text-[10px] font-bold text-success truncate">CONS: {f.codigo_interno_consinco}</p>}
-                        </div>
-                      )}
+                      {f.contato && <p className="text-xs text-muted-foreground truncate">{f.contato}</p>}
                     </div>
                     <button
                       onClick={() => startEdit(f)}

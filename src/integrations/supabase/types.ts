@@ -14,36 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      audit_logs: {
-        Row: {
-          action: string
-          created_at: string
-          details: Json | null
-          id: string
-          ip_address: string | null
-          status: string
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          details?: Json | null
-          id?: string
-          ip_address?: string | null
-          status: string
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          details?: Json | null
-          id?: string
-          ip_address?: string | null
-          status?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       avarias: {
         Row: {
           comprador: string
@@ -157,36 +127,6 @@ export type Database = {
         }
         Relationships: []
       }
-      empresas: {
-        Row: {
-          cnpj: string | null
-          cor_primaria: string | null
-          created_at: string | null
-          id: string
-          logo_url: string | null
-          nome: string
-          slug: string | null
-        }
-        Insert: {
-          cnpj?: string | null
-          cor_primaria?: string | null
-          created_at?: string | null
-          id?: string
-          logo_url?: string | null
-          nome: string
-          slug?: string | null
-        }
-        Update: {
-          cnpj?: string | null
-          cor_primaria?: string | null
-          created_at?: string | null
-          id?: string
-          logo_url?: string | null
-          nome?: string
-          slug?: string | null
-        }
-        Relationships: []
-      }
       estoques_manuais: {
         Row: {
           created_at: string
@@ -294,115 +234,63 @@ export type Database = {
       }
       fornecedores: {
         Row: {
-          codigo_interno: string | null
-          codigo_interno_ciss: string | null
-          codigo_interno_consinco: string | null
           contato: string | null
           created_at: string
-          email: string | null
-          empresa_id: string
           id: string
-          network_id: string | null
           nome: string
-          nome_representante: string | null
           user_id: string | null
           whatsapp: string
         }
         Insert: {
-          codigo_interno?: string | null
-          codigo_interno_ciss?: string | null
-          codigo_interno_consinco?: string | null
           contato?: string | null
           created_at?: string
-          email?: string | null
-          empresa_id: string
           id?: string
-          network_id?: string | null
           nome: string
-          nome_representante?: string | null
           user_id?: string | null
           whatsapp?: string
         }
         Update: {
-          codigo_interno?: string | null
-          codigo_interno_ciss?: string | null
-          codigo_interno_consinco?: string | null
           contato?: string | null
           created_at?: string
-          email?: string | null
-          empresa_id?: string
           id?: string
-          network_id?: string | null
           nome?: string
-          nome_representante?: string | null
           user_id?: string | null
           whatsapp?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fornecedores_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fornecedores_network_id_fkey"
-            columns: ["network_id"]
-            isOneToOne: false
-            referencedRelation: "networks"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       links_cotacao: {
         Row: {
           created_at: string
           empresa: string
-          empresa_id: string
           estados: string
           id: string
           lista_id: string
-          network_id: string | null
           respondido: boolean
-          tipo_preco: string | null
           token: string
           user_id: string | null
         }
         Insert: {
           created_at?: string
           empresa: string
-          empresa_id: string
           estados?: string
           id?: string
           lista_id: string
-          network_id?: string | null
           respondido?: boolean
-          tipo_preco?: string | null
           token?: string
           user_id?: string | null
         }
         Update: {
           created_at?: string
           empresa?: string
-          empresa_id?: string
           estados?: string
           id?: string
           lista_id?: string
-          network_id?: string | null
           respondido?: boolean
-          tipo_preco?: string | null
           token?: string
           user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "links_cotacao_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "links_cotacao_lista_id_fkey"
             columns: ["lista_id"]
@@ -410,21 +298,12 @@ export type Database = {
             referencedRelation: "listas"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "links_cotacao_network_id_fkey"
-            columns: ["network_id"]
-            isOneToOne: false
-            referencedRelation: "networks"
-            referencedColumns: ["id"]
-          },
         ]
       }
       listas: {
         Row: {
           created_at: string
-          empresa_id: string
           id: string
-          network_id: string | null
           nome: string
           prazo: string | null
           produtos: Json
@@ -434,9 +313,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          empresa_id: string
           id?: string
-          network_id?: string | null
           nome: string
           prazo?: string | null
           produtos?: Json
@@ -446,98 +323,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          empresa_id?: string
           id?: string
-          network_id?: string | null
           nome?: string
           prazo?: string | null
           produtos?: Json
           status?: string
           updated_at?: string
           user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "listas_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "listas_network_id_fkey"
-            columns: ["network_id"]
-            isOneToOne: false
-            referencedRelation: "networks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      master_audit_logs: {
-        Row: {
-          action_type: string
-          created_at: string
-          details: Json | null
-          entity_id: string
-          entity_type: string
-          id: string
-          network_id: string | null
-          performed_by: string | null
-        }
-        Insert: {
-          action_type: string
-          created_at?: string
-          details?: Json | null
-          entity_id: string
-          entity_type: string
-          id?: string
-          network_id?: string | null
-          performed_by?: string | null
-        }
-        Update: {
-          action_type?: string
-          created_at?: string
-          details?: Json | null
-          entity_id?: string
-          entity_type?: string
-          id?: string
-          network_id?: string | null
-          performed_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "master_audit_logs_network_id_fkey"
-            columns: ["network_id"]
-            isOneToOne: false
-            referencedRelation: "networks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      networks: {
-        Row: {
-          config: Json | null
-          created_at: string | null
-          id: string
-          name: string
-          slug: string
-          updated_at: string | null
-        }
-        Insert: {
-          config?: Json | null
-          created_at?: string | null
-          id?: string
-          name: string
-          slug: string
-          updated_at?: string | null
-        }
-        Update: {
-          config?: Json | null
-          created_at?: string | null
-          id?: string
-          name?: string
-          slug?: string
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -581,109 +373,59 @@ export type Database = {
       }
       profiles: {
         Row: {
-          avatar_url: string | null
-          cargo: string | null
           created_at: string
           email: string
-          empresa_id: string
           id: string
-          is_super_admin: boolean | null
-          network_id: string | null
           nome: string
           user_id: string
         }
         Insert: {
-          avatar_url?: string | null
-          cargo?: string | null
           created_at?: string
           email?: string
-          empresa_id: string
           id?: string
-          is_super_admin?: boolean | null
-          network_id?: string | null
           nome?: string
           user_id: string
         }
         Update: {
-          avatar_url?: string | null
-          cargo?: string | null
           created_at?: string
           email?: string
-          empresa_id?: string
           id?: string
-          is_super_admin?: boolean | null
-          network_id?: string | null
           nome?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_network_id_fkey"
-            columns: ["network_id"]
-            isOneToOne: false
-            referencedRelation: "networks"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       respostas: {
         Row: {
           created_at: string
           empresa: string
-          empresa_id: string
           id: string
           lista_id: string
-          network_id: string | null
           resposta: Json
           user_id: string | null
         }
         Insert: {
           created_at?: string
           empresa: string
-          empresa_id: string
           id?: string
           lista_id: string
-          network_id?: string | null
           resposta?: Json
           user_id?: string | null
         }
         Update: {
           created_at?: string
           empresa?: string
-          empresa_id?: string
           id?: string
           lista_id?: string
-          network_id?: string | null
           resposta?: Json
           user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "respostas_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "respostas_lista_id_fkey"
             columns: ["lista_id"]
             isOneToOne: false
             referencedRelation: "listas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "respostas_network_id_fkey"
-            columns: ["network_id"]
-            isOneToOne: false
-            referencedRelation: "networks"
             referencedColumns: ["id"]
           },
         ]

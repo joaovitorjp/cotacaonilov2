@@ -14,7 +14,6 @@ interface Produto {
 interface RespostaEmpresa {
   empresa: string;
   resposta: { codigo_interno: string; preco?: number | string; preco_mt?: number | string; preco_go?: number | string }[];
-  tipo_preco?: 'IPI_ST' | 'NOTA';
 }
 
 interface SpreadsheetTableProps {
@@ -30,8 +29,6 @@ interface SpreadsheetTableProps {
   onDeleteResposta?: (empresa: string) => Promise<void>;
   onAfterSave?: () => void;
   onAddEmpresa?: (empresa: string, states: ('MT' | 'GO')[]) => Promise<void>;
-  onAddProduto?: (rowIndex: number) => void;
-  onDeleteProduto?: (rowIndex: number) => void;
 }
 
 const parsePrice = (val: string | number): number => {
@@ -71,13 +68,12 @@ interface ColDef {
   isSeparator?: boolean;
   state?: 'MT' | 'GO';
   empresa?: string;
-  tipoPreco?: 'IPI_ST' | 'NOTA';
 }
 
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   produtos, respostas, readOnly = false, editableColumn, onPriceChange,
   editPrices = {}, highlightLowest = false, onSave, listaId, onDeleteResposta,
-  onAfterSave, onAddEmpresa, onAddProduto, onDeleteProduto,
+  onAfterSave, onAddEmpresa,
 }) => {
   const { user } = useAuth();
   const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
@@ -195,63 +191,36 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     let idx = 4;
     // MT columns
     for (let i = 0; i < empresas.length; i++) {
-      const resp = respostas.find(r => r.empresa === empresas[i]);
       cols.push({
         key: `emp_${empresas[i]}_MT`, label: `${empresas[i]} MT`, defaultAlign: 'center',
         highlight: editableColumn === empresas[i], isData: true, originalIdx: idx++,
-        state: 'MT', empresa: empresas[i], tipoPreco: resp?.tipo_preco || 'IPI_ST',
+        state: 'MT', empresa: empresas[i],
       });
     }
+    if (editableColumn && !empresas.includes(editableColumn)) {
+      cols.push({
+        key: `emp_${editableColumn}_MT`, label: `${editableColumn} MT`, defaultAlign: 'center',
+        highlight: true, isData: true, originalIdx: idx++, state: 'MT', empresa: editableColumn,
+      });
+    }
+    // Separator
+    cols.push({ key: 'separator', label: '', defaultAlign: 'center', isData: false, isSeparator: true, originalIdx: idx++ });
     // GO columns
     for (let i = 0; i < empresas.length; i++) {
-      const resp = respostas.find(r => r.empresa === empresas[i]);
       cols.push({
         key: `emp_${empresas[i]}_GO`, label: `${empresas[i]} GO`, defaultAlign: 'center',
         highlight: editableColumn === empresas[i], isData: true, originalIdx: idx++,
-        state: 'GO', empresa: empresas[i], tipoPreco: resp?.tipo_preco || 'NOTA',
+        state: 'GO', empresa: empresas[i],
+      });
+    }
+    if (editableColumn && !empresas.includes(editableColumn)) {
+      cols.push({
+        key: `emp_${editableColumn}_GO`, label: `${editableColumn} GO`, defaultAlign: 'center',
+        highlight: true, isData: true, originalIdx: idx++, state: 'GO', empresa: editableColumn,
       });
     }
     return cols;
-  }, [empresas, editableColumn, respostas]);
-
-  // Render header cell with modernized style and price type badge
-  const renderHeaderCell = (col: ColDef, visualColIdx: number) => {
-    const isEmpresa = !!col.empresa;
-    
-    return (
-      <div 
-        key={col.key}
-        className={`h-full border-r border-slate-200 flex flex-col justify-center px-2 select-none font-display relative group
-          ${col.sticky ? 'sticky left-0 z-20 bg-slate-50' : 'bg-slate-50/80'}
-          ${col.highlight ? 'bg-primary/5' : ''}
-          ${col.isSeparator ? 'bg-slate-100 border-x-2 border-slate-300' : ''}
-        `}
-        style={{ width: colWidths[visualColIdx] || 120 }}
-      >
-        <div className="flex items-center justify-between gap-1 min-w-0">
-          <span className={`text-[10px] font-bold uppercase tracking-wider truncate ${col.highlight ? 'text-primary' : 'text-slate-500'}`}>
-            {col.label}
-          </span>
-          {isEmpresa && (
-            <div className="flex gap-1 shrink-0">
-               <span className={`text-[8px] px-1 rounded-sm font-black ${
-                 col.tipoPreco === 'IPI_ST' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-               }`}>
-                 {col.tipoPreco === 'IPI_ST' ? 'IPI+ST' : 'NOTA'}
-               </span>
-            </div>
-          )}
-        </div>
-        
-        <div
-          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-primary/30 active:bg-primary/50 z-10"
-          onMouseDown={(e) => handleColResizeStart(e, visualColIdx)}
-        />
-      </div>
-    );
-  };
-
-
+  }, [empresas, editableColumn]);
 
   // Filter columns based on state filter and remove empty empresa columns, then add fillers
   const baseColDefs = useMemo((): ColDef[] => {
@@ -346,11 +315,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           if (measured >= 50) return;
           measured++;
           const el = cell as HTMLElement;
-          const text = el.innerText || el.textContent || '';
+          const text = el.textContent || '';
           if (!text.trim()) return;
           ctx.font = '12px system-ui, sans-serif';
-          const w = ctx.measureText(text.trim()).width + 24; // padding
-
+          const w = ctx.measureText(text).width + 20; // padding
           if (w > maxContentW) maxContentW = w;
         });
 
@@ -547,12 +515,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         if (existingResp) {
           await supabase.from('respostas').update({ resposta: currentItems as any }).eq('lista_id', listaId).eq('empresa', emp);
         } else {
-          await supabase.from('respostas').insert({ 
-            lista_id: listaId, 
-            empresa: emp, 
-            resposta: currentItems as any,
-            empresa_id: '29605804-0000-0000-0000-000000000000'
-          } as any);
+          await supabase.from('respostas').insert({ lista_id: listaId, empresa: emp, resposta: currentItems as any });
         }
       }
     }
@@ -584,13 +547,6 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Shortcut: Adicionar produto
-      if (!readOnly && onAddProduto && ((e.ctrlKey && e.key.toLowerCase() === 'm') || (e.altKey && e.key.toLowerCase() === 'n'))) {
-        e.preventDefault();
-        onAddProduto(produtos.length);
-        return;
-      }
-
       if (!activeCell) return;
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' && !['ArrowUp', 'ArrowDown', 'Tab', 'Enter', 'Escape'].includes(e.key)) return;
@@ -1139,23 +1095,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           onDragOver={e => handleRowDragOver(e, idx)}
           onDrop={e => handleRowDrop(e, idx)}
           onDragEnd={handleRowDragEnd}
-          onContextMenu={e => {
-            if (readOnly) return;
-            handleContextMenu(e, 'row', undefined, idx);
-          }}
+          onContextMenu={e => handleContextMenu(e, 'row', undefined, idx)}
         >
-          <div className="flex items-center justify-center gap-1">
-            {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
-            {!readOnly && onAddProduto && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onAddProduto(idx + 1); }}
-                className="opacity-0 group-hover/row:opacity-100 p-0.5 rounded-full hover:bg-primary hover:text-primary-foreground transition-all"
-                title="Adicionar linha abaixo"
-              >
-                <Plus className="w-2.5 h-2.5" />
-              </button>
-            )}
-          </div>
+          {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
           <div
             className={`absolute left-0 right-0 bottom-[-2px] h-[5px] cursor-row-resize z-30 ${activeRowResize === idx ? 'bg-primary' : 'hover:bg-primary/40'}`}
             style={{ opacity: activeRowResize === idx ? 1 : undefined }}
@@ -1181,10 +1123,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             onClick: (e: React.MouseEvent) => handleCellClick(idx, visualColIdx, e),
             onMouseDown: (e: React.MouseEvent) => handleCellMouseDown(idx, visualColIdx, e),
             onMouseEnter: () => handleCellMouseEnter(idx, visualColIdx),
-            onContextMenu: (e: React.MouseEvent) => {
-              if (readOnly) return;
-              handleContextMenu(e, 'cell', colIdx, idx);
-            },
+            onContextMenu: (e: React.MouseEvent) => handleContextMenu(e, 'cell', colIdx, idx),
             'data-cell': `${idx}-${visualColIdx}`,
           };
 
@@ -1280,19 +1219,6 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     <div className="flex-1 flex flex-col" style={{ border: '1px solid hsl(var(--border))' }}>
       {/* Toolbar */}
       <div className="flex items-center gap-1 px-2 py-1 border-b bg-muted/50 flex-wrap" style={{ borderColor: 'hsl(var(--border))' }}>
-        {!readOnly && onAddProduto && (
-          <>
-            <button 
-              onClick={() => onAddProduto(produtos.length)} 
-              className="p-1.5 rounded hover:bg-accent transition-colors flex items-center gap-1 text-xs text-primary font-medium" 
-              title="Adicionar Produto (Atalho: Ctrl+M ou Alt+N)"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Adicionar produto</span>
-            </button>
-            <div className="w-px h-5 bg-border mx-1" />
-          </>
-        )}
         <button onClick={toolbarToggleBold} disabled={!hasSelection} className="p-1.5 rounded hover:bg-accent disabled:opacity-40 transition-colors" title="Negrito">
           <Bold className="w-4 h-4" />
         </button>
@@ -1425,17 +1351,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     onContextMenu={e => handleContextMenu(e, 'column', colIdx)}
                     onClick={() => i > 0 && handleHeaderSort(colIdx, col.originalIdx)}
                   >
-                    <div className="flex flex-col items-center gap-0.5 min-w-0 w-full overflow-hidden">
-                      <span className="inline-flex items-center gap-1 truncate max-w-full">
-                        {col.label}
-                        {sortCol === col.originalIdx && <span className="text-[9px] shrink-0">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                      </span>
-                      {col.tipoPreco && (
-                        <span className="text-[8px] font-black opacity-60 leading-tight uppercase tracking-tighter">
-                          {col.tipoPreco === 'IPI_ST' ? 'PREÇOS COM IPI + ST' : 'PREÇOS DE NOTA'}
-                        </span>
-                      )}
-                    </div>
+                    <span className="inline-flex items-center gap-1">
+                      {col.label}
+                      {sortCol === col.originalIdx && <span className="text-[9px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                    </span>
                     {col.empresa && priceMarkups[col.empresa] ? (
                       <span className="ml-1 text-[9px] opacity-70">(+{priceMarkups[col.empresa].toFixed(1)}%)</span>
                     ) : null}
@@ -1559,28 +1478,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               </>
             )}
 
-            {(contextMenu.type === 'row' || contextMenu.type === 'cell') && contextMenu.rowIdx !== undefined && !readOnly && (
+            {(contextMenu.type === 'row' || contextMenu.type === 'cell') && contextMenu.rowIdx !== undefined && (
               <>
-                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Linha</div>
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mover Linha</div>
                 <button onClick={() => moveRow('up')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowUp className="w-3.5 h-3.5" /> Mover para Cima
                 </button>
                 <button onClick={() => moveRow('down')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowDown className="w-3.5 h-3.5" /> Mover para Baixo
                 </button>
-                
-                {!readOnly && onAddProduto && (
-                  <button onClick={() => { onAddProduto(contextMenu.rowIdx!); setContextMenu(null); }} 
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
-                    <Plus className="w-3.5 h-3.5" /> Adicionar Produto
-                  </button>
-                )}
-                {!readOnly && onDeleteProduto && contextMenu.rowIdx! < produtos.length && (
-                  <button onClick={() => { onDeleteProduto(contextMenu.rowIdx!); setContextMenu(null); }} 
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-destructive">
-                    <Trash2 className="w-3.5 h-3.5" /> Excluir Produto
-                  </button>
-                )}
               </>
             )}
           </div>

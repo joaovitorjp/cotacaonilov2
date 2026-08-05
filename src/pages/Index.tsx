@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
@@ -10,19 +10,17 @@ import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import Dashboard from '@/components/Dashboard';
 import FloatingChat from '@/components/FloatingChat';
 import PerfilPanel from '@/components/PerfilPanel';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ProfileGate from '@/components/ProfileGate';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon, LucideIcon, Loader2 } from 'lucide-react';
-
+import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon } from 'lucide-react';
 
 interface Lista {
   id: string;
@@ -41,9 +39,6 @@ interface RespostaEmpresa {
 const Index = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [isAdmin, setIsAdmin] = useState(false);
-  
   const [importOpen, setImportOpen] = useState(false);
   const [carregarOpen, setCarregarOpen] = useState(false);
   const [finalizadasOpen, setFinalizadasOpen] = useState(false);
@@ -52,73 +47,6 @@ const Index = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  const [profile, setProfile] = useState<{ nome: string; avatar_url: string | null } | null>(null);
-  const [isFetchingProfile, setIsFetchingProfile] = useState(false);
-  const lastFetchRef = useRef<number>(0);
-
-  const fetchUserProfile = useCallback(async () => {
-    if (!user || isFetchingProfile) return;
-    
-    // Throttle to avoid duplicate fetches
-    const now = Date.now();
-    if (now - lastFetchRef.current < 1000) return;
-    lastFetchRef.current = now;
-
-    setIsFetchingProfile(true);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('nome, avatar_url')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-    } finally {
-      setIsFetchingProfile(false);
-    }
-  }, [user, isFetchingProfile]);
-
-  useEffect(() => {
-    fetchUserProfile();
-
-    const checkRoles = async () => {
-      if (!user) return;
-      
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id);
-      
-      const roleList = roles?.map(r => r.role) || [];
-      setIsAdmin(roleList.includes('admin'));
-    };
-
-    checkRoles();
-
-    const handleProfileUpdate = () => {
-      fetchUserProfile();
-    };
-
-    window.addEventListener('profile-updated', handleProfileUpdate);
-    
-    const channel = supabase
-      .channel('profile-sync')
-      .on(
-        'postgres_changes' as any,
-        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `user_id=eq.${user?.id}` },
-        () => fetchUserProfile()
-      )
-      .subscribe();
-
-    return () => {
-      window.removeEventListener('profile-updated', handleProfileUpdate);
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, user?.email, fetchUserProfile]);
 
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
   const [respostas, setRespostas] = useState<RespostaEmpresa[]>([]);
@@ -131,27 +59,11 @@ const Index = () => {
   const [encerrarStats, setEncerrarStats] = useState<{ total: number; responded: number; pending: string[] }>({ total: 0, responded: 0, pending: [] });
 
   const loadRespostas = useCallback(async (listaId: string) => {
-    // Buscar respostas e juntar com tipo_preco do link
-    const { data: respData } = await supabase
+    const { data } = await supabase
       .from('respostas')
       .select('empresa, resposta')
       .eq('lista_id', listaId);
-    
-    const { data: linksData } = await supabase
-      .from('links_cotacao')
-      .select('empresa, tipo_preco')
-      .eq('lista_id', listaId);
-
-    const linksMap: Record<string, string> = {};
-    (linksData ?? []).forEach(l => {
-      linksMap[l.empresa] = l.tipo_preco || '';
-    });
-
-    setRespostas((respData ?? []).map((d: any) => ({ 
-      empresa: d.empresa, 
-      resposta: d.resposta as any[],
-      tipo_preco: linksMap[d.empresa] || (d.empresa.includes('GO') ? 'NOTA' : 'IPI_ST') // Fallback logic requested
-    })));
+    setRespostas((data ?? []).map((d: any) => ({ empresa: d.empresa, resposta: d.resposta as any[] })));
   }, []);
 
   // 1. REALTIME: Subscribe to new responses when a lista is open
@@ -161,7 +73,7 @@ const Index = () => {
     const channel = supabase
       .channel(`respostas-${currentLista.id}`)
       .on(
-        'postgres_changes' as any,
+        'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
@@ -175,7 +87,7 @@ const Index = () => {
         }
       )
       .on(
-        'postgres_changes' as any,
+        'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
@@ -209,7 +121,6 @@ const Index = () => {
     setIsFinalized(false);
     setShowDashboard(true);
     setActiveTab('planilha');
-    setMobileMenuOpen(false);
   };
 
   // 4. CONFIRMATION: Load stats before showing dialog
@@ -472,27 +383,16 @@ const Index = () => {
     toast.success('Planilha exportada!');
   };
 
-  const handleDownloadResultados = async (lista: Lista, type: 'CISS' | 'CONSINCO') => {
-    const { data: respsData } = await supabase
+  const handleDownloadResultados = async (lista: Lista) => {
+    const { data } = await supabase
       .from('respostas')
       .select('empresa, resposta')
       .eq('lista_id', lista.id);
 
-    const { data: fornsData } = await supabase
-      .from('fornecedores')
-      .select('*');
-
-    const resps: RespostaEmpresa[] = (respsData ?? []).map((d: any) => ({
+    const resps: RespostaEmpresa[] = (data ?? []).map((d: any) => ({
       empresa: d.empresa,
       resposta: d.resposta as any[],
     }));
-
-    const fornsMapCISS: Record<string, string> = {};
-    const fornsMapCONSINCO: Record<string, string> = {};
-    (fornsData ?? []).forEach(f => {
-      fornsMapCISS[f.nome] = f.codigo_interno_ciss || '';
-      fornsMapCONSINCO[f.nome] = f.codigo_interno_consinco || '';
-    });
 
     const parsePrice = (raw: any): number => {
       if (typeof raw === 'number') return raw;
@@ -520,6 +420,7 @@ const Index = () => {
         for (const resp of resps) {
           const item = resp.resposta.find((i: any) => i.codigo_interno === prod.codigo_interno);
           if (!item) continue;
+          // Por estado: MT usa preco_mt (fallback preco), GO usa preco_go.
           const raw = est.key === 'mt' ? (item.preco_mt ?? item.preco) : item.preco_go;
           const num = parsePrice(raw);
           if (!isNaN(num) && num > 0 && num < lowestPrice) {
@@ -537,39 +438,19 @@ const Index = () => {
       const suppliers = Object.keys(winnersBySupplier);
       for (const empresa of suppliers) {
         const items = winnersBySupplier[empresa];
-        
-        if (type === 'CISS') {
-          // CSV CISS (Existing format)
-          const codFornecedor = fornsMapCISS[empresa] || '';
-          const csvLinesCISS = items.map(item => {
-            const precoFormatted = item.preco.toFixed(2).replace('.', ',');
-            return `${item.codigo_barras};1;${precoFormatted}`;
-          });
-          const blobCISS = new Blob([csvLinesCISS.join('\n')], { type: 'text/csv;charset=utf-8;' });
-          const urlCISS = URL.createObjectURL(blobCISS);
-          const aCISS = document.createElement('a');
-          aCISS.href = urlCISS;
-          aCISS.download = `${lista.nome}_${est.label}_${empresa}_CISS.csv`;
-          aCISS.click();
-          URL.revokeObjectURL(urlCISS);
-          totalArquivos++;
-        } else {
-          // CSV CONSINCO (New format)
-          const codFornecedor = fornsMapCONSINCO[empresa] || '';
-          const csvLinesCONSINCO = items.map(item => {
-            const precoFormatted = item.preco.toFixed(2); // format 3.45 (dot separator)
-            // Col A: codFornecedor, B: "", C: "", D: barcode, E: "", F: "1", G: price, H-K: "0"
-            return `${codFornecedor};;;${item.codigo_barras};;1;${precoFormatted};0;0;0;0`;
-          });
-          const blobCONSINCO = new Blob([csvLinesCONSINCO.join('\n')], { type: 'text/csv;charset=utf-8;' });
-          const urlCONSINCO = URL.createObjectURL(blobCONSINCO);
-          const aCONSINCO = document.createElement('a');
-          aCONSINCO.href = urlCONSINCO;
-          aCONSINCO.download = `${lista.nome}_${est.label}_${empresa}_CONSINCO.csv`;
-          aCONSINCO.click();
-          URL.revokeObjectURL(urlCONSINCO);
-          totalArquivos++;
-        }
+        const csvLines = items.map(item => {
+          const precoFormatted = item.preco.toFixed(2).replace('.', ',');
+          return `${item.codigo_barras};1;${precoFormatted}`;
+        });
+        const csvContent = csvLines.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${lista.nome}_${est.label}_${empresa}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        totalArquivos++;
       }
     }
 
@@ -601,256 +482,240 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <ProfileGate>
-        <></>
-      </ProfileGate>
-      
-      {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <button onClick={handleBackToDashboard} className="flex items-center gap-3 group">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
-                <Table className="w-5 h-5" />
-              </div>
-              <h1 className="text-xl font-display font-bold text-slate-800 tracking-tight hidden sm:block">
-                Nilo Atacadista
-              </h1>
-            </button>
+    <ProfileGate>
+    <div className="flex flex-col h-screen">
+      {/* Header */}
+      <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
+        <button onClick={handleBackToDashboard} className="flex items-center gap-2">
+          <h1 className="text-lg sm:text-xl font-display font-bold text-foreground tracking-tight">Nilo Atacadista</h1>
+        </button>
 
-            <nav className="hidden lg:flex items-center gap-1">
-              <button 
-                onClick={handleBackToDashboard}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${showDashboard ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-50'}`}
-              >
-                Início
-              </button>
-              <button 
-                onClick={() => setImportOpen(true)}
-                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors"
-              >
-                Nova Cotação
-              </button>
-              <button 
-                onClick={() => setCarregarOpen(true)}
-                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors"
-              >
-                Abertas
-              </button>
-              <button 
-                onClick={() => setFinalizadasOpen(true)}
-                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors"
-              >
-                Finalizadas
-              </button>
-              <button 
-                onClick={() => setFornecedoresOpen(true)}
-                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors"
-              >
-                Fornecedores
-              </button>
-              {/* Master link removed */}
-              {currentLista && !isFinalized && (
-                <button 
-                  onClick={() => setGerarLinkOpen(true)}
-                  className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-all shadow-sm shadow-primary/20 flex items-center gap-2 ml-2 animate-in zoom-in-95 duration-200"
-                >
-                  <Link2 className="w-4 h-4" />
-                  Gerar Link
-                </button>
-              )}
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setChatOpen(true)}
-              className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-full transition-colors relative"
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-2">
+          {navItems.slice(1).map(item => (
+            <Button
+              key={item.label}
+              variant={item.label === 'Gerar Link' ? 'default' : 'outline'}
+              size="sm"
+              onClick={item.action}
+              disabled={item.disabled}
+              className={item.disabled ? 'opacity-50 cursor-not-allowed' : ''}
             >
-              <MessageCircle className="w-5 h-5" />
-            </button>
-            
-            <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
-
-            <button 
-              onClick={() => setPerfilOpen(true)}
-              className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full border border-slate-100 hover:border-primary/30 hover:bg-slate-50 transition-all group"
-            >
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-700 leading-none mb-0.5">
-                  {isFetchingProfile ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : (profile?.nome || 'Meu Perfil')}
-                </p>
-                <p className="text-[10px] text-slate-400 font-medium leading-none">Configurações</p>
-              </div>
-              <Avatar className="w-8 h-8 border border-white group-hover:border-primary/20 transition-colors">
-                <AvatarImage src={profile?.avatar_url ? (profile.avatar_url.includes('?') ? `${profile.avatar_url}&t=${Date.now()}` : `${profile.avatar_url}?t=${Date.now()}`) : ''} />
-                <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
-                  {profile?.nome && !isFetchingProfile ? profile.nome.substring(0, 1).toUpperCase() : <UserIcon className="w-4 h-4" />}
-                </AvatarFallback>
-              </Avatar>
-            </button>
-
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="lg:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <item.icon className="w-4 h-4 mr-1.5" />
+              {item.label}
             </Button>
-          </div>
+          ))}
+          <div className="w-px h-6 bg-border mx-1" />
+          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Mobile menu toggle */}
+        <div className="flex md:hidden items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
+            <LogOut className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
       </header>
 
-      {/* Content Wrapper */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* Header Mobile (now redundant but kept simple for small screens if needed, 
-            actually the Top Header above handles it with lg:hidden logic) */}
-
-        {/* Mobile menu dropdown */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-card border-b border-border px-4 py-2 space-y-1 shrink-0 z-50 shadow-lg animate-in slide-in-from-top duration-200">
-            {navItems.map(item => (
-              <button
-                key={item.label}
-                onClick={() => { item.action(); setMobileMenuOpen(false); }}
-                disabled={item.disabled}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold text-left transition-colors ${
-                  item.disabled ? 'opacity-40 cursor-not-allowed text-slate-400' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </button>
-            ))}
+      {/* Mobile menu dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-card border-b border-border px-4 py-2 space-y-1 shrink-0">
+          {navItems.map(item => (
             <button
-              onClick={() => { signOut(); setMobileMenuOpen(false); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-semibold text-left text-red-500 hover:bg-red-50 transition-colors"
+              key={item.label}
+              onClick={() => { item.action(); setMobileMenuOpen(false); }}
+              disabled={item.disabled}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-display font-bold text-left transition-colors ${
+                item.disabled
+                  ? 'opacity-40 cursor-not-allowed text-muted-foreground'
+                  : 'text-foreground hover:bg-muted/50'
+              }`}
             >
-              <LogOut className="w-4 h-4" />
-              Sair
+              <item.icon className="w-4 h-4" />
+              {item.label}
             </button>
-          </div>
-        )}
+          ))}
+        </div>
+      )}
 
-        {/* Lista info bar with tabs */}
-        {currentLista && !showDashboard && (
-          <div className="shrink-0 border-b border-border bg-white">
-            <div className="bg-slate-50 px-4 sm:px-6 py-2 text-sm text-slate-600 flex items-center gap-2 flex-wrap">
-              <button onClick={handleBackToDashboard} className="text-primary hover:underline text-xs font-semibold">
-                ← Início
-              </button>
-              <span className="text-slate-300">·</span>
-              <span className="font-bold text-slate-800">{currentLista.nome}</span>
-              <span className="text-slate-400 text-xs">
-                {currentLista.produtos.length} itens · {respostas.length} respostas
+      {/* Lista info bar with tabs */}
+      {currentLista && !showDashboard && (
+        <div className="shrink-0 border-b border-border">
+          <div className="bg-muted/50 px-4 sm:px-6 py-2 text-sm text-foreground flex items-center gap-2 flex-wrap">
+            <button onClick={handleBackToDashboard} className="text-primary hover:underline text-xs font-display">
+              ← Início
+            </button>
+            <span className="text-muted-foreground">·</span>
+            <span className="font-display font-bold">{currentLista.nome}</span>
+            <span className="text-muted-foreground text-xs">
+              {currentLista.produtos.length} produtos · {respostas.length} resposta(s)
+            </span>
+            {isFinalized && (
+              <span className="text-[10px] bg-success/10 text-success px-2 py-0.5 rounded-full font-display font-bold">
+                FINALIZADA
               </span>
-              {isFinalized && (
-                <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">
-                  FINALIZADA
-                </span>
-              )}
-            </div>
-            {/* Tabs */}
-            {respostas.length > 0 && (
-              <div className="flex px-4 sm:px-6 border-t border-slate-100">
-                <button
-                  onClick={() => setActiveTab('planilha')}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
-                    activeTab === 'planilha' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  <Table className="w-3.5 h-3.5" />
-                  Planilha
-                </button>
-                <button
-                  onClick={() => setActiveTab('analise')}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
-                    activeTab === 'analise' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  <BarChart3 className="w-3.5 h-3.5" />
-                  Análise
-                </button>
-              </div>
+            )}
+            {currentLista.prazo && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-display font-bold ${
+                isExpired
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-primary/10 text-primary'
+              }`}>
+                {isExpired ? '⏰ EXPIRADA' : `📅 Prazo: ${new Date(currentLista.prazo).toLocaleDateString('pt-BR')}`}
+              </span>
+            )}
+            {!isFinalized && respostas.length > 0 && (
+              <Button variant="outline" size="sm" className="ml-auto text-xs" onClick={() => loadRespostas(currentLista.id)}>
+                Atualizar
+              </Button>
             )}
           </div>
-        )}
-
-        <div className="flex-1 overflow-auto bg-slate-50/50">
-
-        {showDashboard ? (
-          <Dashboard onNavigate={handleDashboardNavigate} />
-        ) : activeTab === 'planilha' ? (
-          <SpreadsheetTable
-            produtos={currentLista?.produtos ?? []}
-            respostas={respostas}
-            readOnly={false}
-            highlightLowest={respostas.length > 1}
-            listaId={currentLista?.id}
-            onDeleteResposta={currentLista ? async (empresa: string) => {
-              const { error } = await supabase
-                .from('respostas')
-                .delete()
-                .eq('lista_id', currentLista.id)
-                .eq('empresa', empresa);
-              if (error) {
-                toast.error('Erro ao excluir dados do fornecedor.');
-              } else {
-                setRespostas(prev => prev.filter(r => r.empresa !== empresa));
-                toast.success(`Dados de "${empresa}" excluídos com sucesso.`);
-              }
-            } : undefined}
-            onSave={currentLista ? async (updatedProdutos) => {
-              const { error } = await supabase
-                .from('listas')
-                .update({ produtos: updatedProdutos as any })
-                .eq('id', currentLista.id);
-              if (error) {
-                toast.error('Erro ao salvar alterações.');
-              } else {
-                setCurrentLista({ ...currentLista, produtos: updatedProdutos });
-                toast.success('Alterações salvas com sucesso!');
-              }
-            } : undefined}
-            onAfterSave={currentLista ? () => loadRespostas(currentLista.id) : undefined}
-            onAddEmpresa={currentLista ? async (empresa: string, states: ('MT' | 'GO')[]) => {
-              const marker = [{ __manual_states: states }] as any;
-              const { error } = await supabase
-                .from('respostas')
-                .insert({ lista_id: currentLista.id, empresa, resposta: marker, user_id: user?.id, empresa_id: '29605804-0000-0000-0000-000000000000' as any });
-              if (error) {
-                toast.error('Erro ao adicionar fornecedor.');
-              } else {
-                await loadRespostas(currentLista.id);
-                toast.success(`Coluna "${empresa}" adicionada em ${states.join(' e ')}!`);
-              }
-            } : undefined}
-            onAddProduto={!isFinalized && currentLista ? (rowIndex) => {
-              const newProd = { codigo_interno: '', descricao: 'Novo Produto', codigo_barras: '' };
-              const newProdutos = [...currentLista.produtos];
-              newProdutos.splice(rowIndex + 1, 0, newProd);
-              setCurrentLista({ ...currentLista, produtos: newProdutos });
-              toast.info('Produto adicionado. Lembre-se de salvar as alterações.');
-            } : undefined}
-            onDeleteProduto={!isFinalized && currentLista ? (rowIndex) => {
-              const newProdutos = [...currentLista.produtos];
-              newProdutos.splice(rowIndex, 1);
-              setCurrentLista({ ...currentLista, produtos: newProdutos });
-              toast.info('Produto removido. Lembre-se de salvar as alterações.');
-            } : undefined}
-          />
-        ) : (
-          <AnalisePrecosPanel
-            produtos={currentLista?.produtos ?? []}
-            respostas={respostas}
-            listaNome={currentLista?.nome}
-          />
-        )}
+          {/* Tabs */}
+          {respostas.length > 0 && (
+            <div className="flex px-4 sm:px-6 bg-card">
+              <button
+                onClick={() => setActiveTab('planilha')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-display font-bold border-b-2 transition-colors ${
+                  activeTab === 'planilha'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Table className="w-3.5 h-3.5" />
+                Planilha
+              </button>
+              <button
+                onClick={() => setActiveTab('analise')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-display font-bold border-b-2 transition-colors ${
+                  activeTab === 'analise'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                Análise
+              </button>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
+      {/* Main content */}
+      {showDashboard ? (
+        <Dashboard onNavigate={handleDashboardNavigate} />
+      ) : activeTab === 'planilha' ? (
+        <SpreadsheetTable
+          produtos={currentLista?.produtos ?? []}
+          respostas={respostas}
+          readOnly={false}
+          highlightLowest={respostas.length > 1}
+          listaId={currentLista?.id}
+          onDeleteResposta={currentLista ? async (empresa: string) => {
+            const { error } = await supabase
+              .from('respostas')
+              .delete()
+              .eq('lista_id', currentLista.id)
+              .eq('empresa', empresa);
+            if (error) {
+              toast.error('Erro ao excluir dados do fornecedor.');
+            } else {
+              setRespostas(prev => prev.filter(r => r.empresa !== empresa));
+              toast.success(`Dados de "${empresa}" excluídos com sucesso.`);
+            }
+          } : undefined}
+          onSave={currentLista ? async (updatedProdutos) => {
+            const { error } = await supabase
+              .from('listas')
+              .update({ produtos: updatedProdutos as any })
+              .eq('id', currentLista.id);
+            if (error) {
+              toast.error('Erro ao salvar alterações.');
+            } else {
+              setCurrentLista({ ...currentLista, produtos: updatedProdutos });
+              toast.success('Alterações salvas com sucesso!');
+            }
+          } : undefined}
+          onAfterSave={currentLista ? () => loadRespostas(currentLista.id) : undefined}
+          onAddEmpresa={currentLista ? async (empresa: string, states: ('MT' | 'GO')[]) => {
+            const marker = [{ __manual_states: states }] as any;
+            const { error } = await supabase
+              .from('respostas')
+              .insert({ lista_id: currentLista.id, empresa, resposta: marker, user_id: user?.id });
+            if (error) {
+              toast.error('Erro ao adicionar fornecedor.');
+            } else {
+              await loadRespostas(currentLista.id);
+              toast.success(`Coluna "${empresa}" adicionada em ${states.join(' e ')}!`);
+            }
+          } : undefined}
+        />
+      ) : (
+        <AnalisePrecosPanel
+          produtos={currentLista?.produtos ?? []}
+          respostas={respostas}
+          listaNome={currentLista?.nome}
+        />
+      )}
+
+      {/* Floating button */}
+      {currentLista && !isFinalized && !showDashboard && (
+        <button
+          onClick={handleEncerrarClick}
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-success text-success-foreground px-4 sm:px-6 py-3 rounded shadow-lg font-display font-bold text-sm hover:bg-success/90 transition-colors duration-200 z-50"
+        >
+          Encerrar Cotação
+        </button>
+      )}
+
+      {/* 4. Encerrar Confirmation Dialog */}
+      <AlertDialog open={showEncerrarDialog} onOpenChange={setShowEncerrarDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Encerrar cotação?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Deseja encerrar a cotação <strong>"{currentLista?.nome}"</strong>? Após encerrar, fornecedores não poderão mais enviar respostas.</p>
+                
+                <div className="bg-muted rounded-lg p-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Links gerados:</span>
+                    <span className="font-bold text-foreground">{encerrarStats.total}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Responderam:</span>
+                    <span className="font-bold text-success">{encerrarStats.responded}</span>
+                  </div>
+                  {encerrarStats.pending.length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Ainda não responderam:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {encerrarStats.pending.map(emp => (
+                          <span key={emp} className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-display font-bold">
+                            {emp}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEncerrarConfirm} className="bg-success text-success-foreground hover:bg-success/90">
+              Encerrar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Panels */}
       <ImportListaPanel open={importOpen} onOpenChange={setImportOpen} onImported={() => {}} />
       <CarregarListaPanel
         open={carregarOpen}
@@ -866,8 +731,7 @@ const Index = () => {
         statusFilter="finalizada"
         title="Cotações Finalizadas"
         onExport={handleExport}
-        onDownloadCISS={(l) => handleDownloadResultados(l, 'CISS')}
-        onDownloadCONSINCO={(l) => handleDownloadResultados(l, 'CONSINCO')}
+        onDownloadResultados={handleDownloadResultados}
       />
       <FornecedoresPanel open={fornecedoresOpen} onOpenChange={setFornecedoresOpen} />
       {currentLista && (
@@ -876,10 +740,9 @@ const Index = () => {
       <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
       <PerfilPanel open={perfilOpen} onOpenChange={setPerfilOpen} />
 
-
     </div>
+    </ProfileGate>
   );
 };
 
 export default Index;
-
