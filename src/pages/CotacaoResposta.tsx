@@ -209,7 +209,8 @@ const CotacaoResposta = () => {
           empresa,
           resposta,
           ...(listaUserId ? { user_id: listaUserId } : {}),
-        });
+          empresa_id: '29605804-0000-0000-0000-000000000000'
+        } as any);
       }
 
       // Vincula a resposta ao link específico que foi usado

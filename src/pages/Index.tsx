@@ -883,7 +883,7 @@ const Index = () => {
           className="fixed bottom-4 right-4 p-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full text-slate-400 hover:text-primary transition-all z-50 shadow-lg"
           title="Painel Master"
         >
-          <LucideIcon name="lock" className="w-4 h-4" />
+          <Home className="w-4 h-4" />
         </button>
       )}
 
