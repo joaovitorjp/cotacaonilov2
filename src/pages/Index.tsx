@@ -151,7 +151,7 @@ const Index = () => {
     setRespostas((respData ?? []).map((d: any) => ({ 
       empresa: d.empresa, 
       resposta: d.resposta as any[],
-      tipo_preco: linksMap[d.empresa] || (d.empresa.includes('GO') ? 'NOTA' : 'IPI_ST') // Fallback logic requested
+      tipo_preco: linksMap[d.empresa] || (d.empresa?.includes('GO') ? 'NOTA' : 'IPI_ST') // Fallback logic requested
     })));
   }, []);
 
