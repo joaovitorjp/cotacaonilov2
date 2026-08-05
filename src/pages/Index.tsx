@@ -39,7 +39,7 @@ interface RespostaEmpresa {
 }
 
 const Index = () => {
-  const { user, network, signOut } = useAuth();
+  const { user, network, empresa: userEmpresa, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -151,7 +151,7 @@ const Index = () => {
     setRespostas((respData ?? []).map((d: any) => ({ 
       empresa: d.empresa, 
       resposta: d.resposta as any[],
-      tipo_preco: linksMap[d.empresa] || (d.empresa.includes('GO') ? 'NOTA' : 'IPI_ST') // Fallback logic requested
+      tipo_preco: linksMap[d.empresa] || (d.empresa?.includes('GO') ? 'NOTA' : 'IPI_ST') // Fallback logic requested
     })));
   }, []);
 
@@ -820,7 +820,13 @@ const Index = () => {
               const marker = [{ __manual_states: states }] as any;
               const { error } = await supabase
                 .from('respostas')
-                .insert({ lista_id: currentLista.id, empresa, resposta: marker, user_id: user?.id });
+                .insert({
+                  lista_id: currentLista.id,
+                  empresa,
+                  resposta: marker,
+                  user_id: user?.id,
+                  empresa_id: userEmpresa?.id
+                });
               if (error) {
                 toast.error('Erro ao adicionar fornecedor.');
               } else {

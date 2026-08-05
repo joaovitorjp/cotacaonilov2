@@ -24,6 +24,7 @@ const CotacaoResposta = () => {
   const [listaId, setListaId] = useState('');
   const [listaUserId, setListaUserId] = useState<string | null>(null);
   const [linkId, setLinkId] = useState<string>('');
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [listaNome, setListaNome] = useState('');
   const [networkName, setNetworkName] = useState('Nilo Atacadista');
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -69,6 +70,7 @@ const CotacaoResposta = () => {
     setEmpresa(linkData.empresa);
     setListaId(linkData.lista_id);
     setLinkId(linkData.id);
+    setEmpresaId(linkData.empresa_id);
     setEstados((linkData as any).estados || 'AMBOS');
     setTipoPreco((linkData as any).tipo_preco || 'IPI_ST');
 
@@ -209,6 +211,7 @@ const CotacaoResposta = () => {
           empresa,
           resposta,
           ...(listaUserId ? { user_id: listaUserId } : {}),
+          empresa_id: empresaId
         });
       }
 

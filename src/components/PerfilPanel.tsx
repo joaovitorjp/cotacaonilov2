@@ -16,7 +16,7 @@ interface PerfilPanelProps {
 }
 
 const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
-  const { user, signOut } = useAuth();
+  const { user, empresa, signOut } = useAuth();
   const [nome, setNome] = useState('');
   const [cargo, setCargo] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -70,6 +70,7 @@ const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
         .upsert(
           { 
             user_id: user.id, 
+            empresa_id: empresa?.id,
             email: user.email ?? emailLocal, 
             nome: cleanNome,
             cargo: cargo.trim(),

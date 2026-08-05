@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   network: any | null;
+  empresa: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   network: null,
+  empresa: null,
   loading: true,
   signOut: async () => {},
 });
@@ -25,11 +27,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [network, setNetwork] = useState<any | null>(null);
+  const [empresa, setEmpresa] = useState<any | null>(null);
 
-  const fetchNetwork = async (userId: string) => {
+  const fetchData = async (userId: string) => {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('network_id')
+      .select('network_id, empresa_id')
       .eq('user_id', userId)
       .maybeSingle();
     
@@ -43,6 +46,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       setNetwork(null);
     }
+
+    if (profile?.empresa_id) {
+      const { data: emp } = await supabase
+        .from('empresas')
+        .select('*')
+        .eq('id', profile.empresa_id)
+        .maybeSingle();
+      setEmpresa(emp);
+    } else {
+      setEmpresa(null);
+    }
   };
 
   useEffect(() => {
@@ -50,9 +64,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchNetwork(session.user.id);
+        fetchData(session.user.id);
       } else {
         setNetwork(null);
+        setEmpresa(null);
       }
       setLoading(false);
     });
@@ -61,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchNetwork(session.user.id);
+        fetchData(session.user.id);
       }
       setLoading(false);
     });
@@ -74,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, network, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, network, empresa, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
