@@ -59,12 +59,17 @@ const Index = () => {
   const [encerrarStats, setEncerrarStats] = useState<{ total: number; responded: number; pending: string[] }>({ total: 0, responded: 0, pending: [] });
 
   const loadRespostas = useCallback(async (listaId: string) => {
+    if (!user?.id) {
+      setRespostas([]);
+      return;
+    }
     const { data } = await supabase
       .from('respostas')
       .select('empresa, resposta')
+      .eq('user_id', user.id)
       .eq('lista_id', listaId);
     setRespostas((data ?? []).map((d: any) => ({ empresa: d.empresa, resposta: d.resposta as any[] })));
-  }, []);
+  }, [user?.id]);
 
   // 1. REALTIME: Subscribe to new responses when a lista is open
   useEffect(() => {
@@ -129,6 +134,7 @@ const Index = () => {
     const { data: links } = await supabase
       .from('links_cotacao')
       .select('empresa, respondido')
+      .eq('user_id', user?.id ?? '')
       .eq('lista_id', currentLista.id);
 
     const allLinks = links ?? [];
@@ -144,7 +150,8 @@ const Index = () => {
     const { error } = await supabase
       .from('listas')
       .update({ status: 'finalizada' })
-      .eq('id', currentLista.id);
+      .eq('id', currentLista.id)
+      .eq('user_id', user?.id ?? '');
 
     if (error) {
       toast.error('Erro ao encerrar cotação.');
@@ -159,6 +166,7 @@ const Index = () => {
     const { data } = await supabase
       .from('respostas')
       .select('empresa, resposta')
+      .eq('user_id', user?.id ?? '')
       .eq('lista_id', lista.id);
 
     const resps: RespostaEmpresa[] = (data ?? []).map((d: any) => ({
@@ -387,6 +395,7 @@ const Index = () => {
     const { data } = await supabase
       .from('respostas')
       .select('empresa, resposta')
+      .eq('user_id', user?.id ?? '')
       .eq('lista_id', lista.id);
 
     const resps: RespostaEmpresa[] = (data ?? []).map((d: any) => ({
@@ -620,7 +629,8 @@ const Index = () => {
               .from('respostas')
               .delete()
               .eq('lista_id', currentLista.id)
-              .eq('empresa', empresa);
+              .eq('empresa', empresa)
+              .eq('user_id', user?.id ?? '');
             if (error) {
               toast.error('Erro ao excluir dados do fornecedor.');
             } else {
@@ -632,7 +642,8 @@ const Index = () => {
             const { error } = await supabase
               .from('listas')
               .update({ produtos: updatedProdutos as any })
-              .eq('id', currentLista.id);
+              .eq('id', currentLista.id)
+              .eq('user_id', user?.id ?? '');
             if (error) {
               toast.error('Erro ao salvar alterações.');
             } else {

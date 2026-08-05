@@ -513,9 +513,9 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           }
         }
         if (existingResp) {
-          await supabase.from('respostas').update({ resposta: currentItems as any }).eq('lista_id', listaId).eq('empresa', emp);
+          await supabase.from('respostas').update({ resposta: currentItems as any }).eq('lista_id', listaId).eq('empresa', emp).eq('user_id', user?.id ?? '');
         } else {
-          await supabase.from('respostas').insert({ lista_id: listaId, empresa: emp, resposta: currentItems as any });
+          await supabase.from('respostas').insert({ lista_id: listaId, empresa: emp, resposta: currentItems as any, user_id: user?.id });
         }
       }
     }
@@ -924,7 +924,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   useEffect(() => {
     if (!listaId) return;
     const loadMarkups = async () => {
-      const { data } = await supabase.from('price_markups').select('empresa, markup_percent').eq('lista_id', listaId);
+      const { data } = await supabase.from('price_markups').select('empresa, markup_percent').eq('lista_id', listaId).eq('user_id', user?.id ?? '');
       if (data && data.length > 0) {
         const loaded: Record<string, number> = {};
         data.forEach((row: any) => { loaded[row.empresa] = Number(row.markup_percent); });
@@ -936,7 +936,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const saveMarkupToDb = async (empresa: string, percent: number) => {
     if (!listaId) return;
-    if (percent === 0) await supabase.from('price_markups').delete().eq('lista_id', listaId).eq('empresa', empresa);
+    if (percent === 0) await supabase.from('price_markups').delete().eq('lista_id', listaId).eq('empresa', empresa).eq('user_id', user?.id ?? '');
     else await supabase.from('price_markups').upsert({ lista_id: listaId, empresa, markup_percent: percent, updated_at: new Date().toISOString(), user_id: user?.id }, { onConflict: 'lista_id,empresa' });
   };
 
