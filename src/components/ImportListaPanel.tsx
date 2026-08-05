@@ -14,7 +14,7 @@ interface ImportListaPanelProps {
 }
 
 const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange, onImported }) => {
-  const { user, network } = useAuth();
+  const { user } = useAuth();
   const [nome, setNome] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [prazo, setPrazo] = useState('');
@@ -57,7 +57,7 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
         produtos,
         status: 'aberta',
         user_id: user?.id,
-        network_id: network?.id || '29605804-0000-0000-0000-000000000000', // Default to Nilo if no network context
+        network_id: '29605804-0000-0000-0000-000000000000', // Default to Nilo
       };
 
       // 5. DEADLINE: Add prazo if set

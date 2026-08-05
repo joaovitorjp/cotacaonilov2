@@ -75,7 +75,7 @@ const TIPO_PRECO_LABELS: Record<TipoPrecoOption, string> = {
 };
 
 const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, listaId }) => {
-  const { user, network } = useAuth();
+  const { user } = useAuth();
   const [empresa, setEmpresa] = useState('');
   const [loading, setLoading] = useState(false);
   const [generatedLinks, setGeneratedLinks] = useState<GeneratedLink[]>([]);
@@ -137,7 +137,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const generateLink = async (empresaNome: string, estados: EstadoOption, tipo_preco: TipoPrecoOption) => {
     const { data, error } = await supabase
       .from('links_cotacao')
-      .insert({ lista_id: listaId, empresa: empresaNome, estados, tipo_preco, user_id: user?.id, network_id: network?.id || '29605804-0000-0000-0000-000000000000', empresa_id: '29605804-0000-0000-0000-000000000000' } as any)
+      .insert({ lista_id: listaId, empresa: empresaNome, estados, tipo_preco, user_id: user?.id, network_id: '29605804-0000-0000-0000-000000000000', empresa_id: '29605804-0000-0000-0000-000000000000' } as any)
       .select()
       .single();
 
@@ -236,7 +236,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     const remetente = userNome ? `\n\nEnviado por: ${userNome}` : '';
     const avisoPreco = tipoPreco ? `\n\nATENÇÃO: Os preços devem ser preenchidos como: ${TIPO_PRECO_LABELS[tipoPreco]}` : '';
     const body = `Olá!\n\nSegue o link para responder a cotação ${cotacaoLabel}:${avisoPreco}\n\nLink de resposta:\n${link}${remetente}`;
-    const subject = `Cotação de Preços - ${listaNome || (network ? network.name : 'Rede Nilo')}`;
+    const subject = `Cotação de Preços - ${listaNome || 'Rede Nilo'}`;
     return { subject: encodeURIComponent(subject), body: encodeURIComponent(body) };
   };
 
