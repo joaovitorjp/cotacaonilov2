@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Package, Clock, CheckCircle2, Users } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardStats {
   abertas: number;
@@ -14,6 +15,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({ abertas: 0, finalizadas: 0, totalProdutos: 0, totalRespostas: 0 });
   const [recentes, setRecentes] = useState<{ id: string; nome: string; status: string; created_at: string; produtos: any[] }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,9 +25,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   }, []);
 
   const loadStats = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
     const [listasRes, respostasRes] = await Promise.all([
-      supabase.from('listas').select('id, nome, status, created_at, produtos').order('created_at', { ascending: false }),
-      supabase.from('respostas').select('id', { count: 'exact', head: true }),
+      supabase.from('listas').select('id, nome, status, created_at, produtos').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('respostas').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
     ]);
 
     const listas = (listasRes.data ?? []) as any[];

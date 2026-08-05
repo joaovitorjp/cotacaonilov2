@@ -40,7 +40,12 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
 
   const fetchFornecedores = async () => {
     setLoading(true);
-    const { data } = await supabase.from('fornecedores').select('*').order('nome');
+    if (!user?.id) {
+      setFornecedores([]);
+      setLoading(false);
+      return;
+    }
+    const { data } = await supabase.from('fornecedores').select('*').eq('user_id', user.id).order('nome');
     setFornecedores((data ?? []) as Fornecedor[]);
     setLoading(false);
   };
@@ -74,7 +79,8 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from('fornecedores').delete().eq('id', id);
+    if (!user?.id) return;
+    const { error } = await supabase.from('fornecedores').delete().eq('id', id).eq('user_id', user.id);
     if (error) {
       toast.error('Erro ao excluir.');
     } else {
@@ -104,7 +110,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       nome: editNome.trim(),
       whatsapp: cleanWhatsapp,
       contato: editContato.trim() || null,
-    }).eq('id', editingId);
+    }).eq('id', editingId).eq('user_id', user?.id ?? '');
 
     if (error) {
       toast.error('Erro ao salvar.');

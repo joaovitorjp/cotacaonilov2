@@ -752,6 +752,11 @@ export type Database = {
     Functions: {
       current_empresa_id: { Args: never; Returns: string }
       default_empresa_id: { Args: never; Returns: string }
+      enviar_resposta_cotacao: {
+        Args: { _resposta: Json; _token: string }
+        Returns: string
+      }
+      get_cotacao_por_token: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -79,7 +79,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
 
   useEffect(() => {
     if (open) {
-      supabase.from('fornecedores').select('*').order('nome').then(({ data }) => {
+      supabase.from('fornecedores').select('*').eq('user_id', user?.id ?? '').order('nome').then(({ data }) => {
         setFornecedores((data ?? []) as Fornecedor[]);
       });
       supabase.from('listas').select('nome').eq('id', listaId).maybeSingle().then(({ data }) => {
@@ -99,11 +99,12 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     const { data: links } = await supabase
       .from('links_cotacao')
       .select('id, token, empresa, respondido, estados')
+      .eq('user_id', user?.id ?? '')
       .eq('lista_id', listaId)
       .order('created_at', { ascending: false });
 
     if (links) {
-      const { data: forns } = await supabase.from('fornecedores').select('nome, whatsapp');
+      const { data: forns } = await supabase.from('fornecedores').select('nome, whatsapp').eq('user_id', user?.id ?? '');
       const fornMap: Record<string, string> = {};
       (forns ?? []).forEach((f: any) => { fornMap[f.nome] = f.whatsapp; });
 
@@ -212,7 +213,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
 
   const handleDeleteLink = async () => {
     if (!linkToDelete) return;
-    const { error } = await supabase.from('links_cotacao').delete().eq('id', linkToDelete.id);
+    const { error } = await supabase.from('links_cotacao').delete().eq('id', linkToDelete.id).eq('user_id', user?.id ?? '');
     if (error) {
       toast.error('Erro ao excluir link.');
     } else {

@@ -59,9 +59,15 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
 
   const fetchListas = async () => {
     setLoading(true);
+    if (!user?.id) {
+      setListas([]);
+      setLoading(false);
+      return;
+    }
     const { data, error } = await supabase
       .from('listas')
       .select('*')
+      .eq('user_id', user.id)
       .eq('status', statusFilter)
       .order('created_at', { ascending: false });
 
@@ -78,8 +84,8 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
     const ids = lists.map(l => l.id);
     if (ids.length > 0) {
       const [linksRes, respostasRes] = await Promise.all([
-        supabase.from('links_cotacao').select('lista_id, empresa, respondido').in('lista_id', ids),
-        supabase.from('respostas').select('lista_id').in('lista_id', ids),
+        supabase.from('links_cotacao').select('lista_id, empresa, respondido').eq('user_id', user.id).in('lista_id', ids),
+        supabase.from('respostas').select('lista_id').eq('user_id', user.id).in('lista_id', ids),
       ]);
 
       const lMap: Record<string, LinkInfo[]> = {};
@@ -106,9 +112,10 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    await supabase.from('links_cotacao').delete().eq('lista_id', deleteTarget.id);
-    await supabase.from('respostas').delete().eq('lista_id', deleteTarget.id);
-    const { error } = await supabase.from('listas').delete().eq('id', deleteTarget.id);
+    if (!user?.id) return;
+    await supabase.from('links_cotacao').delete().eq('lista_id', deleteTarget.id).eq('user_id', user.id);
+    await supabase.from('respostas').delete().eq('lista_id', deleteTarget.id).eq('user_id', user.id);
+    const { error } = await supabase.from('listas').delete().eq('id', deleteTarget.id).eq('user_id', user.id);
     if (error) {
       toast.error('Erro ao excluir lista.');
     } else {
@@ -120,7 +127,8 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
 
   const handleRename = async () => {
     if (!renameTarget || !renameValue.trim()) return;
-    const { error } = await supabase.from('listas').update({ nome: renameValue.trim() }).eq('id', renameTarget.id);
+    if (!user?.id) return;
+    const { error } = await supabase.from('listas').update({ nome: renameValue.trim() }).eq('id', renameTarget.id).eq('user_id', user.id);
     if (error) {
       toast.error('Erro ao renomear.');
     } else {
@@ -140,6 +148,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
       const { data } = await supabase
         .from('respostas')
         .select('empresa, resposta')
+        .eq('user_id', user?.id ?? '')
         .eq('lista_id', lista.id);
       setDuplicateRespostas(data ?? []);
     }
