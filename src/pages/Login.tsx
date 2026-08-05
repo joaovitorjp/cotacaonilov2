@@ -19,7 +19,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-
+  useEffect(() => {
     const oauthError = searchParams.get('oauth_error');
     if (!oauthError) return;
 
@@ -39,7 +39,6 @@ const Login = () => {
     }
     setLoading(true);
     
-
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
