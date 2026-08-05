@@ -13,9 +13,10 @@ import OAuthInitiate from "./pages/OAuthInitiate.tsx";
 import OAuthConsent from "./pages/OAuthConsent.tsx";
 import Perfil from "./pages/Perfil.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
-// Master pages removed
-
-// Network admin removed
+import MasterAdmin from "./pages/MasterAdmin.tsx";
+import MasterLogin from "./pages/MasterLogin.tsx";
+import MasterAuditLogs from "./pages/MasterAuditLogs.tsx";
+import NetworkAdmin from "./pages/NetworkAdmin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -57,7 +58,10 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            {/* Master routes removed */}
+            <Route path="/master-login" element={<MasterLogin />} />
+            <Route path="/master" element={<MasterAdmin />} />
+            <Route path="/master/audit" element={<MasterAuditLogs />} />
+            <Route path="/master/networks" element={<NetworkAdmin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

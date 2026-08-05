@@ -51,16 +51,22 @@ const Login = () => {
     setLoading(true);
     
     // Network isolation
-    const { data: profile } = await supabase.from('profiles').select('network_id').eq('email', email).maybeSingle();
+    const { data: profile } = await supabase.from('profiles').select('network_id, profiles_user_roles(role)').eq('email', email).maybeSingle();
     
     // Default to Nilo if no network specified
     const networkSlug = searchParams.get('network') || 'nilo';
     const { data: net } = await (supabase as any).from('networks').select('id').eq('slug', networkSlug).single();
 
     if (net && profile && profile.network_id && profile.network_id !== net.id) {
-      toast.error('Este usuário não pertence a esta rede.');
-      setLoading(false);
-      return;
+      // Allow multi-tenant access if user is master admin (has admin role in user_roles)
+      const userRoles = (profile as any).profiles_user_roles || [];
+      const isAdminRole = Array.isArray(userRoles) ? userRoles.some((r: any) => r.role === 'admin') : (userRoles.role === 'admin');
+      
+      if (!isAdminRole) {
+        toast.error('Este usuário não pertence a esta rede.');
+        setLoading(false);
+        return;
+      }
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -106,7 +112,7 @@ const Login = () => {
       <div className="relative z-10 w-full max-w-[90%] sm:max-w-sm mx-auto p-6 sm:p-8 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
-            {'Nilo Atacadista'}
+            {networkInfo?.name || 'Nilo Atacadista'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isSignUp ? 'Criar novo acesso' : 'Acesso administrativo'}

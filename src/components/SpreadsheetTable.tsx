@@ -547,7 +547,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         if (existingResp) {
           await supabase.from('respostas').update({ resposta: currentItems as any }).eq('lista_id', listaId).eq('empresa', emp);
         } else {
-          await supabase.from('respostas').insert({ lista_id: listaId, empresa: emp, resposta: currentItems as any });
+          await supabase.from('respostas').insert({ 
+            lista_id: listaId, 
+            empresa: emp, 
+            resposta: currentItems as any,
+            empresa_id: '29605804-0000-0000-0000-000000000000'
+          } as any);
         }
       }
     }

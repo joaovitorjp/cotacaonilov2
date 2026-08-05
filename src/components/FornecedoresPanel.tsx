@@ -77,7 +77,8 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       network_id: network?.id || '29605804-0000-0000-0000-000000000000',
       codigo_interno_ciss: codigoInternoCISS.trim() || null,
       codigo_interno_consinco: codigoInternoCONSINCO.trim() || null,
-    });
+      empresa_id: '29605804-0000-0000-0000-000000000000'
+    } as any);
     if (error) {
       toast.error('Erro ao adicionar fornecedor.');
     } else {
