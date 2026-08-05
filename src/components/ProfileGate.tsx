@@ -17,7 +17,7 @@ import { toast } from 'sonner';
  *  - Forces normal users without a `nome` to fill it before using the app
  */
 const ProfileGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, empresa } = useAuth();
   const { role, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const [checked, setChecked] = useState(false);
@@ -54,7 +54,7 @@ const ProfileGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { error } = await supabase
       .from('profiles')
       .upsert(
-        { user_id: user.id, email: user.email ?? '', nome: clean },
+        { user_id: user.id, email: user.email ?? '', nome: clean, empresa_id: empresa?.id },
         { onConflict: 'user_id' }
       );
     setSaving(false);
