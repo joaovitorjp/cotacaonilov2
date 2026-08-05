@@ -40,7 +40,7 @@ interface CarregarListaPanelProps {
 const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   open, onOpenChange, onListaSelected, statusFilter, title, onExport, onDownloadCISS, onDownloadCONSINCO,
 }) => {
-  const { user, empresa } = useAuth();
+  const { user } = useAuth();
   const [listas, setListas] = useState<Lista[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Lista | null>(null);
@@ -152,13 +152,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
     try {
       const { data: novaLista, error } = await supabase
         .from('listas')
-        .insert({
-          nome: duplicateName.trim(),
-          produtos: duplicateTarget.produtos as any,
-          status: 'aberta',
-          user_id: user?.id,
-          empresa_id: empresa?.id
-        })
+        .insert({ nome: duplicateName.trim(), produtos: duplicateTarget.produtos as any, status: 'aberta', user_id: user?.id })
         .select().single();
       if (error || !novaLista) throw error;
 
@@ -172,7 +166,6 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
           lista_id: novaLista.id,
           empresa: r.empresa,
           user_id: user?.id,
-          empresa_id: empresa?.id,
           resposta: (r.resposta as any[]).map((item: any) => ({
             codigo_interno: item.codigo_interno,
             ...(sel.mt && (item.preco_mt !== undefined || item.preco !== undefined)

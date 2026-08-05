@@ -79,7 +79,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   editPrices = {}, highlightLowest = false, onSave, listaId, onDeleteResposta,
   onAfterSave, onAddEmpresa, onAddProduto, onDeleteProduto,
 }) => {
-  const { user, empresa: userEmpresa } = useAuth();
+  const { user } = useAuth();
   const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
 
   // State filter
@@ -547,13 +547,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         if (existingResp) {
           await supabase.from('respostas').update({ resposta: currentItems as any }).eq('lista_id', listaId).eq('empresa', emp);
         } else {
-          await supabase.from('respostas').insert({
-            lista_id: listaId,
-            empresa: emp,
-            resposta: currentItems as any,
-            user_id: user?.id,
-            empresa_id: userEmpresa?.id
-          });
+          await supabase.from('respostas').insert({ lista_id: listaId, empresa: emp, resposta: currentItems as any });
         }
       }
     }

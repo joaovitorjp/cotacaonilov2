@@ -19,17 +19,17 @@ const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [empresaInfo, setEmpresaInfo] = useState<any>(null);
+  const [networkInfo, setNetworkInfo] = useState<any>(null);
 
   useEffect(() => {
-    const fetchEmpresaInfo = async () => {
-      const slug = searchParams.get('empresa');
+    const fetchNetworkInfo = async () => {
+      const slug = searchParams.get('network');
       if (slug) {
-        const { data } = await supabase.from('empresas').select('*').eq('slug', slug).single();
-        if (data) setEmpresaInfo(data);
+        const { data } = await (supabase as any).from('networks').select('*').eq('slug', slug).single();
+        if (data) setNetworkInfo(data);
       }
     };
-    fetchEmpresaInfo();
+    fetchNetworkInfo();
 
     const oauthError = searchParams.get('oauth_error');
     if (!oauthError) return;
@@ -50,15 +50,15 @@ const Login = () => {
     }
     setLoading(true);
     
-    // Empresa isolation
-    const { data: profile } = await supabase.from('profiles').select('empresa_id').eq('email', email).maybeSingle();
+    // Network isolation
+    const { data: profile } = await supabase.from('profiles').select('network_id').eq('email', email).maybeSingle();
     
-    // Default to 'nilo' slug if none specified
-    const empresaSlug = searchParams.get('empresa') || 'nilo';
-    const { data: emp } = await supabase.from('empresas').select('id').eq('slug', empresaSlug).maybeSingle();
+    // Default to Nilo if no network specified
+    const networkSlug = searchParams.get('network') || 'nilo';
+    const { data: net } = await (supabase as any).from('networks').select('id').eq('slug', networkSlug).single();
 
-    if (emp && profile && profile.empresa_id && profile.empresa_id !== emp.id) {
-      toast.error('Este usuário não pertence a esta empresa.');
+    if (net && profile && profile.network_id && profile.network_id !== net.id) {
+      toast.error('Este usuário não pertence a esta rede.');
       setLoading(false);
       return;
     }
@@ -106,7 +106,7 @@ const Login = () => {
       <div className="relative z-10 w-full max-w-[90%] sm:max-w-sm mx-auto p-6 sm:p-8 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
-            {empresaInfo?.nome || 'Nilo Atacadista'}
+            {'Nilo Atacadista'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isSignUp ? 'Criar novo acesso' : 'Acesso administrativo'}
