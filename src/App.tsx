@@ -13,7 +13,8 @@ import OAuthInitiate from "./pages/OAuthInitiate.tsx";
 import OAuthConsent from "./pages/OAuthConsent.tsx";
 import Perfil from "./pages/Perfil.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
-// Master pages removed
+import MasterAdmin from "./pages/MasterAdmin.tsx";
+import MasterLogin from "./pages/MasterLogin.tsx";
 
 // Network admin removed
 import NotFound from "./pages/NotFound.tsx";
