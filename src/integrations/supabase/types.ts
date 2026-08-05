@@ -315,7 +315,7 @@ export type Database = {
           contato?: string | null
           created_at?: string
           email?: string | null
-          empresa_id: string
+          empresa_id?: string
           id?: string
           network_id?: string | null
           nome: string
@@ -372,7 +372,7 @@ export type Database = {
         Insert: {
           created_at?: string
           empresa: string
-          empresa_id: string
+          empresa_id?: string
           estados?: string
           id?: string
           lista_id: string
@@ -434,7 +434,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          empresa_id: string
+          empresa_id?: string
           id?: string
           network_id?: string | null
           nome: string
@@ -597,7 +597,7 @@ export type Database = {
           cargo?: string | null
           created_at?: string
           email?: string
-          empresa_id: string
+          empresa_id?: string
           id?: string
           is_super_admin?: boolean | null
           network_id?: string | null
@@ -647,7 +647,7 @@ export type Database = {
         Insert: {
           created_at?: string
           empresa: string
-          empresa_id: string
+          empresa_id?: string
           id?: string
           lista_id: string
           network_id?: string | null
@@ -750,6 +750,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      default_empresa_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
