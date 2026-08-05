@@ -51,13 +51,12 @@ const CotacaoResposta = () => {
   const loadData = async () => {
     if (!token) { setError('Link inválido.'); setLoading(false); return; }
 
-    const { data: linkData, error: linkErr } = await supabase
-      .from('links_cotacao')
-      .select('*')
-      .eq('token', token)
-      .maybeSingle();
+    const { data, error: linkErr } = await supabase.rpc('get_cotacao_por_token', { _token: token });
+    const payload = data && typeof data === 'object' && !Array.isArray(data) ? data as any : null;
+    const linkData = payload?.link;
+    const lista = payload?.lista;
 
-    if (linkErr || !linkData) {
+    if (linkErr || !linkData || !lista) {
       setError('Link de cotação não encontrado ou inválido.');
       setLoading(false);
       return;
@@ -69,30 +68,16 @@ const CotacaoResposta = () => {
     setLinkId(linkData.id);
     setEstados((linkData as any).estados || 'AMBOS');
 
-    const { data: lista } = await supabase
-      .from('listas')
-      .select('*')
-      .eq('id', linkData.lista_id)
-      .maybeSingle();
-
-    if (!lista) { setError('Lista não encontrada.'); setLoading(false); return; }
     if (lista.status === 'finalizada') { setError('Esta cotação já foi encerrada.'); setLoading(false); return; }
     if ((lista as any).prazo && new Date((lista as any).prazo) < new Date()) {
       setError('O prazo para responder esta cotação expirou.'); setLoading(false); return;
     }
 
     setListaNome(lista.nome);
-    setListaUserId((lista as any).user_id ?? null);
     const prods = lista.produtos as any as Produto[];
     setProdutos(prods);
 
-    const { data: resps } = await supabase
-      .from('respostas')
-      .select('empresa, resposta')
-      .eq('lista_id', linkData.lista_id)
-      .eq('empresa', linkData.empresa);
-
-    const myResp = (resps ?? [])[0];
+    const myResp = payload?.resposta;
     if (myResp) {
       const prefilledMT: Record<number, string> = {};
       const prefilledGO: Record<number, string> = {};
@@ -181,30 +166,12 @@ const CotacaoResposta = () => {
         ...(showGO ? { preco_go: (pricesGO[idx] && pricesGO[idx].trim() !== '') ? pricesGO[idx] : '' } : {}),
       }));
 
-      const { data: existing } = await supabase
-        .from('respostas')
-        .select('id')
-        .eq('lista_id', listaId)
-        .eq('empresa', empresa)
-        .maybeSingle();
-
-      if (existing) {
-        await supabase.from('respostas').update({ resposta }).eq('id', existing.id);
-      } else {
-        await supabase.from('respostas').insert({
-          lista_id: listaId,
-          empresa,
-          resposta,
-          ...(listaUserId ? { user_id: listaUserId } : {}),
-        });
-      }
-
-      // Vincula a resposta ao link específico que foi usado
-      if (linkId) {
-        await supabase.from('links_cotacao').update({ respondido: true }).eq('id', linkId);
-      } else {
-        await supabase.from('links_cotacao').update({ respondido: true }).eq('token', token);
-      }
+      if (!token) throw new Error('Link inválido');
+      const { error: submitError } = await supabase.rpc('enviar_resposta_cotacao', {
+        _token: token,
+        _resposta: resposta,
+      });
+      if (submitError) throw submitError;
       handleDownloadPdf();
       setSubmitted(true);
       toast.success('Resposta enviada com sucesso!');
