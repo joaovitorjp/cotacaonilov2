@@ -615,7 +615,7 @@ const Index = () => {
                 <Table className="w-5 h-5" />
               </div>
               <h1 className="text-xl font-display font-bold text-slate-800 tracking-tight hidden sm:block">
-                {network ? network.name : 'Nilo Atacadista'}
+                Nilo Atacadista
               </h1>
             </button>
 
@@ -876,15 +876,6 @@ const Index = () => {
       <FloatingChat open={chatOpen} onOpenChange={setChatOpen} hideBubble />
       <PerfilPanel open={perfilOpen} onOpenChange={setPerfilOpen} />
 
-      {isMaster && (
-        <button
-          onClick={() => navigate('/master-login')}
-          className="fixed bottom-4 right-4 p-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full text-slate-400 hover:text-primary transition-all z-50 shadow-lg"
-          title="Painel Master"
-        >
-          <Home className="w-4 h-4" />
-        </button>
-      )}
 
     </div>
   );
