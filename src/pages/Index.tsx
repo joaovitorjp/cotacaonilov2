@@ -524,7 +524,7 @@ const Index = () => {
 
           {/* Desktop nav - Refined */}
           <div className="hidden md:flex items-center gap-3">
-            {navItems.slice(1).map(item => (
+            {navItems.slice(1).filter(i => i.label !== 'Perfil').map(item => (
               <Button
                 key={item.label}
                 variant={item.label === 'Gerar Link' ? 'default' : 'ghost'}
@@ -541,6 +541,17 @@ const Index = () => {
                 {item.label}
               </Button>
             ))}
+            <button
+              onClick={() => setPerfilOpen(true)}
+              title="Perfil"
+              className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center hover:ring-2 hover:ring-primary/30 transition-all"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Foto de perfil" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon className="w-4 h-4 text-slate-500" />
+              )}
+            </button>
             <div className="w-px h-5 bg-slate-200 mx-2" />
             <Button variant="ghost" size="icon" onClick={signOut} title="Sair" className="hover:bg-red-50 hover:text-red-600 rounded-full transition-colors w-9 h-9">
               <LogOut className="h-4 w-4" />
