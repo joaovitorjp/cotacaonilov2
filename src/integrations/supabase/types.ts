@@ -362,10 +362,13 @@ export type Database = {
           empresa_id: string
           estados: string
           id: string
+          info_preco: string | null
           lista_id: string
           network_id: string | null
           respondido: boolean
           tipo_preco: string | null
+          tipo_preco_go: string
+          tipo_preco_mt: string
           token: string
           user_id: string | null
         }
@@ -375,10 +378,13 @@ export type Database = {
           empresa_id?: string
           estados?: string
           id?: string
+          info_preco?: string | null
           lista_id: string
           network_id?: string | null
           respondido?: boolean
           tipo_preco?: string | null
+          tipo_preco_go?: string
+          tipo_preco_mt?: string
           token?: string
           user_id?: string | null
         }
@@ -388,10 +394,13 @@ export type Database = {
           empresa_id?: string
           estados?: string
           id?: string
+          info_preco?: string | null
           lista_id?: string
           network_id?: string | null
           respondido?: boolean
           tipo_preco?: string | null
+          tipo_preco_go?: string
+          tipo_preco_mt?: string
           token?: string
           user_id?: string | null
         }

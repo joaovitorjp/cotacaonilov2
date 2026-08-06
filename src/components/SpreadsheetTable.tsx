@@ -29,6 +29,8 @@ interface SpreadsheetTableProps {
   onDeleteResposta?: (empresa: string) => Promise<void>;
   onAfterSave?: () => void;
   onAddEmpresa?: (empresa: string, states: ('MT' | 'GO')[]) => Promise<void>;
+  tipoPrecoMap?: Record<string, string>;
+
 }
 
 const parsePrice = (val: string | number): number => {
@@ -39,10 +41,13 @@ const parsePrice = (val: string | number): number => {
   return isNaN(num) ? Infinity : num;
 };
 
+export const tipoPrecoLabel = (t?: string) => (t === 'NOTA' ? 'PREÇO NOTA' : 'IPI + ST');
+
 const MIN_COL_WIDTH = 40;
+
 const MIN_ROW_HEIGHT = 21;
 const DEFAULT_ROW_HEIGHT = 25;
-const HEADER_HEIGHT = 28;
+const HEADER_HEIGHT = 40;
 const EMPTY_ROWS = 30;
 const EMPTY_COLS = 8;
 
@@ -73,7 +78,7 @@ interface ColDef {
 const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   produtos, respostas, readOnly = false, editableColumn, onPriceChange,
   editPrices = {}, highlightLowest = false, onSave, listaId, onDeleteResposta,
-  onAfterSave, onAddEmpresa,
+  onAfterSave, onAddEmpresa, tipoPrecoMap = {},
 }) => {
   const { user } = useAuth();
   const empresas = useMemo(() => respostas.map(r => r.empresa), [respostas]);
@@ -1396,6 +1401,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     {col.empresa && priceMarkups[col.empresa] ? (
                       <span className="ml-1 text-[9px] opacity-70">(+{priceMarkups[col.empresa].toFixed(1)}%)</span>
                     ) : null}
+                    {col.empresa && col.state ? (
+                      <div className="text-[8px] leading-tight font-bold opacity-80 uppercase tracking-wide">
+                        {tipoPrecoLabel(tipoPrecoMap[`${col.empresa}_${col.state}`] ?? (col.state === 'MT' ? 'IPI_ST' : 'NOTA'))}
+                      </div>
+                    ) : null}
+
                     <div
                       className={`absolute top-0 bottom-0 w-[4px] cursor-col-resize z-30 ${activeColResize === i ? 'bg-primary' : 'hover:bg-primary/50'}`}
                       style={{ right: '-2px' }}

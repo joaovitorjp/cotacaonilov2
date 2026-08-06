@@ -32,9 +32,14 @@ const CotacaoResposta = () => {
   const [filledCount, setFilledCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [estados, setEstados] = useState<string>('AMBOS');
+  const [tipoMT, setTipoMT] = useState<string>('IPI_ST');
+  const [tipoGO, setTipoGO] = useState<string>('NOTA');
+
+  const tipoLabel = (t: string) => (t === 'NOTA' ? 'PREÇO NOTA' : 'IPI + ST');
 
   const showMT = estados === 'AMBOS' || estados === 'MT';
   const showGO = estados === 'AMBOS' || estados === 'GO';
+
 
   useEffect(() => {
     loadData();
@@ -64,6 +69,9 @@ const CotacaoResposta = () => {
     setEmpresa(linkData.empresa);
     setListaId(linkData.lista_id);
     setEstados((linkData as any).estados || 'AMBOS');
+    setTipoMT((linkData as any).tipo_preco_mt || 'IPI_ST');
+    setTipoGO((linkData as any).tipo_preco_go || 'NOTA');
+
 
     if (lista.status === 'finalizada') { setError('Esta cotação já foi encerrada.'); setLoading(false); return; }
     if ((lista as any).prazo && new Date((lista as any).prazo) < new Date()) {
@@ -113,8 +121,8 @@ const CotacaoResposta = () => {
       y0 = drawSectionTitle(doc, y0 + 2, 'Itens Cotados');
 
       const head: string[] = ['Código', 'Descrição', 'EAN'];
-      if (showMT) head.push('Preço MT (R$)');
-      if (showGO) head.push('Preço GO (R$)');
+      if (showMT) head.push(`Preço MT (R$) - ${tipoLabel(tipoMT)}`);
+      if (showGO) head.push(`Preço GO (R$) - ${tipoLabel(tipoGO)}`);
 
       const body = produtos.map((p, idx) => {
         const row: string[] = [p.codigo_interno, p.descricao, p.codigo_barras || '—'];
@@ -238,7 +246,7 @@ const CotacaoResposta = () => {
             {showMT && (
               <div className="flex-1">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
-                  MT (Mato Grosso)
+                  MT (Mato Grosso) · {tipoLabel(tipoMT)}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">R$</span>
@@ -256,7 +264,7 @@ const CotacaoResposta = () => {
             {showGO && (
               <div className="flex-1">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
-                  GO (Goiás)
+                  GO (Goiás) · {tipoLabel(tipoGO)}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">R$</span>
@@ -387,7 +395,20 @@ const CotacaoResposta = () => {
                 <>Preencha os preços para <span className="font-bold text-foreground">Goiás (GO)</span>.</>
               )}
             </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {showMT && (
+                <span className="text-[11px] font-bold px-2 py-1 rounded bg-primary/10 text-primary">
+                  MT: preços com {tipoLabel(tipoMT)}
+                </span>
+              )}
+              {showGO && (
+                <span className="text-[11px] font-bold px-2 py-1 rounded bg-primary/10 text-primary">
+                  GO: preços com {tipoLabel(tipoGO)}
+                </span>
+              )}
+            </div>
           </div>
+
           {filteredProdutos.length === 0 && searchTerm.trim() ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
               Nenhum produto encontrado para "{searchTerm}"

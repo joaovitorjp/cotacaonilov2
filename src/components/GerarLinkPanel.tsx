@@ -42,6 +42,9 @@ interface ExistingLink {
 }
 
 type EstadoOption = 'AMBOS' | 'MT' | 'GO';
+type TipoPreco = 'IPI_ST' | 'NOTA';
+const TIPO_LABELS: Record<TipoPreco, string> = { IPI_ST: 'IPI + ST', NOTA: 'PREÇO NOTA' };
+
 
 interface GerarLinkPanelProps {
   open: boolean;
@@ -74,6 +77,9 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [listaNome, setListaNome] = useState<string>('');
   const [userNome, setUserNome] = useState<string>('');
   const [linkToDelete, setLinkToDelete] = useState<ExistingLink | null>(null);
+  const [tipoMT, setTipoMT] = useState<TipoPreco>('IPI_ST');
+  const [tipoGO, setTipoGO] = useState<TipoPreco>('NOTA');
+
 
 
 
@@ -118,13 +124,21 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const generateLink = async (empresaNome: string, estados: EstadoOption) => {
     const { data, error } = await supabase
       .from('links_cotacao')
-      .insert({ lista_id: listaId, empresa: empresaNome, estados, user_id: user?.id })
+      .insert({
+        lista_id: listaId,
+        empresa: empresaNome,
+        estados,
+        user_id: user?.id,
+        tipo_preco_mt: tipoMT,
+        tipo_preco_go: tipoGO,
+      })
       .select()
       .single();
 
     if (error) throw error;
     return `${getPublicBaseUrl()}/cotacao/${data.token}`;
   };
+
 
   const handleGerar = async () => {
     if (!empresa.trim()) return;
@@ -273,6 +287,49 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
               O fornecedor verá apenas os campos de preço do(s) estado(s) selecionado(s).
             </p>
           </div>
+
+          {/* Tipo de preço por estado */}
+          <div>
+            <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              Tipo de preço solicitado
+            </p>
+            <div className="space-y-2">
+              {(selectedEstado === 'AMBOS' || selectedEstado === 'MT') && (
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground mb-1">MT (Mato Grosso)</p>
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                    {(['IPI_ST', 'NOTA'] as TipoPreco[]).map(opt => (
+                      <button key={opt} onClick={() => setTipoMT(opt)}
+                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-display font-bold transition-colors ${
+                          tipoMT === opt ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                        {TIPO_LABELS[opt]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(selectedEstado === 'AMBOS' || selectedEstado === 'GO') && (
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground mb-1">GO (Goiás)</p>
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                    {(['IPI_ST', 'NOTA'] as TipoPreco[]).map(opt => (
+                      <button key={opt} onClick={() => setTipoGO(opt)}
+                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-display font-bold transition-colors ${
+                          tipoGO === opt ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                        {TIPO_LABELS[opt]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Essa informação será exibida ao fornecedor na página de resposta.
+            </p>
+          </div>
+
 
           {/* Quick add from saved fornecedores */}
           {fornecedores.length > 0 && (
