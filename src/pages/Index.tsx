@@ -10,6 +10,7 @@ import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import Dashboard from '@/components/Dashboard';
 import FloatingChat from '@/components/FloatingChat';
 import PerfilPanel from '@/components/PerfilPanel';
+import { useAvatar } from '@/hooks/useAvatar';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
@@ -46,6 +47,7 @@ const Index = () => {
   const [fornecedoresOpen, setFornecedoresOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
+  const { avatarUrl } = useAvatar();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
