@@ -202,7 +202,7 @@ const AdminPanel: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Sidebar / Stats / Controls */}
           <div className="lg:col-span-4 space-y-6">
-            <MonthlyReportCard listas={listas} profiles={profiles} />
+            
             
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
               <h2 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
