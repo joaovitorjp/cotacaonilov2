@@ -246,7 +246,7 @@ const CotacaoResposta = () => {
             {showMT && (
               <div className="flex-1">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
-                  MT (Mato Grosso)
+                  MT (Mato Grosso) · {tipoLabel(tipoMT)}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">R$</span>
