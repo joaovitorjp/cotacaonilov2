@@ -69,6 +69,9 @@ const CotacaoResposta = () => {
     setEmpresa(linkData.empresa);
     setListaId(linkData.lista_id);
     setEstados((linkData as any).estados || 'AMBOS');
+    setTipoMT((linkData as any).tipo_preco_mt || 'IPI_ST');
+    setTipoGO((linkData as any).tipo_preco_go || 'NOTA');
+
 
     if (lista.status === 'finalizada') { setError('Esta cotação já foi encerrada.'); setLoading(false); return; }
     if ((lista as any).prazo && new Date((lista as any).prazo) < new Date()) {
