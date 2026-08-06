@@ -362,7 +362,6 @@ export type Database = {
           empresa_id: string
           estados: string
           id: string
-          info_preco: string | null
           lista_id: string
           network_id: string | null
           respondido: boolean
@@ -376,7 +375,6 @@ export type Database = {
           empresa_id?: string
           estados?: string
           id?: string
-          info_preco?: string | null
           lista_id: string
           network_id?: string | null
           respondido?: boolean
@@ -390,7 +388,6 @@ export type Database = {
           empresa_id?: string
           estados?: string
           id?: string
-          info_preco?: string | null
           lista_id?: string
           network_id?: string | null
           respondido?: boolean

@@ -63,22 +63,12 @@ const Index = () => {
       setRespostas([]);
       return;
     }
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('respostas')
-      .select('empresa, resposta, links_cotacao(info_preco)')
+      .select('empresa, resposta')
       .eq('user_id', user.id)
       .eq('lista_id', listaId);
-    
-    if (error) {
-      console.error('Erro ao carregar respostas:', error);
-      return;
-    }
-
-    setRespostas((data ?? []).map((d: any) => ({ 
-      empresa: d.empresa, 
-      resposta: d.resposta as any[],
-      info_preco: d.links_cotacao?.info_preco
-    })));
+    setRespostas((data ?? []).map((d: any) => ({ empresa: d.empresa, resposta: d.resposta as any[] })));
   }, [user?.id]);
 
   // 1. REALTIME: Subscribe to new responses when a lista is open
@@ -175,14 +165,13 @@ const Index = () => {
   const handleExport = async (lista: Lista) => {
     const { data } = await supabase
       .from('respostas')
-      .select('empresa, resposta, links_cotacao(info_preco)')
+      .select('empresa, resposta')
       .eq('user_id', user?.id ?? '')
       .eq('lista_id', lista.id);
 
     const resps: RespostaEmpresa[] = (data ?? []).map((d: any) => ({
       empresa: d.empresa,
       resposta: d.resposta as any[],
-      info_preco: d.links_cotacao?.info_preco,
     }));
 
     const parseBR = (v: any): number | null => {
@@ -405,14 +394,13 @@ const Index = () => {
   const handleDownloadResultados = async (lista: Lista) => {
     const { data } = await supabase
       .from('respostas')
-      .select('empresa, resposta, links_cotacao(info_preco)')
+      .select('empresa, resposta')
       .eq('user_id', user?.id ?? '')
       .eq('lista_id', lista.id);
 
     const resps: RespostaEmpresa[] = (data ?? []).map((d: any) => ({
       empresa: d.empresa,
       resposta: d.resposta as any[],
-      info_preco: d.links_cotacao?.info_preco,
     }));
 
     const parsePrice = (raw: any): number => {
