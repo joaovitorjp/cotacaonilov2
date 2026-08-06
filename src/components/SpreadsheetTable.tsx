@@ -14,6 +14,7 @@ interface Produto {
 interface RespostaEmpresa {
   empresa: string;
   resposta: { codigo_interno: string; preco?: number | string; preco_mt?: number | string; preco_go?: number | string }[];
+  info_preco?: string;
 }
 
 interface SpreadsheetTableProps {
@@ -126,6 +127,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const getPreco = useCallback((empresa: string, state: 'MT' | 'GO', codigoInterno: string) => {
     return precoMap[`${empresa}_${state}`]?.[codigoInterno] ?? '';
   }, [precoMap]);
+
+  const getInfoPreco = useCallback((empresa: string) => {
+    return respostas.find(r => r.empresa === empresa)?.info_preco;
+  }, [respostas]);
 
   const getLowestEmpresa = useCallback((codigoInterno: string, state: 'MT' | 'GO'): string | null => {
     if (!highlightLowest || empresas.length === 0) return null;
@@ -1390,7 +1395,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     onClick={() => i > 0 && handleHeaderSort(colIdx, col.originalIdx)}
                   >
                     <span className="inline-flex items-center gap-1">
-                      {col.label}
+          {col.empresa && (
+            <div className="flex flex-col items-center">
+              <span className="truncate max-w-full">{col.label}</span>
+              <span className="text-[9px] text-muted-foreground font-normal leading-tight">
+                {getInfoPreco(col.empresa)}
+              </span>
+            </div>
+          )}
+          {!col.empresa && col.label}
                       {sortCol === col.originalIdx && <span className="text-[9px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
                     </span>
                     {col.empresa && priceMarkups[col.empresa] ? (

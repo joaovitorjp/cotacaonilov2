@@ -30,6 +30,7 @@ interface GeneratedLink {
   copied: boolean;
   whatsapp?: string;
   estados?: string;
+  info_preco?: string;
 }
 
 interface ExistingLink {
@@ -39,9 +40,11 @@ interface ExistingLink {
   respondido: boolean;
   whatsapp?: string;
   estados?: string;
+  info_preco?: string;
 }
 
 type EstadoOption = 'AMBOS' | 'MT' | 'GO';
+type InfoPrecoOption = 'IPI + ST' | 'PRECO NOTA';
 
 interface GerarLinkPanelProps {
   open: boolean;
@@ -73,6 +76,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [selectedEstado, setSelectedEstado] = useState<EstadoOption>('AMBOS');
   const [listaNome, setListaNome] = useState<string>('');
   const [userNome, setUserNome] = useState<string>('');
+  const [selectedInfoPreco, setSelectedInfoPreco] = useState<InfoPrecoOption>('IPI + ST');
   const [linkToDelete, setLinkToDelete] = useState<ExistingLink | null>(null);
 
 
@@ -98,7 +102,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const loadExistingLinks = async () => {
     const { data: links } = await supabase
       .from('links_cotacao')
-      .select('id, token, empresa, respondido, estados')
+      .select('id, token, empresa, respondido, estados, info_preco')
       .eq('user_id', user?.id ?? '')
       .eq('lista_id', listaId)
       .order('created_at', { ascending: false });
@@ -115,10 +119,10 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     }
   };
 
-  const generateLink = async (empresaNome: string, estados: EstadoOption) => {
+  const generateLink = async (empresaNome: string, estados: EstadoOption, infoPreco: InfoPrecoOption) => {
     const { data, error } = await supabase
       .from('links_cotacao')
-      .insert({ lista_id: listaId, empresa: empresaNome, estados, user_id: user?.id })
+      .insert({ lista_id: listaId, empresa: empresaNome, estados, info_preco: infoPreco, user_id: user?.id })
       .select()
       .single();
 
@@ -130,8 +134,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     if (!empresa.trim()) return;
     setLoading(true);
     try {
-      const link = await generateLink(empresa.trim(), selectedEstado);
-      setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false, estados: selectedEstado }]);
+      const link = await generateLink(empresa.trim(), selectedEstado, selectedInfoPreco);
+      setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false, estados: selectedEstado, info_preco: selectedInfoPreco }]);
       setEmpresa('');
       toast.success('Link gerado!');
       loadExistingLinks();
@@ -147,8 +151,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       return;
     }
     try {
-      const link = await generateLink(f.nome, selectedEstado);
-      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado }]);
+      const link = await generateLink(f.nome, selectedEstado, selectedInfoPreco);
+      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado, info_preco: selectedInfoPreco }]);
       toast.success(`Link gerado para ${f.nome}!`);
       loadExistingLinks();
     } catch {
@@ -167,8 +171,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     let count = 0;
     for (const f of pendentes) {
       try {
-        const link = await generateLink(f.nome, selectedEstado);
-        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado }]);
+        const link = await generateLink(f.nome, selectedEstado, selectedInfoPreco);
+        setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado, info_preco: selectedInfoPreco }]);
         count++;
       } catch { /* skip */ }
     }
@@ -274,6 +278,32 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
             </p>
           </div>
 
+          {/* Info Preco selector */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
+              <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">Informação de Preço</p>
+            </div>
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+              {(['IPI + ST', 'PRECO NOTA'] as InfoPrecoOption[]).map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setSelectedInfoPreco(opt)}
+                  className={`flex-1 px-3 py-2 rounded-md text-xs font-display font-bold transition-colors ${
+                    selectedInfoPreco === opt
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Especifique se os preços devem incluir IPI + ST ou ser Preço Nota.
+            </p>
+          </div>
+
           {/* Quick add from saved fornecedores */}
           {fornecedores.length > 0 && (
             <div>
@@ -352,6 +382,11 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                             {item.estados}
                           </span>
                         )}
+                        {item.info_preco && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-bold shrink-0">
+                            {item.info_preco}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1">
                         {item.whatsapp && (
@@ -395,6 +430,11 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                         {link.estados && link.estados !== 'AMBOS' && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-bold shrink-0">
                             {link.estados}
+                          </span>
+                        )}
+                        {link.info_preco && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-bold shrink-0">
+                            {link.info_preco}
                           </span>
                         )}
                       </div>

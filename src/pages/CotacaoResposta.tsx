@@ -32,6 +32,7 @@ const CotacaoResposta = () => {
   const [filledCount, setFilledCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [estados, setEstados] = useState<string>('AMBOS');
+  const [infoPreco, setInfoPreco] = useState<string>('');
 
   const showMT = estados === 'AMBOS' || estados === 'MT';
   const showGO = estados === 'AMBOS' || estados === 'GO';
@@ -64,6 +65,7 @@ const CotacaoResposta = () => {
     setEmpresa(linkData.empresa);
     setListaId(linkData.lista_id);
     setEstados((linkData as any).estados || 'AMBOS');
+    setInfoPreco((linkData as any).info_preco || '');
 
     if (lista.status === 'finalizada') { setError('Esta cotação já foi encerrada.'); setLoading(false); return; }
     if ((lista as any).prazo && new Date((lista as any).prazo) < new Date()) {
@@ -99,7 +101,7 @@ const CotacaoResposta = () => {
       let y0 = drawHeader(doc, {
         title: 'Cópia da Resposta de Cotação',
         subtitle: `Cotação: ${listaNome}`,
-        meta: `Fornecedor: ${empresa}`,
+        meta: `Fornecedor: ${empresa}${infoPreco ? ` (${infoPreco})` : ''}`,
       });
 
       const preenchidosMT = showMT ? Object.values(pricesMT).filter(p => p && String(p).trim() !== '').length : 0;
@@ -343,6 +345,11 @@ const CotacaoResposta = () => {
             <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
               {estadoLabel}
             </span>
+            {infoPreco && (
+              <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">
+                {infoPreco}
+              </span>
+            )}
             {linkRespondido && (
               <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full font-medium">
                 Já respondida
@@ -385,6 +392,11 @@ const CotacaoResposta = () => {
                 <>Preencha os preços para <span className="font-bold text-foreground">Mato Grosso (MT)</span>.</>
               ) : (
                 <>Preencha os preços para <span className="font-bold text-foreground">Goiás (GO)</span>.</>
+              )}
+              {infoPreco && (
+                <span className="block mt-1 font-bold text-amber-700">
+                  ⚠️ Atenção: Preencher com {infoPreco}
+                </span>
               )}
             </p>
           </div>
