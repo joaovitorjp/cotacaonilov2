@@ -288,6 +288,49 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
             </p>
           </div>
 
+          {/* Tipo de preço por estado */}
+          <div>
+            <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              Tipo de preço solicitado
+            </p>
+            <div className="space-y-2">
+              {(selectedEstado === 'AMBOS' || selectedEstado === 'MT') && (
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground mb-1">MT (Mato Grosso)</p>
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                    {(['IPI_ST', 'NOTA'] as TipoPreco[]).map(opt => (
+                      <button key={opt} onClick={() => setTipoMT(opt)}
+                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-display font-bold transition-colors ${
+                          tipoMT === opt ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                        {TIPO_LABELS[opt]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(selectedEstado === 'AMBOS' || selectedEstado === 'GO') && (
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground mb-1">GO (Goiás)</p>
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                    {(['IPI_ST', 'NOTA'] as TipoPreco[]).map(opt => (
+                      <button key={opt} onClick={() => setTipoGO(opt)}
+                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-display font-bold transition-colors ${
+                          tipoGO === opt ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                        {TIPO_LABELS[opt]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Essa informação será exibida ao fornecedor na página de resposta.
+            </p>
+          </div>
+
+
           {/* Quick add from saved fornecedores */}
           {fornecedores.length > 0 && (
             <div>
