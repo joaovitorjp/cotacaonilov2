@@ -1118,7 +1118,18 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           onDragEnd={handleRowDragEnd}
           onContextMenu={e => handleContextMenu(e, 'row', undefined, idx)}
         >
-          {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
+          <div className="relative h-full w-full flex items-center justify-center group/idx">
+            {prod ? displayIdx + 1 : (produtos.length > 0 ? displayIdx + 1 : '')}
+            {!readOnly && prod && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); deleteRow(idx); }}
+                className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/idx:opacity-100 text-red-500 hover:text-red-700 bg-white/80 rounded shadow-sm p-0.5 transition-opacity"
+                title="Excluir Produto"
+              >
+                <Trash className="w-3 h-3" />
+              </button>
+            )}
+          </div>
           <div
             className={`absolute left-0 right-0 bottom-[-2px] h-[5px] cursor-row-resize z-30 ${activeRowResize === idx ? 'bg-primary' : 'hover:bg-primary/40'}`}
             style={{ opacity: activeRowResize === idx ? 1 : undefined }}
@@ -1240,6 +1251,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     <div className="flex-1 flex flex-col" style={{ border: '1px solid hsl(var(--border))' }}>
       {/* Toolbar */}
       <div className="flex items-center gap-1 px-2 py-1 border-b bg-muted/50 flex-wrap" style={{ borderColor: 'hsl(var(--border))' }}>
+        {!readOnly && (
+          <>
+            <button onClick={addRow}
+              className="p-1.5 rounded hover:bg-accent transition-colors flex items-center gap-1 text-xs text-blue-600 font-bold" title="Adicionar Novo Produto">
+              <Plus className="w-4 h-4" /><span>Novo Item</span>
+            </button>
+            <div className="w-px h-5 bg-border mx-1" />
+          </>
+        )}
         <button onClick={toolbarToggleBold} disabled={!hasSelection} className="p-1.5 rounded hover:bg-accent disabled:opacity-40 transition-colors" title="Negrito">
           <Bold className="w-4 h-4" />
         </button>
