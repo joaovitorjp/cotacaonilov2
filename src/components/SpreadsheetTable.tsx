@@ -1395,15 +1395,15 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     onClick={() => i > 0 && handleHeaderSort(colIdx, col.originalIdx)}
                   >
                     <span className="inline-flex items-center gap-1">
-          {col.empresa && (
-            <div className="flex flex-col items-center">
-              <span className="truncate max-w-full">{col.label}</span>
-              <span className="text-[9px] text-muted-foreground font-normal leading-tight">
-                {getInfoPreco(col.empresa)}
-              </span>
-            </div>
-          )}
-          {!col.empresa && col.label}
+                    {col.empresa && (
+                      <div className="flex flex-col items-center">
+                        <span className="truncate max-w-full">{col.label}</span>
+                        <span className="text-[9px] text-muted-foreground font-normal leading-tight">
+                          {getInfoPreco(col.empresa)}
+                        </span>
+                      </div>
+                    )}
+                    {!col.empresa && col.label}
                       {sortCol === col.originalIdx && <span className="text-[9px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
                     </span>
                     {col.empresa && priceMarkups[col.empresa] ? (
