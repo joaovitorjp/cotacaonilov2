@@ -470,9 +470,8 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
     let y1 = ((doc as any).lastAutoTable?.finalY || 80) + 8;
     y1 = drawSectionTitle(doc, y1, 'Comparativo por Produto', 'accent');
 
-    const tableHead = ['Código', 'Descrição', ...empresas, 'Menor', 'Economia'];
-    const winnerColIdx = 2 + empresas.length;
-    const savingsColIdx = winnerColIdx + 1;
+    const tableHead = ['Código', 'Descrição', ...empresas, 'Economia'];
+    const savingsColIdx = 2 + empresas.length;
     const tableBody = analysis.prodAnalysis.map(item => [
       item.prod.codigo_interno,
       item.prod.descricao.substring(0, 40),
@@ -480,7 +479,6 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         const p = item.prices.find(pr => pr.empresa === emp);
         return p ? formatBRL(p.preco) : '—';
       }),
-      item.winner ? formatBRL(item.winner.preco) : '—',
       item.savings > 0 ? `-${item.savings.toFixed(0)}%` : '—',
     ]);
 
@@ -498,11 +496,18 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
       didParseCell: (data: any) => {
         if (data.section !== 'body') return;
         if (data.column.index >= 2) data.cell.styles.halign = 'right';
-        if (data.column.index === winnerColIdx) {
-          data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.fillColor = PDF_COLORS.successSoft;
-          data.cell.styles.textColor = PDF_COLORS.success;
+
+        // Pinta de verde o menor preço (fornecedor vencedor) na própria coluna dele
+        if (data.column.index >= 2 && data.column.index < savingsColIdx) {
+          const item = analysis.prodAnalysis[data.row.index];
+          const emp = empresas[data.column.index - 2];
+          if (item?.winner && item.winner.empresa === emp && item.prices.length > 0) {
+            data.cell.styles.fillColor = PDF_COLORS.successSoft;
+            data.cell.styles.textColor = PDF_COLORS.success;
+            data.cell.styles.fontStyle = 'bold';
+          }
         }
+
         if (data.column.index === savingsColIdx) {
           data.cell.styles.halign = 'center';
           data.cell.styles.fontStyle = 'bold';
@@ -511,6 +516,7 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
         }
       },
     });
+
 
     drawFooter(doc);
     doc.save(`analise_precos${listaNome ? `_${listaNome}` : ''}.pdf`);
