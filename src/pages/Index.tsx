@@ -492,44 +492,53 @@ const Index = () => {
 
   return (
     <ProfileGate>
-    <div className="flex flex-col h-screen bg-background/95 backdrop-blur-sm">
-      {/* Header */}
-      <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
-        <button onClick={handleBackToDashboard} className="flex items-center gap-2">
-          <h1 className="text-lg sm:text-xl font-display font-bold text-foreground tracking-tight">Nilo Atacadista</h1>
-        </button>
+      <div className="flex flex-col h-screen bg-[#F8FAFC]">
+        {/* Modern Header */}
+        <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <button onClick={handleBackToDashboard} className="bg-primary/10 p-2 rounded-xl">
+              <Package className="w-5 h-5 text-primary" />
+            </button>
+            <div>
+              <h1 className="text-lg font-display font-bold text-slate-900 tracking-tight cursor-pointer" onClick={handleBackToDashboard}>
+                Nilo Atacadista
+              </h1>
+              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Gestão de Cotações</p>
+            </div>
+          </div>
 
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-2">
-          {navItems.slice(1).map(item => (
-            <Button
-              key={item.label}
-              variant={item.label === 'Gerar Link' ? 'default' : 'outline'}
-              size="sm"
-              onClick={item.action}
-              disabled={item.disabled}
-              className={item.disabled ? 'opacity-50 cursor-not-allowed' : ''}
-            >
-              <item.icon className="w-4 h-4 mr-1.5" />
-              {item.label}
+          {/* Desktop nav - Refined */}
+          <div className="hidden md:flex items-center gap-3">
+            {navItems.slice(1).map(item => (
+              <Button
+                key={item.label}
+                variant={item.label === 'Gerar Link' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={item.action}
+                disabled={item.disabled}
+                className={`text-xs font-bold rounded-xl h-9 ${
+                  item.label === 'Gerar Link' 
+                    ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm' 
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                } ${item.disabled ? 'opacity-30' : ''}`}
+              >
+                <item.icon className="w-3.5 h-3.5 mr-2" />
+                {item.label}
+              </Button>
+            ))}
+            <div className="w-px h-5 bg-slate-200 mx-2" />
+            <Button variant="ghost" size="icon" onClick={signOut} title="Sair" className="hover:bg-red-50 hover:text-red-600 rounded-full transition-colors w-9 h-9">
+              <LogOut className="h-4 w-4" />
             </Button>
-          ))}
-          <div className="w-px h-6 bg-border mx-1" />
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
+          </div>
 
-        {/* Mobile menu toggle */}
-        <div className="flex md:hidden items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
-            <LogOut className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
-        </div>
-      </header>
+          {/* Mobile menu toggle */}
+          <div className="flex md:hidden items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="w-9 h-9 rounded-xl">
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
+        </header>
 
       {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
