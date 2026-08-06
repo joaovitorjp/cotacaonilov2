@@ -409,7 +409,7 @@ const Index = () => {
     toast.success('Planilha exportada!');
   };
 
-  const handleDownloadResultados = async (lista: Lista) => {
+  const handleDownloadResultados = async (lista: Lista, formato: 'ciss' | 'consinco' = 'ciss') => {
     const { data } = await supabase
       .from('respostas')
       .select('empresa, resposta')
@@ -420,6 +420,18 @@ const Index = () => {
       empresa: d.empresa,
       resposta: d.resposta as any[],
     }));
+
+    let codigoConsincoPorEmpresa: Record<string, string> = {};
+    if (formato === 'consinco') {
+      const { data: forns } = await supabase
+        .from('fornecedores')
+        .select('nome, codigo_interno_consinco, codigo_interno')
+        .eq('user_id', user?.id ?? '');
+      (forns ?? []).forEach((f: any) => {
+        codigoConsincoPorEmpresa[String(f.nome).trim().toLowerCase()] =
+          f.codigo_interno_consinco || f.codigo_interno || '';
+      });
+    }
 
     const parsePrice = (raw: any): number => {
       if (typeof raw === 'number') return raw;
@@ -466,6 +478,12 @@ const Index = () => {
       for (const empresa of suppliers) {
         const items = winnersBySupplier[empresa];
         const csvLines = items.map(item => {
+          if (formato === 'consinco') {
+            const codFornecedor = codigoConsincoPorEmpresa[empresa.trim().toLowerCase()] ?? '';
+            const preco = item.preco.toFixed(2);
+            // A;B;C;D;E;F;G;H;I;J;K
+            return `${codFornecedor};;;${item.codigo_barras};;1;${preco};0;0;0;0`;
+          }
           const precoFormatted = item.preco.toFixed(2).replace('.', ',');
           return `${item.codigo_barras};1;${precoFormatted}`;
         });
@@ -474,7 +492,7 @@ const Index = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${lista.nome}_${est.label}_${empresa}.csv`;
+        a.download = `${lista.nome}_${est.label}_${empresa}_${formato.toUpperCase()}.csv`;
         a.click();
         URL.revokeObjectURL(url);
         totalArquivos++;
@@ -485,8 +503,9 @@ const Index = () => {
       toast.error('Nenhum preço ganhador encontrado.');
       return;
     }
-    toast.success(`${totalArquivos} arquivo(s) CSV baixado(s) (separados por estado).`);
+    toast.success(`${totalArquivos} arquivo(s) CSV ${formato.toUpperCase()} baixado(s) (separados por estado).`);
   };
+
 
   const handleDashboardNavigate = (view: 'importar' | 'carregar' | 'finalizadas') => {
     if (view === 'importar') setImportOpen(true);
