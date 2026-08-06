@@ -121,8 +121,8 @@ const CotacaoResposta = () => {
       y0 = drawSectionTitle(doc, y0 + 2, 'Itens Cotados');
 
       const head: string[] = ['Código', 'Descrição', 'EAN'];
-      if (showMT) head.push('Preço MT (R$)');
-      if (showGO) head.push('Preço GO (R$)');
+      if (showMT) head.push(`Preço MT (R$) - ${tipoLabel(tipoMT)}`);
+      if (showGO) head.push(`Preço GO (R$) - ${tipoLabel(tipoGO)}`);
 
       const body = produtos.map((p, idx) => {
         const row: string[] = [p.codigo_interno, p.descricao, p.codigo_barras || '—'];
