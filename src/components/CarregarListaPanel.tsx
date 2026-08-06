@@ -33,7 +33,7 @@ interface CarregarListaPanelProps {
   statusFilter: 'aberta' | 'finalizada';
   title: string;
   onExport?: (lista: Lista) => void;
-  onDownloadResultados?: (lista: Lista, formato?: 'ciss' | 'consinco') => void;
+  onDownloadResultados?: (lista: Lista, formato?: 'ciss' | 'consinco', empresa?: string) => void;
 }
 
 const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
@@ -52,6 +52,21 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   const [duplicateSelected, setDuplicateSelected] = useState<Record<string, { mt: boolean; go: boolean }>>({});
   const [duplicateName, setDuplicateName] = useState('');
   const [duplicating, setDuplicating] = useState(false);
+  const [csvTarget, setCsvTarget] = useState<{ lista: Lista; formato: 'ciss' | 'consinco' } | null>(null);
+  const [csvEmpresas, setCsvEmpresas] = useState<string[]>([]);
+  const [csvEmpresaSel, setCsvEmpresaSel] = useState<string>('__todos__');
+
+  const openCsvDialog = async (lista: Lista, formato: 'ciss' | 'consinco') => {
+    setCsvTarget({ lista, formato });
+    setCsvEmpresaSel('__todos__');
+    setCsvEmpresas([]);
+    const { data } = await supabase
+      .from('respostas')
+      .select('empresa')
+      .eq('user_id', user?.id ?? '')
+      .eq('lista_id', lista.id);
+    setCsvEmpresas(Array.from(new Set((data ?? []).map((r: any) => r.empresa))));
+  };
 
   useEffect(() => {
     if (open) fetchListas();
@@ -336,7 +351,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                       {statusFilter === 'finalizada' && onDownloadResultados && (
                         <>
                           <button
-                            onClick={() => onDownloadResultados(lista, 'ciss')}
+                            onClick={() => openCsvDialog(lista, 'ciss')}
                             className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
                             title="Baixar CSV ganhadores (CISS)"
                           >
@@ -344,7 +359,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                             <span className="text-[11px] font-display">CSV CISS</span>
                           </button>
                           <button
-                            onClick={() => onDownloadResultados(lista, 'consinco')}
+                            onClick={() => openCsvDialog(lista, 'consinco')}
                             className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
                             title="Baixar CSV ganhadores (CONSINCO)"
                           >
@@ -456,6 +471,44 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
             <Button variant="outline" onClick={() => setDuplicateTarget(null)} disabled={duplicating}>Cancelar</Button>
             <Button onClick={confirmReplicate} disabled={duplicating || !duplicateName.trim()}>
               {duplicating ? 'Duplicando...' : 'Duplicar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CSV supplier selection */}
+      <Dialog open={!!csvTarget} onOpenChange={(o) => { if (!o) setCsvTarget(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Baixar CSV {csvTarget?.formato === 'consinco' ? 'CONSINCO' : 'CISS'}</DialogTitle>
+            <DialogDescription>Escolha se deseja baixar de todos os fornecedores ganhadores ou apenas de um.</DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-2 max-h-72 overflow-auto">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="radio" checked={csvEmpresaSel === '__todos__'} onChange={() => setCsvEmpresaSel('__todos__')} />
+              Todos os fornecedores
+            </label>
+            {csvEmpresas.map(e => (
+              <label key={e} className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" checked={csvEmpresaSel === e} onChange={() => setCsvEmpresaSel(e)} />
+                {e}
+              </label>
+            ))}
+            {csvEmpresas.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhuma resposta de fornecedor encontrada.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCsvTarget(null)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (csvTarget && onDownloadResultados) {
+                  onDownloadResultados(csvTarget.lista, csvTarget.formato, csvEmpresaSel === '__todos__' ? undefined : csvEmpresaSel);
+                }
+                setCsvTarget(null);
+              }}
+            >
+              Baixar
             </Button>
           </DialogFooter>
         </DialogContent>

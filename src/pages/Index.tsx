@@ -409,7 +409,7 @@ const Index = () => {
     toast.success('Planilha exportada!');
   };
 
-  const handleDownloadResultados = async (lista: Lista, formato: 'ciss' | 'consinco' = 'ciss') => {
+  const handleDownloadResultados = async (lista: Lista, formato: 'ciss' | 'consinco' = 'ciss', empresaFiltro?: string) => {
     const { data } = await supabase
       .from('respostas')
       .select('empresa, resposta')
@@ -474,7 +474,9 @@ const Index = () => {
         }
       }
 
-      const suppliers = Object.keys(winnersBySupplier);
+      const suppliers = Object.keys(winnersBySupplier).filter(
+        e => !empresaFiltro || e.trim().toLowerCase() === empresaFiltro.trim().toLowerCase()
+      );
       for (const empresa of suppliers) {
         const items = winnersBySupplier[empresa];
         const csvLines = items.map(item => {
