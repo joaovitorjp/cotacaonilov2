@@ -33,7 +33,7 @@ interface CarregarListaPanelProps {
   statusFilter: 'aberta' | 'finalizada';
   title: string;
   onExport?: (lista: Lista) => void;
-  onDownloadResultados?: (lista: Lista, formato?: 'ciss' | 'consinco') => void;
+  onDownloadResultados?: (lista: Lista, formato?: 'ciss' | 'consinco', empresa?: string) => void;
 }
 
 const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
@@ -52,6 +52,21 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   const [duplicateSelected, setDuplicateSelected] = useState<Record<string, { mt: boolean; go: boolean }>>({});
   const [duplicateName, setDuplicateName] = useState('');
   const [duplicating, setDuplicating] = useState(false);
+  const [csvTarget, setCsvTarget] = useState<{ lista: Lista; formato: 'ciss' | 'consinco' } | null>(null);
+  const [csvEmpresas, setCsvEmpresas] = useState<string[]>([]);
+  const [csvEmpresaSel, setCsvEmpresaSel] = useState<string>('__todos__');
+
+  const openCsvDialog = async (lista: Lista, formato: 'ciss' | 'consinco') => {
+    setCsvTarget({ lista, formato });
+    setCsvEmpresaSel('__todos__');
+    setCsvEmpresas([]);
+    const { data } = await supabase
+      .from('respostas')
+      .select('empresa')
+      .eq('user_id', user?.id ?? '')
+      .eq('lista_id', lista.id);
+    setCsvEmpresas(Array.from(new Set((data ?? []).map((r: any) => r.empresa))));
+  };
 
   useEffect(() => {
     if (open) fetchListas();
