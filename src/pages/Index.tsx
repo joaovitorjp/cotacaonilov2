@@ -58,6 +58,8 @@ const Index = () => {
   const [showEncerrarDialog, setShowEncerrarDialog] = useState(false);
   const [encerrarStats, setEncerrarStats] = useState<{ total: number; responded: number; pending: string[] }>({ total: 0, responded: 0, pending: [] });
 
+  const [tipoPrecoMap, setTipoPrecoMap] = useState<Record<string, string>>({});
+
   const loadRespostas = useCallback(async (listaId: string) => {
     if (!user?.id) {
       setRespostas([]);
@@ -69,7 +71,20 @@ const Index = () => {
       .eq('user_id', user.id)
       .eq('lista_id', listaId);
     setRespostas((data ?? []).map((d: any) => ({ empresa: d.empresa, resposta: d.resposta as any[] })));
+
+    const { data: links } = await supabase
+      .from('links_cotacao')
+      .select('empresa, tipo_preco_mt, tipo_preco_go')
+      .eq('user_id', user.id)
+      .eq('lista_id', listaId);
+    const map: Record<string, string> = {};
+    (links ?? []).forEach((l: any) => {
+      map[`${l.empresa}_MT`] = l.tipo_preco_mt || 'IPI_ST';
+      map[`${l.empresa}_GO`] = l.tipo_preco_go || 'NOTA';
+    });
+    setTipoPrecoMap(map);
   }, [user?.id]);
+
 
   // 1. REALTIME: Subscribe to new responses when a lista is open
   useEffect(() => {
