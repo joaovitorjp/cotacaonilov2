@@ -705,40 +705,41 @@ const Index = () => {
         />
       )}
 
-      {/* Floating button */}
+      {/* Floating button - Modernized */}
       {currentLista && !isFinalized && !showDashboard && (
         <button
           onClick={handleEncerrarClick}
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-success text-success-foreground px-4 sm:px-6 py-3 rounded shadow-lg font-display font-bold text-sm hover:bg-success/90 transition-colors duration-200 z-50"
+          className="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-xl shadow-slate-200 font-bold text-xs uppercase tracking-widest hover:bg-slate-800 hover:scale-105 active:scale-95 transition-all z-50 flex items-center gap-2"
         >
+          <CheckSquare className="w-4 h-4" />
           Encerrar Cotação
         </button>
       )}
 
-      {/* 4. Encerrar Confirmation Dialog */}
+      {/* 4. Encerrar Confirmation Dialog - Themed */}
       <AlertDialog open={showEncerrarDialog} onOpenChange={setShowEncerrarDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-3xl border-slate-200">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">Encerrar cotação?</AlertDialogTitle>
+            <AlertDialogTitle className="font-bold text-slate-900">Encerrar cotação?</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>Deseja encerrar a cotação <strong>"{currentLista?.nome}"</strong>? Após encerrar, fornecedores não poderão mais enviar respostas.</p>
+              <div className="space-y-4">
+                <p className="text-slate-600 text-sm">Deseja encerrar a cotação <strong>"{currentLista?.nome}"</strong>? Após encerrar, fornecedores não poderão mais enviar respostas.</p>
                 
-                <div className="bg-muted rounded-lg p-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Links gerados:</span>
-                    <span className="font-bold text-foreground">{encerrarStats.total}</span>
+                <div className="bg-slate-50 rounded-2xl p-4 space-y-3 border border-slate-100">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-bold uppercase tracking-wider">Links gerados</span>
+                    <span className="font-black text-slate-900">{encerrarStats.total}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Responderam:</span>
-                    <span className="font-bold text-success">{encerrarStats.responded}</span>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-bold uppercase tracking-wider">Responderam</span>
+                    <span className="font-black text-emerald-600">{encerrarStats.responded}</span>
                   </div>
                   {encerrarStats.pending.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Ainda não responderam:</p>
-                      <div className="flex flex-wrap gap-1">
+                    <div className="pt-2 border-t border-slate-200/50">
+                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Aguardando resposta de:</p>
+                      <div className="flex flex-wrap gap-1.5">
                         {encerrarStats.pending.map(emp => (
-                          <span key={emp} className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-display font-bold">
+                          <span key={emp} className="text-[9px] font-black uppercase tracking-widest bg-slate-200/50 text-slate-600 px-2 py-1 rounded-md">
                             {emp}
                           </span>
                         ))}
@@ -749,10 +750,10 @@ const Index = () => {
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleEncerrarConfirm} className="bg-success text-success-foreground hover:bg-success/90">
-              Encerrar
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="rounded-xl border-slate-200 text-xs font-bold">Continuar Aberta</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEncerrarConfirm} className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-xs font-bold">
+              Encerrar Agora
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
