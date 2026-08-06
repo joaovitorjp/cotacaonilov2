@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import SpreadsheetTable from '@/components/SpreadsheetTable';
 import MonthlyReportCard from '@/components/MonthlyReportCard';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
+import PerfilPanel from '@/components/PerfilPanel';
+import HeaderAvatarButton from '@/components/HeaderAvatarButton';
 import { toast } from 'sonner';
 import { LogOut, Search, Shield, ArrowLeft, FileText, Eye, Package, Users, Calendar, BarChart3, Table as TableIcon } from 'lucide-react';
 
@@ -44,6 +46,7 @@ const AdminPanel: React.FC = () => {
   const [currentLista, setCurrentLista] = useState<Lista | null>(null);
   const [respostas, setRespostas] = useState<RespostaEmpresa[]>([]);
   const [activeTab, setActiveTab] = useState<'planilha' | 'analise'>('planilha');
+  const [perfilOpen, setPerfilOpen] = useState(false);
 
   useEffect(() => {
     if (roleLoading) return;
@@ -102,20 +105,28 @@ const AdminPanel: React.FC = () => {
   if (currentLista) {
     return (
       <div className="flex flex-col h-screen">
-        <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between shrink-0 sticky top-0 z-40">
           <div className="flex items-center gap-3">
-            <button onClick={() => setCurrentLista(null)} className="flex items-center gap-2 text-foreground hover:text-primary">
+            <button onClick={() => setCurrentLista(null)} className="flex items-center gap-2 text-slate-600 hover:text-primary transition-colors">
               <ArrowLeft className="w-4 h-4" />
               <span className="font-display font-bold text-sm">Voltar</span>
             </button>
-            <div className="w-px h-5 bg-border" />
-            <Shield className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display font-bold text-foreground">Modo Admin (somente leitura)</span>
+            <div className="w-px h-5 bg-slate-200" />
+            <div className="flex items-center gap-2">
+              <div className="bg-primary/10 p-1.5 rounded-lg">
+                <Shield className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <span className="text-xs font-display font-bold text-slate-700 hidden sm:inline">Modo Admin (Somente Leitura)</span>
+            </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-3">
+            <HeaderAvatarButton onClick={() => setPerfilOpen(true)} />
+            <Button variant="ghost" size="icon" onClick={signOut} title="Sair" className="hover:bg-red-50 hover:text-red-600 rounded-full h-8 w-8">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </header>
+        <PerfilPanel open={perfilOpen} onOpenChange={setPerfilOpen} />
 
         <div className="shrink-0 border-b border-border">
           <div className="bg-muted/50 px-4 sm:px-6 py-2 text-sm text-foreground flex items-center gap-2 flex-wrap">
@@ -175,7 +186,7 @@ const AdminPanel: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-xl">
             <Shield className="w-5 h-5 text-primary" />
@@ -189,14 +200,17 @@ const AdminPanel: React.FC = () => {
         </div>
         <div className="flex items-center gap-4">
           <div className="hidden md:flex flex-col items-end mr-2">
-            <span className="text-xs font-bold text-slate-900">{user?.email?.split('@')[0]}</span>
+            <span className="text-xs font-bold text-slate-900">{profiles[user?.id || '']?.nome || user?.email?.split('@')[0]}</span>
             <span className="text-[10px] text-slate-500">{user?.email}</span>
           </div>
+          <HeaderAvatarButton onClick={() => setPerfilOpen(true)} />
           <Button variant="ghost" size="icon" onClick={signOut} title="Sair" className="hover:bg-red-50 hover:text-red-600 rounded-full transition-colors">
             <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </header>
+
+      <PerfilPanel open={perfilOpen} onOpenChange={setPerfilOpen} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
