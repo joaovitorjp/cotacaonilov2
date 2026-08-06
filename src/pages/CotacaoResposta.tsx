@@ -264,7 +264,7 @@ const CotacaoResposta = () => {
             {showGO && (
               <div className="flex-1">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
-                  GO (Goiás)
+                  GO (Goiás) · {tipoLabel(tipoGO)}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">R$</span>
