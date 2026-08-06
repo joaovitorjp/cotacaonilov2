@@ -351,7 +351,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                       {statusFilter === 'finalizada' && onDownloadResultados && (
                         <>
                           <button
-                            onClick={() => onDownloadResultados(lista, 'ciss')}
+                            onClick={() => openCsvDialog(lista, 'ciss')}
                             className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
                             title="Baixar CSV ganhadores (CISS)"
                           >
@@ -359,7 +359,7 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                             <span className="text-[11px] font-display">CSV CISS</span>
                           </button>
                           <button
-                            onClick={() => onDownloadResultados(lista, 'consinco')}
+                            onClick={() => openCsvDialog(lista, 'consinco')}
                             className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
                             title="Baixar CSV ganhadores (CONSINCO)"
                           >
