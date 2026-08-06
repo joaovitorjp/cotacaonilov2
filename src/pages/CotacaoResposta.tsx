@@ -395,7 +395,20 @@ const CotacaoResposta = () => {
                 <>Preencha os preços para <span className="font-bold text-foreground">Goiás (GO)</span>.</>
               )}
             </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {showMT && (
+                <span className="text-[11px] font-bold px-2 py-1 rounded bg-primary/10 text-primary">
+                  MT: preços com {tipoLabel(tipoMT)}
+                </span>
+              )}
+              {showGO && (
+                <span className="text-[11px] font-bold px-2 py-1 rounded bg-primary/10 text-primary">
+                  GO: preços com {tipoLabel(tipoGO)}
+                </span>
+              )}
+            </div>
           </div>
+
           {filteredProdutos.length === 0 && searchTerm.trim() ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
               Nenhum produto encontrado para "{searchTerm}"
