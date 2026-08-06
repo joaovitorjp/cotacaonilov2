@@ -178,7 +178,7 @@ const AdminPanel: React.FC = () => {
       <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary" />
-          <h1 className="text-lg sm:text-xl font-display font-bold text-foreground tracking-tight">
+          <h1 className="text-lg sm:text-xl font-display font-bold text-foreground tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
             Painel do Administrador
           </h1>
         </div>
@@ -237,7 +237,7 @@ const AdminPanel: React.FC = () => {
               return (
                 <div
                   key={lista.id}
-                  className="border border-border rounded-lg p-4 hover:border-primary/40 hover:shadow-sm transition-all bg-card"
+                  className="border border-border/60 rounded-xl p-5 hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 transition-all bg-card/80 backdrop-blur-sm"
                 >
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="flex-1 min-w-0">
