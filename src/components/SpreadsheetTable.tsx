@@ -29,6 +29,8 @@ interface SpreadsheetTableProps {
   onDeleteResposta?: (empresa: string) => Promise<void>;
   onAfterSave?: () => void;
   onAddEmpresa?: (empresa: string, states: ('MT' | 'GO')[]) => Promise<void>;
+  tipoPrecoMap?: Record<string, string>;
+
 }
 
 const parsePrice = (val: string | number): number => {
