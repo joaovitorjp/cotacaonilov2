@@ -367,6 +367,8 @@ export type Database = {
           network_id: string | null
           respondido: boolean
           tipo_preco: string | null
+          tipo_preco_go: string
+          tipo_preco_mt: string
           token: string
           user_id: string | null
         }
@@ -381,6 +383,8 @@ export type Database = {
           network_id?: string | null
           respondido?: boolean
           tipo_preco?: string | null
+          tipo_preco_go?: string
+          tipo_preco_mt?: string
           token?: string
           user_id?: string | null
         }
@@ -395,6 +399,8 @@ export type Database = {
           network_id?: string | null
           respondido?: boolean
           tipo_preco?: string | null
+          tipo_preco_go?: string
+          tipo_preco_mt?: string
           token?: string
           user_id?: string | null
         }
