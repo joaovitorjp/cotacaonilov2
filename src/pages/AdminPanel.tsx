@@ -174,118 +174,183 @@ const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-primary" />
-          <h1 className="text-lg sm:text-xl font-display font-bold text-foreground tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-            Painel do Administrador
-          </h1>
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 p-2 rounded-xl">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-display font-bold text-slate-900 tracking-tight">
+              Painel Administrativo
+            </h1>
+            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Gestão Global de Cotações</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground hidden sm:inline">{user?.email}</span>
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
-            <LogOut className="h-4 w-4" />
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex flex-col items-end mr-2">
+            <span className="text-xs font-bold text-slate-900">{user?.email?.split('@')[0]}</span>
+            <span className="text-[10px] text-slate-500">{user?.email}</span>
+          </div>
+          <Button variant="ghost" size="icon" onClick={signOut} title="Sair" className="hover:bg-red-50 hover:text-red-600 rounded-full transition-colors">
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto p-4 sm:p-6">
-        <div className="mb-6">
-          <p className="text-sm text-muted-foreground">
-            Visualize todas as cotações de todos os usuários. Você pode abrir a planilha e baixar o PDF, mas não editar.
-          </p>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Sidebar / Stats / Controls */}
+          <div className="lg:col-span-4 space-y-6">
+            <MonthlyReportCard listas={listas} profiles={profiles} />
+            
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+              <h2 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <Search className="w-4 h-4 text-primary" />
+                Filtros de Busca
+              </h2>
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Nome, usuário ou email..."
+                    className="pl-9 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2 p-1 bg-slate-100 rounded-xl">
+                  {(['all', 'aberta', 'finalizada'] as const).map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => setStatusFilter(opt)}
+                      className={`py-2 text-[10px] font-bold rounded-lg transition-all ${
+                        statusFilter === opt 
+                          ? 'bg-white text-primary shadow-sm' 
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      {opt === 'all' ? 'Todas' : opt === 'aberta' ? 'Abertas' : 'Finais'}
+                    </button>
+                  ))}
+                </div>
 
-        <MonthlyReportCard listas={listas} profiles={profiles} />
-
-
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por cotação, usuário ou email..."
-              className="pl-9"
-            />
-          </div>
-          <div className="flex gap-2">
-            {(['all', 'aberta', 'finalizada'] as const).map(opt => (
-              <Button
-                key={opt}
-                variant={statusFilter === opt ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter(opt)}
-              >
-                {opt === 'all' ? 'Todas' : opt === 'aberta' ? 'Abertas' : 'Finalizadas'}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {loading ? (
-          <p className="text-center text-muted-foreground py-12">Carregando...</p>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-border rounded-lg">
-            <p className="text-muted-foreground text-sm">Nenhuma cotação encontrada.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filtered.map(lista => {
-              const owner = profiles[lista.user_id];
-              return (
-                <div
-                  key={lista.id}
-                  className="border border-border/60 rounded-xl p-5 hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 transition-all bg-card/80 backdrop-blur-sm"
-                >
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-display font-bold text-foreground text-base">{lista.nome}</h3>
-                        <span className={`text-[10px] font-display font-bold px-2 py-0.5 rounded-full ${
-                          lista.status === 'finalizada' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
-                        }`}>
-                          {lista.status === 'finalizada' ? 'FINALIZADA' : 'ABERTA'}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          <strong className="text-foreground">{owner?.nome || 'Sem nome'}</strong>
-                          <span>· {owner?.email || '—'}</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Package className="w-3 h-3" />
-                          {lista.produtos.length} produtos
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(lista.created_at).toLocaleDateString('pt-BR')}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => openLista(lista)}>
-                        <Eye className="w-3.5 h-3.5 mr-1.5" />
-                        Abrir planilha
-                      </Button>
-                      <Button size="sm" onClick={async () => {
-                        await openLista(lista);
-                        setActiveTab('analise');
-                        toast.info('Use o botão "Exportar PDF" na aba Análise.');
-                      }}>
-                        <FileText className="w-3.5 h-3.5 mr-1.5" />
-                        PDF
-                      </Button>
-                    </div>
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="text-slate-500">Total Filtrado</span>
+                    <span className="font-bold text-slate-900">{filtered.length} cotações</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-primary h-full transition-all duration-500" 
+                      style={{ width: `${listas.length > 0 ? (filtered.length / listas.length) * 100 : 0}%` }}
+                    />
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Main List */}
+          <div className="lg:col-span-8">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200">
+                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+                <p className="text-slate-500 font-medium">Carregando dados globais...</p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
+                <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-slate-900 font-bold">Nenhuma cotação</h3>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-1">
+                  Não encontramos registros que correspondam aos seus critérios de busca.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {filtered.map(lista => {
+                  const owner = profiles[lista.user_id];
+                  const isFinal = lista.status === 'finalizada';
+                  
+                  return (
+                    <div
+                      key={lista.id}
+                      className="group bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-display font-bold text-slate-900 text-base truncate">
+                              {lista.nome}
+                            </h3>
+                            <span className={`shrink-0 text-[9px] font-black tracking-widest uppercase px-2 py-1 rounded-md ${
+                              isFinal ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'
+                            }`}>
+                              {lista.status}
+                            </span>
+                          </div>
+                          
+                          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 border border-slate-200">
+                                {owner?.nome?.charAt(0) || '?'}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-slate-800 leading-none">{owner?.nome || 'Sem nome'}</span>
+                                <span className="text-[10px] text-slate-500">{owner?.email}</span>
+                              </div>
+                            </div>
+
+                            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+
+                            <div className="flex items-center gap-3">
+                              <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600">
+                                <Package className="w-3.5 h-3.5 text-slate-400" />
+                                <strong>{lista.produtos.length}</strong> itens
+                              </span>
+                              <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600">
+                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                {new Date(lista.created_at).toLocaleDateString('pt-BR')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:self-center">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openLista(lista)}
+                            className="flex-1 sm:flex-none border-slate-200 hover:bg-slate-50 rounded-xl font-bold text-xs"
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                            Visualizar
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            onClick={async () => {
+                              await openLista(lista);
+                              setActiveTab('analise');
+                              toast.info('Exportação disponível na aba Análise');
+                            }}
+                            className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs"
+                          >
+                            <FileText className="w-3.5 h-3.5 mr-2" />
+                            Relatório
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   );
 };
