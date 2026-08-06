@@ -47,7 +47,7 @@ const MIN_COL_WIDTH = 40;
 
 const MIN_ROW_HEIGHT = 21;
 const DEFAULT_ROW_HEIGHT = 25;
-const HEADER_HEIGHT = 28;
+const HEADER_HEIGHT = 40;
 const EMPTY_ROWS = 30;
 const EMPTY_COLS = 8;
 
