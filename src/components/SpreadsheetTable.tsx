@@ -799,29 +799,26 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     const { type, colIdx, rowIdx } = contextMenu;
     if (type === 'cell' && colIdx !== undefined && rowIdx !== undefined) setCellBgColor(prev => ({ ...prev, [`${rowIdx}-${colIdx}`]: color }));
     else if (type === 'column' && colIdx !== undefined) setColBgColor(prev => ({ ...prev, [colIdx]: color }));
-802:     else if (type === 'row' && rowIdx !== undefined) setRowBgColor(prev => ({ ...prev, [rowIdx]: color }));
-803:     setContextMenu(null);
-804:   };
-805: 
-806:   const deleteRow = (rowIdx: number) => {
-807:     if (readOnly || rowIdx >= produtos.length) return;
-808:     const updated = produtos.filter((_, i) => i !== rowIdx);
-809:     if (onSave) onSave(updated);
-810:     setContextMenu(null);
-811:   };
-812: 
-813:   const addRow = () => {
-814:     if (readOnly) return;
-815:     const newProd: Produto = {
-816:       codigo_interno: `NOVO-${Date.now().toString().slice(-4)}`,
-817:       descricao: 'Novo Produto',
-818:       codigo_barras: '',
-819:     };
-820:     const updated = [...produtos, newProd];
-821:     if (onSave) onSave(updated);
-822:   };
     else if (type === 'row' && rowIdx !== undefined) setRowBgColor(prev => ({ ...prev, [rowIdx]: color }));
     setContextMenu(null);
+  };
+
+  const deleteRow = (rowIdx: number) => {
+    if (readOnly || rowIdx >= produtos.length) return;
+    const updated = produtos.filter((_, i) => i !== rowIdx);
+    if (onSave) onSave(updated);
+    setContextMenu(null);
+  };
+
+  const addRow = () => {
+    if (readOnly) return;
+    const newProd: Produto = {
+      codigo_interno: `NOVO-${Date.now().toString().slice(-4)}`,
+      descricao: 'Novo Produto',
+      codigo_barras: '',
+    };
+    const updated = [...produtos, newProd];
+    if (onSave) onSave(updated);
   };
 
   const handleCopyFromMenu = () => { document.execCommand('copy'); setContextMenu(null); };
