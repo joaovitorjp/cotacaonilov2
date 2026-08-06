@@ -334,15 +334,26 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
                         </button>
                       )}
                       {statusFilter === 'finalizada' && onDownloadResultados && (
-                        <button
-                          onClick={() => onDownloadResultados(lista)}
-                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
-                          title="Baixar CSV ganhadores"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline text-[11px] font-display">CSV</span>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => onDownloadResultados(lista, 'ciss')}
+                            className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
+                            title="Baixar CSV ganhadores (CISS)"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span className="text-[11px] font-display">CSV CISS</span>
+                          </button>
+                          <button
+                            onClick={() => onDownloadResultados(lista, 'consinco')}
+                            className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-xs"
+                            title="Baixar CSV ganhadores (CONSINCO)"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span className="text-[11px] font-display">CSV CONSINCO</span>
+                          </button>
+                        </>
                       )}
+
                       <div className="flex-1" />
                       <button
                         onClick={() => setDeleteTarget(lista)}
