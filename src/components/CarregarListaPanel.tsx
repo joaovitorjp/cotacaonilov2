@@ -475,6 +475,44 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* CSV supplier selection */}
+      <Dialog open={!!csvTarget} onOpenChange={(o) => { if (!o) setCsvTarget(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Baixar CSV {csvTarget?.formato === 'consinco' ? 'CONSINCO' : 'CISS'}</DialogTitle>
+            <DialogDescription>Escolha se deseja baixar de todos os fornecedores ganhadores ou apenas de um.</DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-2 max-h-72 overflow-auto">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="radio" checked={csvEmpresaSel === '__todos__'} onChange={() => setCsvEmpresaSel('__todos__')} />
+              Todos os fornecedores
+            </label>
+            {csvEmpresas.map(e => (
+              <label key={e} className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" checked={csvEmpresaSel === e} onChange={() => setCsvEmpresaSel(e)} />
+                {e}
+              </label>
+            ))}
+            {csvEmpresas.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhuma resposta de fornecedor encontrada.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCsvTarget(null)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (csvTarget && onDownloadResultados) {
+                  onDownloadResultados(csvTarget.lista, csvTarget.formato, csvEmpresaSel === '__todos__' ? undefined : csvEmpresaSel);
+                }
+                setCsvTarget(null);
+              }}
+            >
+              Baixar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
