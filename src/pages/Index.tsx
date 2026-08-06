@@ -594,7 +594,12 @@ const Index = () => {
                   : 'text-slate-600 hover:bg-slate-50 active:bg-slate-100'
               }`}
             >
-              <item.icon className="w-4 h-4" />
+              {item.label === 'Perfil' && avatarUrl ? (
+                <img src={avatarUrl} alt="Foto de perfil" className="w-5 h-5 rounded-full object-cover" />
+              ) : (
+                <item.icon className="w-4 h-4" />
+              )}
+
               {item.label}
             </button>
           ))}
