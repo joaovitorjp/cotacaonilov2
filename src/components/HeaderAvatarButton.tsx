@@ -1,6 +1,7 @@
 import React from 'react';
-import { User as UserIcon } from 'lucide-react';
 import { useAvatar } from '@/hooks/useAvatar';
+import { useAuth } from '@/contexts/AuthContext';
+import UserAvatar from '@/components/UserAvatar';
 
 interface Props {
   onClick: () => void;
@@ -10,6 +11,7 @@ interface Props {
 /** Avatar do usuário no menu fixo do topo — sempre visível e sincronizado com o upload. */
 const HeaderAvatarButton: React.FC<Props> = ({ onClick, className = '' }) => {
   const { avatarUrl } = useAvatar();
+  const { user } = useAuth();
 
   return (
     <button
@@ -17,18 +19,14 @@ const HeaderAvatarButton: React.FC<Props> = ({ onClick, className = '' }) => {
       onClick={onClick}
       title="Perfil"
       aria-label="Abrir perfil"
-      className={`shrink-0 w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center hover:ring-2 hover:ring-primary/30 transition-all ${className}`}
+      className={`shrink-0 rounded-full hover:ring-2 hover:ring-primary/30 transition-all ${className}`}
     >
-      {avatarUrl ? (
-        <img
-          key={avatarUrl}
-          src={avatarUrl}
-          alt="Foto de perfil"
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <UserIcon className="w-4 h-4 text-slate-500" />
-      )}
+      <UserAvatar
+        src={avatarUrl}
+        name={(user?.user_metadata as any)?.nome}
+        email={user?.email}
+        className="w-9 h-9"
+      />
     </button>
   );
 };
