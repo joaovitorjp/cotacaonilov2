@@ -135,91 +135,143 @@ const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <div className="flex items-center gap-3">
-            <UserAvatar src={avatarUrl} name={nome} email={emailLocal} className="w-10 h-10" />
-
-            <div className="text-left">
-              <SheetTitle className="font-display">Meu Perfil</SheetTitle>
-              <SheetDescription>Gerencie suas informações</SheetDescription>
+        <SheetHeader className="pb-6 border-b">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="relative group">
+              <UserAvatar
+                src={avatarUrl}
+                name={nome}
+                email={emailLocal}
+                className="w-24 h-24 ring-4 ring-primary/10 transition-all duration-300 group-hover:ring-primary/20"
+                iconClassName="w-10 h-10"
+                textClassName="text-2xl font-bold"
+              />
+              <button 
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                title="Alterar foto"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+              {uploading && (
+                <div className="absolute inset-0 rounded-full bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-1">
+              <SheetTitle className="font-display text-2xl tracking-tight">Meu Perfil</SheetTitle>
+              <SheetDescription className="text-sm">Personalize sua identidade no sistema</SheetDescription>
             </div>
           </div>
         </SheetHeader>
 
         {loading ? (
-          <p className="text-muted-foreground mt-6">Carregando...</p>
-        ) : (
-          <div className="mt-6 space-y-5">
-            {/* Avatar */}
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <UserAvatar
-                  src={avatarUrl}
-                  name={nome}
-                  email={emailLocal}
-                  className="w-20 h-20"
-                  iconClassName="w-8 h-8"
-                  textClassName="text-xl"
-                />
-                {uploading && (
-                  <div className="absolute inset-0 rounded-full bg-white/70 flex items-center justify-center">
-                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handleFile}
-                />
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" disabled={uploading} onClick={() => fileRef.current?.click()}>
-                    <Camera className="w-4 h-4 mr-2" /> {avatarUrl ? 'Trocar foto' : 'Enviar foto'}
-                  </Button>
-                  {avatarUrl && (
-                    <Button size="sm" variant="ghost" disabled={uploading} onClick={removeAvatar} className="text-red-600 hover:bg-red-50">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">JPG, PNG ou WEBP • até 2 MB</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" value={emailLocal} disabled className="opacity-70" />
-              <p className="text-xs text-muted-foreground">O email é vinculado à sua conta e não pode ser alterado.</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome</Label>
-              <Input
-                id="nome"
-                value={nome}
-                onChange={e => setNome(e.target.value)}
-                placeholder="Seu nome completo"
-                maxLength={80}
-              />
-              <p className="text-xs text-muted-foreground">Este nome será exibido nas mensagens enviadas aos fornecedores.</p>
-            </div>
-
-            <Button onClick={handleSave} disabled={saving} className="w-full">
-              {saving ? 'Salvando...' : 'Salvar alterações'}
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => { onOpenChange(false); signOut(); }}
-              className="w-full"
-            >
-              <LogOut className="w-4 h-4 mr-2" /> Sair da conta
-            </Button>
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary/50" />
+            <p className="text-muted-foreground animate-pulse">Carregando perfil...</p>
           </div>
-        )}
+        ) : (
+          <div className="py-6 space-y-8">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleFile}
+            />
+
+            {/* Ações de Foto */}
+            {avatarUrl && (
+              <div className="flex justify-center -mt-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  disabled={uploading} 
+                  onClick={removeAvatar} 
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 text-xs gap-2 h-8"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Remover foto atual
+                </Button>
+              </div>
+            )}
+
+            {/* Campos do Formulário */}
+            <div className="space-y-6">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="nome" className="text-sm font-semibold text-foreground/80">Nome Completo</Label>
+                  <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded uppercase font-medium">Obrigatório</span>
+                </div>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                  <Input
+                    id="nome"
+                    value={nome}
+                    onChange={e => setNome(e.target.value)}
+                    placeholder="Como você quer ser chamado?"
+                    maxLength={80}
+                    className="pl-10 h-11 transition-all focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground/80 leading-relaxed px-1">
+                  Este nome será utilizado para identificar você nas mensagens automáticas de WhatsApp enviadas aos fornecedores.
+                </p>
+              </div>
+
+              <div className="space-y-2.5">
+                <Label htmlFor="email" className="text-sm font-semibold text-foreground/80">Endereço de E-mail</Label>
+                <div className="relative group">
+                  <Input 
+                    id="email" 
+                    value={emailLocal} 
+                    disabled 
+                    className="h-11 bg-muted/30 border-dashed cursor-not-allowed opacity-80" 
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-[10px] bg-foreground/10 px-1.5 py-0.5 rounded text-foreground/60 font-medium">BLOQUEADO</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground/80 leading-relaxed px-1">
+                  O e-mail é a chave da sua conta e não pode ser alterado por motivos de segurança.
+                </p>
+              </div>
+            </div>
+
+            {/* Ações de Rodapé */}
+            <div className="space-y-3 pt-4">
+              <Button 
+                onClick={handleSave} 
+                disabled={saving || uploading} 
+                className="w-full h-11 text-base font-medium shadow-md transition-all active:scale-[0.98]"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando...
+                  </>
+                ) : (
+                  'Salvar alterações'
+                )}
+              </Button>
+
+              <div className="flex items-center gap-2 py-2">
+                <div className="h-px flex-1 bg-border/60"></div>
+                <span className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Conta</span>
+                <div className="h-px flex-1 bg-border/60"></div>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => { onOpenChange(false); signOut(); }}
+                className="w-full h-11 text-destructive hover:text-destructive hover:bg-destructive/5 border-destructive/20 hover:border-destructive/30 transition-colors"
+              >
+                <LogOut className="w-4 h-4 mr-2" /> Sair da conta
+              </Button>
+            </div>
+          </div>
+        ) as any}
       </SheetContent>
     </Sheet>
   );
