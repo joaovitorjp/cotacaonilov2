@@ -20,7 +20,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon } from 'lucide-react';
+import { LogOut, Menu, X, Home, Upload, FolderOpen, Link2, CheckSquare, Users, BarChart3, Table, MessageCircle, User as UserIcon, Package } from 'lucide-react';
 
 interface Lista {
   id: string;
@@ -492,122 +492,154 @@ const Index = () => {
 
   return (
     <ProfileGate>
-    <div className="flex flex-col h-screen bg-background/95 backdrop-blur-sm">
-      {/* Header */}
-      <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
-        <button onClick={handleBackToDashboard} className="flex items-center gap-2">
-          <h1 className="text-lg sm:text-xl font-display font-bold text-foreground tracking-tight">Nilo Atacadista</h1>
-        </button>
+      <div className="flex flex-col h-screen bg-[#F8FAFC]">
+        {/* Modern Header */}
+        <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <button onClick={handleBackToDashboard} className="bg-primary/10 p-2 rounded-xl">
+              <Package className="w-5 h-5 text-primary" />
+            </button>
+            <div>
+              <h1 className="text-lg font-display font-bold text-slate-900 tracking-tight cursor-pointer" onClick={handleBackToDashboard}>
+                Nilo Atacadista
+              </h1>
+              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Gestão de Cotações</p>
+            </div>
+          </div>
 
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-2">
-          {navItems.slice(1).map(item => (
-            <Button
-              key={item.label}
-              variant={item.label === 'Gerar Link' ? 'default' : 'outline'}
-              size="sm"
-              onClick={item.action}
-              disabled={item.disabled}
-              className={item.disabled ? 'opacity-50 cursor-not-allowed' : ''}
-            >
-              <item.icon className="w-4 h-4 mr-1.5" />
-              {item.label}
+          {/* Desktop nav - Refined */}
+          <div className="hidden md:flex items-center gap-3">
+            {navItems.slice(1).map(item => (
+              <Button
+                key={item.label}
+                variant={item.label === 'Gerar Link' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={item.action}
+                disabled={item.disabled}
+                className={`text-xs font-bold rounded-xl h-9 ${
+                  item.label === 'Gerar Link' 
+                    ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm' 
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                } ${item.disabled ? 'opacity-30' : ''}`}
+              >
+                <item.icon className="w-3.5 h-3.5 mr-2" />
+                {item.label}
+              </Button>
+            ))}
+            <div className="w-px h-5 bg-slate-200 mx-2" />
+            <Button variant="ghost" size="icon" onClick={signOut} title="Sair" className="hover:bg-red-50 hover:text-red-600 rounded-full transition-colors w-9 h-9">
+              <LogOut className="h-4 w-4" />
             </Button>
-          ))}
-          <div className="w-px h-6 bg-border mx-1" />
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
+          </div>
 
-        {/* Mobile menu toggle */}
-        <div className="flex md:hidden items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
-            <LogOut className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
-        </div>
-      </header>
+          {/* Mobile menu toggle */}
+          <div className="flex md:hidden items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="w-9 h-9 rounded-xl">
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
+        </header>
 
       {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-card border-b border-border px-4 py-2 space-y-1 shrink-0">
+        <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-1 shrink-0 animate-in slide-in-from-top duration-200">
           {navItems.map(item => (
             <button
               key={item.label}
               onClick={() => { item.action(); setMobileMenuOpen(false); }}
               disabled={item.disabled}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-display font-bold text-left transition-colors ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-left transition-all ${
                 item.disabled
-                  ? 'opacity-40 cursor-not-allowed text-muted-foreground'
-                  : 'text-foreground hover:bg-muted/50'
+                  ? 'opacity-30 cursor-not-allowed text-slate-400'
+                  : 'text-slate-600 hover:bg-slate-50 active:bg-slate-100'
               }`}
             >
               <item.icon className="w-4 h-4" />
               {item.label}
             </button>
           ))}
+          <button
+            onClick={() => { signOut(); setMobileMenuOpen(false); }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-left text-red-600 hover:bg-red-50 active:bg-red-100 mt-2 border-t border-slate-100 pt-3"
+          >
+            <LogOut className="w-4 h-4" />
+            Sair da Conta
+          </button>
         </div>
       )}
 
-      {/* Lista info bar with tabs */}
+      {/* Lista info bar with tabs - Refined */}
       {currentLista && !showDashboard && (
-        <div className="shrink-0 border-b border-border">
-          <div className="bg-muted/50 px-4 sm:px-6 py-2 text-sm text-foreground flex items-center gap-2 flex-wrap">
-            <button onClick={handleBackToDashboard} className="text-primary hover:underline text-xs font-display">
-              ← Início
+        <div className="shrink-0 border-b border-slate-200 bg-white">
+          <div className="px-4 sm:px-8 py-3 flex items-center gap-3 flex-wrap">
+            <button 
+              onClick={handleBackToDashboard} 
+              className="text-slate-400 hover:text-primary transition-colors p-1.5 hover:bg-slate-50 rounded-lg"
+              title="Voltar ao início"
+            >
+              <Home className="w-4 h-4" />
             </button>
-            <span className="text-muted-foreground">·</span>
-            <span className="font-display font-bold">{currentLista.nome}</span>
-            <span className="text-muted-foreground text-xs">
-              {currentLista.produtos.length} produtos · {respostas.length} resposta(s)
-            </span>
-            {isFinalized && (
-              <span className="text-[10px] bg-success/10 text-success px-2 py-0.5 rounded-full font-display font-bold">
-                FINALIZADA
+            <div className="w-px h-4 bg-slate-200 mx-1" />
+            
+            <div className="flex flex-col">
+              <span className="text-xs font-black text-slate-900 leading-none mb-0.5">{currentLista.nome}</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                {currentLista.produtos.length} itens • {respostas.length} respostas
               </span>
-            )}
-            {currentLista.prazo && (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-display font-bold ${
-                isExpired
-                  ? 'bg-destructive/10 text-destructive'
-                  : 'bg-primary/10 text-primary'
-              }`}>
-                {isExpired ? '⏰ EXPIRADA' : `📅 Prazo: ${new Date(currentLista.prazo).toLocaleDateString('pt-BR')}`}
-              </span>
-            )}
-            {!isFinalized && respostas.length > 0 && (
-              <Button variant="outline" size="sm" className="ml-auto text-xs" onClick={() => loadRespostas(currentLista.id)}>
-                Atualizar
-              </Button>
-            )}
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              {isFinalized && (
+                <span className="text-[9px] font-black tracking-widest uppercase bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md">
+                  FINALIZADA
+                </span>
+              )}
+              {currentLista.prazo && (
+                <span className={`text-[9px] font-black tracking-widest uppercase px-2 py-1 rounded-md ${
+                  isExpired ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
+                }`}>
+                  {isExpired ? 'EXPIRADA' : `Prazo: ${new Date(currentLista.prazo).toLocaleDateString('pt-BR')}`}
+                </span>
+              )}
+              {!isFinalized && respostas.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 text-[10px] font-bold border-slate-200 hover:bg-slate-50 rounded-lg px-3" 
+                  onClick={() => loadRespostas(currentLista.id)}
+                >
+                  Sincronizar
+                </Button>
+              )}
+            </div>
           </div>
-          {/* Tabs */}
+
+          {/* Tabs - Modern Minimalist */}
           {respostas.length > 0 && (
-            <div className="flex px-4 sm:px-6 bg-card">
+            <div className="flex px-4 sm:px-8 gap-6 border-t border-slate-100">
               <button
                 onClick={() => setActiveTab('planilha')}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-display font-bold border-b-2 transition-colors ${
-                  activeTab === 'planilha'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                className={`flex items-center gap-2 py-3 text-[11px] font-black uppercase tracking-widest transition-all relative ${
+                  activeTab === 'planilha' 
+                    ? 'text-primary' 
+                    : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
                 <Table className="w-3.5 h-3.5" />
                 Planilha
+                {activeTab === 'planilha' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />}
               </button>
               <button
                 onClick={() => setActiveTab('analise')}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-display font-bold border-b-2 transition-colors ${
-                  activeTab === 'analise'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                className={`flex items-center gap-2 py-3 text-[11px] font-black uppercase tracking-widest transition-all relative ${
+                  activeTab === 'analise' 
+                    ? 'text-primary' 
+                    : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
                 <BarChart3 className="w-3.5 h-3.5" />
                 Análise
+                {activeTab === 'analise' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />}
               </button>
             </div>
           )}
@@ -673,40 +705,41 @@ const Index = () => {
         />
       )}
 
-      {/* Floating button */}
+      {/* Floating button - Modernized */}
       {currentLista && !isFinalized && !showDashboard && (
         <button
           onClick={handleEncerrarClick}
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-success text-success-foreground px-4 sm:px-6 py-3 rounded shadow-lg font-display font-bold text-sm hover:bg-success/90 transition-colors duration-200 z-50"
+          className="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-xl shadow-slate-200 font-bold text-xs uppercase tracking-widest hover:bg-slate-800 hover:scale-105 active:scale-95 transition-all z-50 flex items-center gap-2"
         >
+          <CheckSquare className="w-4 h-4" />
           Encerrar Cotação
         </button>
       )}
 
-      {/* 4. Encerrar Confirmation Dialog */}
+      {/* 4. Encerrar Confirmation Dialog - Themed */}
       <AlertDialog open={showEncerrarDialog} onOpenChange={setShowEncerrarDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-3xl border-slate-200">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">Encerrar cotação?</AlertDialogTitle>
+            <AlertDialogTitle className="font-bold text-slate-900">Encerrar cotação?</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>Deseja encerrar a cotação <strong>"{currentLista?.nome}"</strong>? Após encerrar, fornecedores não poderão mais enviar respostas.</p>
+              <div className="space-y-4">
+                <p className="text-slate-600 text-sm">Deseja encerrar a cotação <strong>"{currentLista?.nome}"</strong>? Após encerrar, fornecedores não poderão mais enviar respostas.</p>
                 
-                <div className="bg-muted rounded-lg p-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Links gerados:</span>
-                    <span className="font-bold text-foreground">{encerrarStats.total}</span>
+                <div className="bg-slate-50 rounded-2xl p-4 space-y-3 border border-slate-100">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-bold uppercase tracking-wider">Links gerados</span>
+                    <span className="font-black text-slate-900">{encerrarStats.total}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Responderam:</span>
-                    <span className="font-bold text-success">{encerrarStats.responded}</span>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-bold uppercase tracking-wider">Responderam</span>
+                    <span className="font-black text-emerald-600">{encerrarStats.responded}</span>
                   </div>
                   {encerrarStats.pending.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Ainda não responderam:</p>
-                      <div className="flex flex-wrap gap-1">
+                    <div className="pt-2 border-t border-slate-200/50">
+                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Aguardando resposta de:</p>
+                      <div className="flex flex-wrap gap-1.5">
                         {encerrarStats.pending.map(emp => (
-                          <span key={emp} className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-display font-bold">
+                          <span key={emp} className="text-[9px] font-black uppercase tracking-widest bg-slate-200/50 text-slate-600 px-2 py-1 rounded-md">
                             {emp}
                           </span>
                         ))}
@@ -717,10 +750,10 @@ const Index = () => {
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleEncerrarConfirm} className="bg-success text-success-foreground hover:bg-success/90">
-              Encerrar
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="rounded-xl border-slate-200 text-xs font-bold">Continuar Aberta</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEncerrarConfirm} className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-xs font-bold">
+              Encerrar Agora
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
