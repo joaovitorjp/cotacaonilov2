@@ -63,12 +63,17 @@ const Index = () => {
       setRespostas([]);
       return;
     }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('respostas')
       .select('empresa, resposta, links_cotacao(info_preco)')
       .eq('user_id', user.id)
       .eq('lista_id', listaId);
     
+    if (error) {
+      console.error('Erro ao carregar respostas:', error);
+      return;
+    }
+
     setRespostas((data ?? []).map((d: any) => ({ 
       empresa: d.empresa, 
       resposta: d.resposta as any[],
