@@ -41,7 +41,10 @@ const parsePrice = (val: string | number): number => {
   return isNaN(num) ? Infinity : num;
 };
 
+export const tipoPrecoLabel = (t?: string) => (t === 'NOTA' ? 'PREÇO NOTA' : 'IPI + ST');
+
 const MIN_COL_WIDTH = 40;
+
 const MIN_ROW_HEIGHT = 21;
 const DEFAULT_ROW_HEIGHT = 25;
 const HEADER_HEIGHT = 28;
