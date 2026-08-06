@@ -668,6 +668,8 @@ const Index = () => {
         <SpreadsheetTable
           produtos={currentLista?.produtos ?? []}
           respostas={respostas}
+          tipoPrecoMap={tipoPrecoMap}
+
           readOnly={false}
           highlightLowest={respostas.length > 1}
           listaId={currentLista?.id}
