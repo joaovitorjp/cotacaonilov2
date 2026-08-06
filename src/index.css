@@ -6,49 +6,47 @@
 
 @layer base {
   :root {
-    --background: 210 40% 99%;
-    --foreground: 215 35% 15%;
+    --background: 210 50% 98.5%;
+    --foreground: 220 40% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 35% 15%;
+    --card-foreground: 220 40% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 35% 15%;
+    --popover-foreground: 220 40% 12%;
 
-    --primary: 210 95% 55%;
+    --primary: 215 95% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 205 70% 95%;
-    --secondary-foreground: 215 50% 25%;
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 31%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 20% 50%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 200 90% 92%;
-    --accent-foreground: 215 50% 25%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --success: 160 70% 40%;
-    --success-foreground: 0 0% 100%;
+    --success: 160 84% 39%;
+    --success-foreground: 210 40% 98%;
 
-    --disabled: 210 20% 80%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
 
-    --border: 210 30% 90%;
-    --input: 210 30% 90%;
-    --ring: 210 95% 55%;
+    --radius: 0.75rem;
 
-    --radius: 0.625rem;
-
-    --sidebar-background: 210 50% 98%;
-    --sidebar-foreground: 215 35% 25%;
-    --sidebar-primary: 210 95% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 205 70% 94%;
-    --sidebar-accent-foreground: 215 50% 25%;
-    --sidebar-border: 210 30% 90%;
-    --sidebar-ring: 210 95% 55%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
 
     --font-display: 'Roboto Condensed', sans-serif;
     --font-body: 'Roboto Flex', sans-serif;

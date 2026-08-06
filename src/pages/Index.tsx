@@ -492,7 +492,7 @@ const Index = () => {
 
   return (
     <ProfileGate>
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-background/95 backdrop-blur-sm">
       {/* Header */}
       <header className="bg-card border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
         <button onClick={handleBackToDashboard} className="flex items-center gap-2">
