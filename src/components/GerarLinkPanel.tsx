@@ -74,6 +74,9 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [listaNome, setListaNome] = useState<string>('');
   const [userNome, setUserNome] = useState<string>('');
   const [linkToDelete, setLinkToDelete] = useState<ExistingLink | null>(null);
+  const [tipoMT, setTipoMT] = useState<TipoPreco>('IPI_ST');
+  const [tipoGO, setTipoGO] = useState<TipoPreco>('NOTA');
+
 
 
 
