@@ -136,13 +136,8 @@ const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Foto de perfil" className="w-full h-full object-cover" />
-              ) : (
-                <UserIcon className="w-5 h-5 text-primary" />
-              )}
-            </div>
+            <UserAvatar src={avatarUrl} name={nome} email={emailLocal} className="w-10 h-10" />
+
             <div className="text-left">
               <SheetTitle className="font-display">Meu Perfil</SheetTitle>
               <SheetDescription>Gerencie suas informações</SheetDescription>
