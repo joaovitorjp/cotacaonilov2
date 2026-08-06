@@ -32,9 +32,14 @@ const CotacaoResposta = () => {
   const [filledCount, setFilledCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [estados, setEstados] = useState<string>('AMBOS');
+  const [tipoMT, setTipoMT] = useState<string>('IPI_ST');
+  const [tipoGO, setTipoGO] = useState<string>('NOTA');
+
+  const tipoLabel = (t: string) => (t === 'NOTA' ? 'PREÇO NOTA' : 'IPI + ST');
 
   const showMT = estados === 'AMBOS' || estados === 'MT';
   const showGO = estados === 'AMBOS' || estados === 'GO';
+
 
   useEffect(() => {
     loadData();
