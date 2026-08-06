@@ -562,10 +562,22 @@ const Index = () => {
 
           {/* Mobile menu toggle */}
           <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={() => { setPerfilOpen(true); setMobileMenuOpen(false); }}
+              title="Perfil"
+              className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Foto de perfil" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon className="w-4 h-4 text-slate-500" />
+              )}
+            </button>
             <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="w-9 h-9 rounded-xl">
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
+
         </header>
 
       {/* Mobile menu dropdown */}
