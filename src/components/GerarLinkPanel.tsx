@@ -42,6 +42,9 @@ interface ExistingLink {
 }
 
 type EstadoOption = 'AMBOS' | 'MT' | 'GO';
+type TipoPreco = 'IPI_ST' | 'NOTA';
+const TIPO_LABELS: Record<TipoPreco, string> = { IPI_ST: 'IPI + ST', NOTA: 'PREÇO NOTA' };
+
 
 interface GerarLinkPanelProps {
   open: boolean;
