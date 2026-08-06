@@ -542,81 +542,104 @@ const Index = () => {
 
       {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-card border-b border-border px-4 py-2 space-y-1 shrink-0">
+        <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-1 shrink-0 animate-in slide-in-from-top duration-200">
           {navItems.map(item => (
             <button
               key={item.label}
               onClick={() => { item.action(); setMobileMenuOpen(false); }}
               disabled={item.disabled}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-display font-bold text-left transition-colors ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-left transition-all ${
                 item.disabled
-                  ? 'opacity-40 cursor-not-allowed text-muted-foreground'
-                  : 'text-foreground hover:bg-muted/50'
+                  ? 'opacity-30 cursor-not-allowed text-slate-400'
+                  : 'text-slate-600 hover:bg-slate-50 active:bg-slate-100'
               }`}
             >
               <item.icon className="w-4 h-4" />
               {item.label}
             </button>
           ))}
+          <button
+            onClick={() => { signOut(); setMobileMenuOpen(false); }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-left text-red-600 hover:bg-red-50 active:bg-red-100 mt-2 border-t border-slate-100 pt-3"
+          >
+            <LogOut className="w-4 h-4" />
+            Sair da Conta
+          </button>
         </div>
       )}
 
-      {/* Lista info bar with tabs */}
+      {/* Lista info bar with tabs - Refined */}
       {currentLista && !showDashboard && (
-        <div className="shrink-0 border-b border-border">
-          <div className="bg-muted/50 px-4 sm:px-6 py-2 text-sm text-foreground flex items-center gap-2 flex-wrap">
-            <button onClick={handleBackToDashboard} className="text-primary hover:underline text-xs font-display">
-              ← Início
+        <div className="shrink-0 border-b border-slate-200 bg-white">
+          <div className="px-4 sm:px-8 py-3 flex items-center gap-3 flex-wrap">
+            <button 
+              onClick={handleBackToDashboard} 
+              className="text-slate-400 hover:text-primary transition-colors p-1.5 hover:bg-slate-50 rounded-lg"
+              title="Voltar ao início"
+            >
+              <Home className="w-4 h-4" />
             </button>
-            <span className="text-muted-foreground">·</span>
-            <span className="font-display font-bold">{currentLista.nome}</span>
-            <span className="text-muted-foreground text-xs">
-              {currentLista.produtos.length} produtos · {respostas.length} resposta(s)
-            </span>
-            {isFinalized && (
-              <span className="text-[10px] bg-success/10 text-success px-2 py-0.5 rounded-full font-display font-bold">
-                FINALIZADA
+            <div className="w-px h-4 bg-slate-200 mx-1" />
+            
+            <div className="flex flex-col">
+              <span className="text-xs font-black text-slate-900 leading-none mb-0.5">{currentLista.nome}</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                {currentLista.produtos.length} itens • {respostas.length} respostas
               </span>
-            )}
-            {currentLista.prazo && (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-display font-bold ${
-                isExpired
-                  ? 'bg-destructive/10 text-destructive'
-                  : 'bg-primary/10 text-primary'
-              }`}>
-                {isExpired ? '⏰ EXPIRADA' : `📅 Prazo: ${new Date(currentLista.prazo).toLocaleDateString('pt-BR')}`}
-              </span>
-            )}
-            {!isFinalized && respostas.length > 0 && (
-              <Button variant="outline" size="sm" className="ml-auto text-xs" onClick={() => loadRespostas(currentLista.id)}>
-                Atualizar
-              </Button>
-            )}
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              {isFinalized && (
+                <span className="text-[9px] font-black tracking-widest uppercase bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md">
+                  FINALIZADA
+                </span>
+              )}
+              {currentLista.prazo && (
+                <span className={`text-[9px] font-black tracking-widest uppercase px-2 py-1 rounded-md ${
+                  isExpired ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
+                }`}>
+                  {isExpired ? 'EXPIRADA' : `Prazo: ${new Date(currentLista.prazo).toLocaleDateString('pt-BR')}`}
+                </span>
+              )}
+              {!isFinalized && respostas.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 text-[10px] font-bold border-slate-200 hover:bg-slate-50 rounded-lg px-3" 
+                  onClick={() => loadRespostas(currentLista.id)}
+                >
+                  Sincronizar
+                </Button>
+              )}
+            </div>
           </div>
-          {/* Tabs */}
+
+          {/* Tabs - Modern Minimalist */}
           {respostas.length > 0 && (
-            <div className="flex px-4 sm:px-6 bg-card">
+            <div className="flex px-4 sm:px-8 gap-6 border-t border-slate-100">
               <button
                 onClick={() => setActiveTab('planilha')}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-display font-bold border-b-2 transition-colors ${
-                  activeTab === 'planilha'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                className={`flex items-center gap-2 py-3 text-[11px] font-black uppercase tracking-widest transition-all relative ${
+                  activeTab === 'planilha' 
+                    ? 'text-primary' 
+                    : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
                 <Table className="w-3.5 h-3.5" />
                 Planilha
+                {activeTab === 'planilha' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />}
               </button>
               <button
                 onClick={() => setActiveTab('analise')}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-display font-bold border-b-2 transition-colors ${
-                  activeTab === 'analise'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                className={`flex items-center gap-2 py-3 text-[11px] font-black uppercase tracking-widest transition-all relative ${
+                  activeTab === 'analise' 
+                    ? 'text-primary' 
+                    : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
                 <BarChart3 className="w-3.5 h-3.5" />
                 Análise
+                {activeTab === 'analise' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />}
               </button>
             </div>
           )}
