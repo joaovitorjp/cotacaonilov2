@@ -525,55 +525,37 @@ const Index = () => {
           </div>
 
           {/* Desktop nav - Refined */}
-          <div className="hidden md:flex items-center gap-3">
-            {navItems.slice(1).filter(i => i.label !== 'Perfil').map(item => (
-              <Button
-                key={item.label}
-                variant={item.label === 'Gerar Link' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={item.action}
-                disabled={item.disabled}
-                className={`text-xs font-bold rounded-xl h-9 ${
-                  item.label === 'Gerar Link' 
-                    ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm' 
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                } ${item.disabled ? 'opacity-30' : ''}`}
-              >
-                <item.icon className="w-3.5 h-3.5 mr-2" />
-                {item.label}
-              </Button>
-            ))}
-            <button
-              onClick={() => setPerfilOpen(true)}
-              title="Perfil"
-              className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center hover:ring-2 hover:ring-primary/30 transition-all"
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Foto de perfil" className="w-full h-full object-cover" />
-              ) : (
-                <UserIcon className="w-4 h-4 text-slate-500" />
-              )}
-            </button>
-            <div className="w-px h-5 bg-slate-200 mx-2" />
-            <Button variant="ghost" size="icon" onClick={signOut} title="Sair" className="hover:bg-red-50 hover:text-red-600 rounded-full transition-colors w-9 h-9">
+          <div className="hidden md:flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 overflow-x-auto no-scrollbar">
+              {navItems.slice(1).filter(i => i.label !== 'Perfil').map(item => (
+                <Button
+                  key={item.label}
+                  variant={item.label === 'Gerar Link' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={item.action}
+                  disabled={item.disabled}
+                  className={`shrink-0 text-xs font-bold rounded-xl h-9 ${
+                    item.label === 'Gerar Link'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  } ${item.disabled ? 'opacity-30' : ''}`}
+                >
+                  <item.icon className="w-3.5 h-3.5 mr-2" />
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+            <HeaderAvatarButton onClick={() => setPerfilOpen(true)} />
+            <div className="w-px h-5 bg-slate-200 mx-2 shrink-0" />
+            <Button variant="ghost" size="icon" onClick={signOut} title="Sair" className="shrink-0 hover:bg-red-50 hover:text-red-600 rounded-full transition-colors w-9 h-9">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Mobile menu toggle */}
-          <div className="flex md:hidden items-center gap-2">
-            <button
-              onClick={() => { setPerfilOpen(true); setMobileMenuOpen(false); }}
-              title="Perfil"
-              className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center"
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Foto de perfil" className="w-full h-full object-cover" />
-              ) : (
-                <UserIcon className="w-4 h-4 text-slate-500" />
-              )}
-            </button>
-            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="w-9 h-9 rounded-xl">
+          <div className="flex md:hidden items-center gap-2 shrink-0">
+            <HeaderAvatarButton onClick={() => { setPerfilOpen(true); setMobileMenuOpen(false); }} />
+            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="w-9 h-9 rounded-xl shrink-0">
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
