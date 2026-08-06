@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAvatar, notifyAvatarUpdated } from '@/hooks/useAvatar';
+import UserAvatar from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -136,13 +137,8 @@ const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Foto de perfil" className="w-full h-full object-cover" />
-              ) : (
-                <UserIcon className="w-5 h-5 text-primary" />
-              )}
-            </div>
+            <UserAvatar src={avatarUrl} name={nome} email={emailLocal} className="w-10 h-10" />
+
             <div className="text-left">
               <SheetTitle className="font-display">Meu Perfil</SheetTitle>
               <SheetDescription>Gerencie suas informações</SheetDescription>
@@ -157,13 +153,14 @@ const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
             {/* Avatar */}
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Foto de perfil do usuário" className="w-full h-full object-cover" />
-                  ) : (
-                    <UserIcon className="w-8 h-8 text-slate-400" />
-                  )}
-                </div>
+                <UserAvatar
+                  src={avatarUrl}
+                  name={nome}
+                  email={emailLocal}
+                  className="w-20 h-20"
+                  iconClassName="w-8 h-8"
+                  textClassName="text-xl"
+                />
                 {uploading && (
                   <div className="absolute inset-0 rounded-full bg-white/70 flex items-center justify-center">
                     <Loader2 className="w-5 h-5 animate-spin text-primary" />
