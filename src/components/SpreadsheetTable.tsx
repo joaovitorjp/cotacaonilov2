@@ -1398,6 +1398,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     {col.empresa && priceMarkups[col.empresa] ? (
                       <span className="ml-1 text-[9px] opacity-70">(+{priceMarkups[col.empresa].toFixed(1)}%)</span>
                     ) : null}
+                    {col.empresa && col.state ? (
+                      <div className="text-[8px] leading-tight font-bold opacity-80 uppercase tracking-wide">
+                        {tipoPrecoLabel(tipoPrecoMap[`${col.empresa}_${col.state}`] ?? (col.state === 'MT' ? 'IPI_ST' : 'NOTA'))}
+                      </div>
+                    ) : null}
+
                     <div
                       className={`absolute top-0 bottom-0 w-[4px] cursor-col-resize z-30 ${activeColResize === i ? 'bg-primary' : 'hover:bg-primary/50'}`}
                       style={{ right: '-2px' }}
