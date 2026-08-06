@@ -153,13 +153,14 @@ const PerfilPanel: React.FC<PerfilPanelProps> = ({ open, onOpenChange }) => {
             {/* Avatar */}
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Foto de perfil do usuário" className="w-full h-full object-cover" />
-                  ) : (
-                    <UserIcon className="w-8 h-8 text-slate-400" />
-                  )}
-                </div>
+                <UserAvatar
+                  src={avatarUrl}
+                  name={nome}
+                  email={emailLocal}
+                  className="w-20 h-20"
+                  iconClassName="w-8 h-8"
+                  textClassName="text-xl"
+                />
                 {uploading && (
                   <div className="absolute inset-0 rounded-full bg-white/70 flex items-center justify-center">
                     <Loader2 className="w-5 h-5 animate-spin text-primary" />
