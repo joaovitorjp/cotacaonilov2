@@ -108,15 +108,22 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
           </div>
           <div>
             <label className="text-sm font-display font-bold text-foreground">Prazo para respostas (opcional)</label>
-            <Input
-              type="date"
-              value={prazo}
-              onChange={e => setPrazo(e.target.value)}
-              min={today}
-              className="mt-1"
-            />
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              <Input
+                type="date"
+                value={prazo}
+                onChange={e => setPrazo(e.target.value)}
+                min={today}
+              />
+              <Input
+                type="time"
+                value={prazoHora}
+                onChange={e => setPrazoHora(e.target.value)}
+                disabled={!prazo}
+              />
+            </div>
             <p className="text-[11px] text-muted-foreground mt-1">
-              Após esta data, fornecedores não poderão mais responder.
+              Após esta data e horário, fornecedores não poderão mais responder.
             </p>
           </div>
           <div>
