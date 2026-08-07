@@ -523,6 +523,36 @@ export type Database = {
           },
         ]
       }
+      mensagens_globais: {
+        Row: {
+          autor_avatar_path: string | null
+          autor_email: string
+          autor_nome: string
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          autor_avatar_path?: string | null
+          autor_email?: string
+          autor_nome?: string
+          content: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          autor_avatar_path?: string | null
+          autor_email?: string
+          autor_nome?: string
+          content?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       networks: {
         Row: {
           config: Json | null
