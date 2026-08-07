@@ -18,6 +18,7 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
   const [nome, setNome] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [prazo, setPrazo] = useState('');
+  const [prazoHora, setPrazoHora] = useState('23:59');
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -61,7 +62,7 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
 
       // 5. DEADLINE: Add prazo if set
       if (prazo) {
-        insertData.prazo = new Date(prazo + 'T23:59:59').toISOString();
+        insertData.prazo = new Date(`${prazo}T${prazoHora || '23:59'}:00`).toISOString();
       }
 
       const { error } = await supabase.from('listas').insert(insertData);
@@ -72,6 +73,7 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
       setNome('');
       setFile(null);
       setPrazo('');
+      setPrazoHora('23:59');
       if (inputRef.current) inputRef.current.value = '';
       onOpenChange(false);
       onImported();
