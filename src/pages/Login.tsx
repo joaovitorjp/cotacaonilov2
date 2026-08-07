@@ -211,6 +211,17 @@ const Login = () => {
           </button>
         </div>
       </div>
+
+      <a
+        href={windowsAppAsset.url}
+        download="NiloCotacoes-windows.zip"
+        className="fixed bottom-4 right-4 z-20 flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-4 py-2.5 text-xs font-medium text-foreground shadow-lg shadow-primary/10 backdrop-blur-xl transition-all hover:bg-white hover:shadow-xl"
+      >
+        <Monitor className="h-4 w-4 text-primary" />
+        <span className="hidden sm:inline">Baixar app para Windows</span>
+        <span className="sm:hidden">App Windows</span>
+        <Download className="h-3.5 w-3.5 text-muted-foreground" />
+      </a>
     </div>
   );
 };
