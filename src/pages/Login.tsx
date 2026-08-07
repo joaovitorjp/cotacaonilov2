@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AetherFlowBackground from '@/components/ui/aether-flow-background';
+import { Monitor, Download } from 'lucide-react';
+import windowsAppAsset from '@/assets/nilo-windows.zip.asset.json';
 
 const Login = () => {
   const [email, setEmail] = useState('');
