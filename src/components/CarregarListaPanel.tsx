@@ -446,6 +446,23 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
               <label className="text-xs font-display font-bold text-muted-foreground uppercase">Nome</label>
               <Input value={duplicateName} onChange={e => setDuplicateName(e.target.value)} className="mt-1" />
             </div>
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground uppercase">Prazo para respostas (opcional)</label>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                <Input
+                  type="date"
+                  value={duplicatePrazo}
+                  onChange={e => setDuplicatePrazo(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+                <Input
+                  type="time"
+                  value={duplicatePrazoHora}
+                  onChange={e => setDuplicatePrazoHora(e.target.value)}
+                  disabled={!duplicatePrazo}
+                />
+              </div>
+            </div>
             {duplicateTarget?.status === 'finalizada' && duplicateRespostas.length > 0 && (
               <div>
                 <label className="text-xs font-display font-bold text-muted-foreground uppercase">Incluir preços de fornecedores</label>
