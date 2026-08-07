@@ -18,6 +18,7 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
   const [nome, setNome] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [prazo, setPrazo] = useState('');
+  const [prazoHora, setPrazoHora] = useState('23:59');
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -61,7 +62,7 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
 
       // 5. DEADLINE: Add prazo if set
       if (prazo) {
-        insertData.prazo = new Date(prazo + 'T23:59:59').toISOString();
+        insertData.prazo = new Date(`${prazo}T${prazoHora || '23:59'}:00`).toISOString();
       }
 
       const { error } = await supabase.from('listas').insert(insertData);
@@ -72,6 +73,7 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
       setNome('');
       setFile(null);
       setPrazo('');
+      setPrazoHora('23:59');
       if (inputRef.current) inputRef.current.value = '';
       onOpenChange(false);
       onImported();
@@ -106,15 +108,22 @@ const ImportListaPanel: React.FC<ImportListaPanelProps> = ({ open, onOpenChange,
           </div>
           <div>
             <label className="text-sm font-display font-bold text-foreground">Prazo para respostas (opcional)</label>
-            <Input
-              type="date"
-              value={prazo}
-              onChange={e => setPrazo(e.target.value)}
-              min={today}
-              className="mt-1"
-            />
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              <Input
+                type="date"
+                value={prazo}
+                onChange={e => setPrazo(e.target.value)}
+                min={today}
+              />
+              <Input
+                type="time"
+                value={prazoHora}
+                onChange={e => setPrazoHora(e.target.value)}
+                disabled={!prazo}
+              />
+            </div>
             <p className="text-[11px] text-muted-foreground mt-1">
-              Após esta data, fornecedores não poderão mais responder.
+              Após esta data e horário, fornecedores não poderão mais responder.
             </p>
           </div>
           <div>

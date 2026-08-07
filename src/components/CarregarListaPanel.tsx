@@ -51,6 +51,8 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   const [duplicateRespostas, setDuplicateRespostas] = useState<any[]>([]);
   const [duplicateSelected, setDuplicateSelected] = useState<Record<string, { mt: boolean; go: boolean }>>({});
   const [duplicateName, setDuplicateName] = useState('');
+  const [duplicatePrazo, setDuplicatePrazo] = useState('');
+  const [duplicatePrazoHora, setDuplicatePrazoHora] = useState('23:59');
   const [duplicating, setDuplicating] = useState(false);
   const [csvTarget, setCsvTarget] = useState<{ lista: Lista; formato: 'ciss' | 'consinco' } | null>(null);
   const [csvEmpresas, setCsvEmpresas] = useState<string[]>([]);
@@ -157,6 +159,8 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   const handleReplicate = async (lista: Lista) => {
     setDuplicateTarget(lista);
     setDuplicateName(`${lista.nome} (cópia)`);
+    setDuplicatePrazo('');
+    setDuplicatePrazoHora('23:59');
     setDuplicateSelected({});
     setDuplicateRespostas([]);
     if (lista.status === 'finalizada') {
@@ -175,7 +179,15 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
     try {
       const { data: novaLista, error } = await supabase
         .from('listas')
-        .insert({ nome: duplicateName.trim(), produtos: duplicateTarget.produtos as any, status: 'aberta', user_id: user?.id })
+        .insert({
+          nome: duplicateName.trim(),
+          produtos: duplicateTarget.produtos as any,
+          status: 'aberta',
+          user_id: user?.id,
+          ...(duplicatePrazo
+            ? { prazo: new Date(`${duplicatePrazo}T${duplicatePrazoHora || '23:59'}:00`).toISOString() }
+            : {}),
+        })
         .select().single();
       if (error || !novaLista) throw error;
 
@@ -433,6 +445,23 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
             <div>
               <label className="text-xs font-display font-bold text-muted-foreground uppercase">Nome</label>
               <Input value={duplicateName} onChange={e => setDuplicateName(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground uppercase">Prazo para respostas (opcional)</label>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                <Input
+                  type="date"
+                  value={duplicatePrazo}
+                  onChange={e => setDuplicatePrazo(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+                <Input
+                  type="time"
+                  value={duplicatePrazoHora}
+                  onChange={e => setDuplicatePrazoHora(e.target.value)}
+                  disabled={!duplicatePrazo}
+                />
+              </div>
             </div>
             {duplicateTarget?.status === 'finalizada' && duplicateRespostas.length > 0 && (
               <div>
