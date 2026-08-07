@@ -159,6 +159,8 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
   const handleReplicate = async (lista: Lista) => {
     setDuplicateTarget(lista);
     setDuplicateName(`${lista.nome} (cópia)`);
+    setDuplicatePrazo('');
+    setDuplicatePrazoHora('23:59');
     setDuplicateSelected({});
     setDuplicateRespostas([]);
     if (lista.status === 'finalizada') {
@@ -177,7 +179,15 @@ const CarregarListaPanel: React.FC<CarregarListaPanelProps> = ({
     try {
       const { data: novaLista, error } = await supabase
         .from('listas')
-        .insert({ nome: duplicateName.trim(), produtos: duplicateTarget.produtos as any, status: 'aberta', user_id: user?.id })
+        .insert({
+          nome: duplicateName.trim(),
+          produtos: duplicateTarget.produtos as any,
+          status: 'aberta',
+          user_id: user?.id,
+          ...(duplicatePrazo
+            ? { prazo: new Date(`${duplicatePrazo}T${duplicatePrazoHora || '23:59'}:00`).toISOString() }
+            : {}),
+        })
         .select().single();
       if (error || !novaLista) throw error;
 
