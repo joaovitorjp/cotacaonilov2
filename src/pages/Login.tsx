@@ -208,6 +208,7 @@ const Login = () => {
             {isSignUp ? 'Já tem acesso? Entrar' : 'Criar novo acesso'}
           </button>
         </div>
+      </div>
     </div>
   );
 };
