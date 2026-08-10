@@ -294,6 +294,7 @@ export type Database = {
       }
       fornecedores: {
         Row: {
+          codigo_estado: string | null
           codigo_interno: string | null
           codigo_interno_ciss: string | null
           codigo_interno_consinco: string | null
@@ -309,6 +310,7 @@ export type Database = {
           whatsapp: string
         }
         Insert: {
+          codigo_estado?: string | null
           codigo_interno?: string | null
           codigo_interno_ciss?: string | null
           codigo_interno_consinco?: string | null
@@ -324,6 +326,7 @@ export type Database = {
           whatsapp?: string
         }
         Update: {
+          codigo_estado?: string | null
           codigo_interno?: string | null
           codigo_interno_ciss?: string | null
           codigo_interno_consinco?: string | null
