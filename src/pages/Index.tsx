@@ -63,6 +63,49 @@ const Index = () => {
 
   const [tipoPrecoMap, setTipoPrecoMap] = useState<Record<string, string>>({});
 
+  // Edição do prazo da cotação
+  const [prazoDialogOpen, setPrazoDialogOpen] = useState(false);
+  const [prazoData, setPrazoData] = useState('');
+  const [prazoHora, setPrazoHora] = useState('23:59');
+  const [savingPrazo, setSavingPrazo] = useState(false);
+
+  const openPrazoDialog = () => {
+    if (!currentLista) return;
+    if (currentLista.prazo) {
+      const d = new Date(currentLista.prazo);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      setPrazoData(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+      setPrazoHora(`${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    } else {
+      setPrazoData('');
+      setPrazoHora('23:59');
+    }
+    setPrazoDialogOpen(true);
+  };
+
+  const savePrazo = async (clear = false) => {
+    if (!currentLista) return;
+    if (!clear && !prazoData) {
+      toast.error('Informe a data do prazo.');
+      return;
+    }
+    setSavingPrazo(true);
+    const novoPrazo = clear ? null : new Date(`${prazoData}T${prazoHora || '23:59'}:00`).toISOString();
+    const { error } = await supabase
+      .from('listas')
+      .update({ prazo: novoPrazo })
+      .eq('id', currentLista.id)
+      .eq('user_id', user?.id ?? '');
+    setSavingPrazo(false);
+    if (error) {
+      toast.error('Erro ao atualizar o prazo.');
+      return;
+    }
+    setCurrentLista({ ...currentLista, prazo: novoPrazo });
+    setPrazoDialogOpen(false);
+    toast.success(clear ? 'Prazo removido.' : 'Prazo atualizado.');
+  };
+
   const loadRespostas = useCallback(async (listaId: string) => {
     if (!user?.id) {
       setRespostas([]);
@@ -421,15 +464,21 @@ const Index = () => {
       resposta: d.resposta as any[],
     }));
 
-    let codigoConsincoPorEmpresa: Record<string, string> = {};
+    // Código interno por empresa + estado (MT/GO) e fallback genérico
+    const codigoConsincoPorEmpresa: Record<string, string> = {};
+    const codigoConsincoPorEmpresaEstado: Record<string, string> = {};
     if (formato === 'consinco') {
       const { data: forns } = await supabase
         .from('fornecedores')
-        .select('nome, codigo_interno_consinco, codigo_interno')
+        .select('nome, codigo_interno_consinco, codigo_interno, codigo_estado')
         .eq('user_id', user?.id ?? '');
       (forns ?? []).forEach((f: any) => {
-        codigoConsincoPorEmpresa[String(f.nome).trim().toLowerCase()] =
-          f.codigo_interno_consinco || f.codigo_interno || '';
+        const key = String(f.nome).trim().toLowerCase();
+        const cod = f.codigo_interno_consinco || f.codigo_interno || '';
+        if (!cod) return;
+        if (!codigoConsincoPorEmpresa[key]) codigoConsincoPorEmpresa[key] = cod;
+        const est = String(f.codigo_estado || '').toUpperCase();
+        if (est === 'MT' || est === 'GO') codigoConsincoPorEmpresaEstado[`${key}|${est}`] = cod;
       });
     }
 
@@ -481,7 +530,11 @@ const Index = () => {
         const items = winnersBySupplier[empresa];
         const csvLines = items.map(item => {
           if (formato === 'consinco') {
-            const codFornecedor = codigoConsincoPorEmpresa[empresa.trim().toLowerCase()] ?? '';
+            const empKey = empresa.trim().toLowerCase();
+            const codFornecedor =
+              codigoConsincoPorEmpresaEstado[`${empKey}|${est.label}`] ??
+              codigoConsincoPorEmpresa[empKey] ??
+              '';
             const preco = item.preco.toFixed(2);
             // A;B;C;D;E;F;G;H;I;J;K
             return `${codFornecedor};;;${item.codigo_barras};;1;${preco};0;0;0;0`;
@@ -643,13 +696,27 @@ const Index = () => {
                   FINALIZADA
                 </span>
               )}
-              {currentLista.prazo && (
-                <span className={`text-[9px] font-black tracking-widest uppercase px-2 py-1 rounded-md ${
-                  isExpired ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
-                }`}>
-                  {isExpired ? 'EXPIRADA' : `Prazo: ${new Date(currentLista.prazo).toLocaleDateString('pt-BR')}`}
+              {!isFinalized ? (
+                <button
+                  onClick={openPrazoDialog}
+                  title="Editar prazo de expiração"
+                  className={`text-[9px] font-black tracking-widest uppercase px-2 py-1 rounded-md transition-colors hover:opacity-80 ${
+                    !currentLista.prazo
+                      ? 'bg-slate-100 text-slate-500'
+                      : isExpired ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
+                  }`}
+                >
+                  {!currentLista.prazo
+                    ? 'DEFINIR PRAZO'
+                    : isExpired
+                      ? `EXPIRADA (${new Date(currentLista.prazo).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })})`
+                      : `Prazo: ${new Date(currentLista.prazo).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`}
+                </button>
+              ) : currentLista.prazo ? (
+                <span className="text-[9px] font-black tracking-widest uppercase px-2 py-1 rounded-md bg-blue-50 text-blue-600">
+                  {`Prazo: ${new Date(currentLista.prazo).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`}
                 </span>
-              )}
+              ) : null}
               {!isFinalized && respostas.length > 0 && (
                 <Button 
                   variant="outline" 
@@ -829,6 +896,48 @@ const Index = () => {
         onDownloadResultados={handleDownloadResultados}
       />
       <FornecedoresPanel open={fornecedoresOpen} onOpenChange={setFornecedoresOpen} />
+      <AlertDialog open={prazoDialogOpen} onOpenChange={setPrazoDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Prazo de expiração</AlertDialogTitle>
+            <AlertDialogDescription>
+              Defina a data e o horário limite para os fornecedores responderem esta cotação.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">Data</label>
+              <input
+                type="date"
+                value={prazoData}
+                onChange={e => setPrazoData(e.target.value)}
+                className="w-full h-9 rounded-lg border border-slate-200 px-3 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">Horário</label>
+              <input
+                type="time"
+                value={prazoHora}
+                onChange={e => setPrazoHora(e.target.value)}
+                className="w-full h-9 rounded-lg border border-slate-200 px-3 text-sm"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={savingPrazo}>Cancelar</AlertDialogCancel>
+            {currentLista?.prazo && (
+              <Button variant="outline" disabled={savingPrazo} onClick={() => savePrazo(true)}>
+                Remover prazo
+              </Button>
+            )}
+            <Button disabled={savingPrazo} onClick={() => savePrazo(false)}>
+              {savingPrazo ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {currentLista && (
         <GerarLinkPanel open={gerarLinkOpen} onOpenChange={setGerarLinkOpen} listaId={currentLista.id} />
       )}
