@@ -16,9 +16,10 @@ interface Fornecedor {
   nome_representante: string | null;
   whatsapp: string;
   email: string | null;
-  codigo_interno_ciss: string | null;
-  codigo_interno_consinco: string | null;
-  codigo_estado: string | null;
+  codigo_interno_ciss_mt: string | null;
+  codigo_interno_ciss_go: string | null;
+  codigo_interno_consinco_mt: string | null;
+  codigo_interno_consinco_go: string | null;
 }
 
 interface FornecedoresPanelProps {
@@ -32,8 +33,10 @@ const emptyForm = {
   whatsapp: '',
   email: '',
   codigoEstado: 'MT' as CodigoEstado,
-  codigoCiss: '',
-  codigoConsinco: '',
+  codigoCissMt: '',
+  codigoConsincoMt: '',
+  codigoCissGo: '',
+  codigoConsincoGo: '',
 };
 
 const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChange }) => {
@@ -59,7 +62,7 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
     }
     const { data } = await supabase
       .from('fornecedores')
-      .select('id,nome,nome_representante,whatsapp,email,codigo_interno_ciss,codigo_interno_consinco,codigo_estado')
+      .select('id,nome,nome_representante,whatsapp,email,codigo_interno_ciss_mt,codigo_interno_ciss_go,codigo_interno_consinco_mt,codigo_interno_consinco_go')
       .eq('user_id', user.id)
       .order('nome');
     setFornecedores((data ?? []) as Fornecedor[]);
@@ -72,7 +75,6 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
     if (!f.nome.trim()) return 'Informe o nome do fornecedor.';
     if (onlyDigits(f.whatsapp).length < 10) return 'Número de WhatsApp inválido. Insira com DDD.';
     if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) return 'E-mail inválido.';
-    if ((f.codigoCiss.trim() || f.codigoConsinco.trim()) && !f.codigoEstado) return 'Selecione o estado dos códigos internos.';
     return null;
   };
 
@@ -81,9 +83,10 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
     nome_representante: f.representante.trim() || null,
     whatsapp: onlyDigits(f.whatsapp),
     email: f.email.trim() || null,
-    codigo_interno_ciss: f.codigoCiss.trim() || null,
-    codigo_interno_consinco: f.codigoConsinco.trim() || null,
-    codigo_estado: (f.codigoCiss.trim() || f.codigoConsinco.trim()) ? f.codigoEstado : null,
+    codigo_interno_ciss_mt: f.codigoCissMt.trim() || null,
+    codigo_interno_consinco_mt: f.codigoConsincoMt.trim() || null,
+    codigo_interno_ciss_go: f.codigoCissGo.trim() || null,
+    codigo_interno_consinco_go: f.codigoConsincoGo.trim() || null,
   });
 
   const handleAdd = async () => {
@@ -115,9 +118,11 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
       representante: f.nome_representante || '',
       whatsapp: f.whatsapp,
       email: f.email || '',
-      codigoEstado: (f.codigo_estado === 'GO' ? 'GO' : 'MT') as CodigoEstado,
-      codigoCiss: f.codigo_interno_ciss || '',
-      codigoConsinco: f.codigo_interno_consinco || '',
+      codigoEstado: 'MT' as CodigoEstado,
+      codigoCissMt: f.codigo_interno_ciss_mt || '',
+      codigoConsincoMt: f.codigo_interno_consinco_mt || '',
+      codigoCissGo: f.codigo_interno_ciss_go || '',
+      codigoConsincoGo: f.codigo_interno_consinco_go || '',
     });
   };
 
@@ -157,27 +162,40 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input className={`pl-9 ${h}`} value={f.email} onChange={e => set({ ...f, email: e.target.value })} placeholder="E-mail do fornecedor" type="email" />
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="relative">
-            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input className={`pl-9 ${h}`} value={f.codigoCiss} onChange={e => set({ ...f, codigoCiss: e.target.value })} placeholder="Código CISS" />
+        <div className="rounded-lg border border-border p-2.5 space-y-2 bg-muted/30">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Códigos internos do estado:</span>
+            <Select value={f.codigoEstado} onValueChange={(v: CodigoEstado) => set({ ...f, codigoEstado: v })}>
+              <SelectTrigger className={`w-[90px] ${h}`}>
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MT">MT</SelectItem>
+                <SelectItem value="GO">GO</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <div className="relative">
-            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input className={`pl-9 ${h}`} value={f.codigoConsinco} onChange={e => set({ ...f, codigoConsinco: e.target.value })} placeholder="Código CONSINCO" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                className={`pl-9 ${h}`}
+                value={f.codigoEstado === 'MT' ? f.codigoCissMt : f.codigoCissGo}
+                onChange={e => set(f.codigoEstado === 'MT' ? { ...f, codigoCissMt: e.target.value } : { ...f, codigoCissGo: e.target.value })}
+                placeholder={`CISS ${f.codigoEstado}`}
+              />
+            </div>
+            <div className="relative">
+              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                className={`pl-9 ${h}`}
+                value={f.codigoEstado === 'MT' ? f.codigoConsincoMt : f.codigoConsincoGo}
+                onChange={e => set(f.codigoEstado === 'MT' ? { ...f, codigoConsincoMt: e.target.value } : { ...f, codigoConsincoGo: e.target.value })}
+                placeholder={`CONSINCO ${f.codigoEstado}`}
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Estado dos códigos:</span>
-          <Select value={f.codigoEstado} onValueChange={(v: CodigoEstado) => set({ ...f, codigoEstado: v })}>
-            <SelectTrigger className={`w-[90px] ${h}`}>
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="MT">MT</SelectItem>
-              <SelectItem value="GO">GO</SelectItem>
-            </SelectContent>
-          </Select>
+          <p className="text-[11px] text-muted-foreground">Os códigos de MT e GO são salvos separadamente.</p>
         </div>
       </>
     );
@@ -240,15 +258,20 @@ const FornecedoresPanel: React.FC<FornecedoresPanelProps> = ({ open, onOpenChang
                           <Mail className="w-3 h-3" /> {f.email}
                         </p>
                       )}
-                      {(f.codigo_interno_ciss || f.codigo_interno_consinco) && (
-                        <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                          <Hash className="w-3 h-3" />
-                          {[
-                            f.codigo_interno_ciss ? `CISS: ${f.codigo_interno_ciss}` : null,
-                            f.codigo_interno_consinco ? `CONSINCO: ${f.codigo_interno_consinco}` : null,
-                          ].filter(Boolean).join(' • ')}{f.codigo_estado ? ` • ${f.codigo_estado}` : ''}
-                        </p>
-                      )}
+                      {[
+                        { est: 'MT', ciss: f.codigo_interno_ciss_mt, consinco: f.codigo_interno_consinco_mt },
+                        { est: 'GO', ciss: f.codigo_interno_ciss_go, consinco: f.codigo_interno_consinco_go },
+                      ]
+                        .filter(g => g.ciss || g.consinco)
+                        .map(g => (
+                          <p key={g.est} className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                            <Hash className="w-3 h-3" />
+                            {g.est}: {[
+                              g.ciss ? `CISS ${g.ciss}` : null,
+                              g.consinco ? `CONSINCO ${g.consinco}` : null,
+                            ].filter(Boolean).join(' • ')}
+                          </p>
+                        ))}
                     </div>
                     <button onClick={() => startEdit(f)} className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors shrink-0">
                       <Pencil className="w-3.5 h-3.5" />
