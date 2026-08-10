@@ -297,7 +297,11 @@ export type Database = {
           codigo_estado: string | null
           codigo_interno: string | null
           codigo_interno_ciss: string | null
+          codigo_interno_ciss_go: string | null
+          codigo_interno_ciss_mt: string | null
           codigo_interno_consinco: string | null
+          codigo_interno_consinco_go: string | null
+          codigo_interno_consinco_mt: string | null
           contato: string | null
           created_at: string
           email: string | null
@@ -313,7 +317,11 @@ export type Database = {
           codigo_estado?: string | null
           codigo_interno?: string | null
           codigo_interno_ciss?: string | null
+          codigo_interno_ciss_go?: string | null
+          codigo_interno_ciss_mt?: string | null
           codigo_interno_consinco?: string | null
+          codigo_interno_consinco_go?: string | null
+          codigo_interno_consinco_mt?: string | null
           contato?: string | null
           created_at?: string
           email?: string | null
@@ -329,7 +337,11 @@ export type Database = {
           codigo_estado?: string | null
           codigo_interno?: string | null
           codigo_interno_ciss?: string | null
+          codigo_interno_ciss_go?: string | null
+          codigo_interno_ciss_mt?: string | null
           codigo_interno_consinco?: string | null
+          codigo_interno_consinco_go?: string | null
+          codigo_interno_consinco_mt?: string | null
           contato?: string | null
           created_at?: string
           email?: string | null

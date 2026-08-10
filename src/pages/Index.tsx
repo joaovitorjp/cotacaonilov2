@@ -470,17 +470,26 @@ const Index = () => {
     if (formato === 'consinco') {
       const { data: forns } = await supabase
         .from('fornecedores')
-        .select('nome, codigo_interno_consinco, codigo_interno, codigo_estado')
+        .select('nome, codigo_interno_consinco, codigo_interno_consinco_mt, codigo_interno_consinco_go, codigo_interno, codigo_estado')
         .eq('user_id', user?.id ?? '');
       (forns ?? []).forEach((f: any) => {
         const key = String(f.nome).trim().toLowerCase();
-        const cod = f.codigo_interno_consinco || f.codigo_interno || '';
-        if (!cod) return;
-        if (!codigoConsincoPorEmpresa[key]) codigoConsincoPorEmpresa[key] = cod;
-        const est = String(f.codigo_estado || '').toUpperCase();
-        if (est === 'MT' || est === 'GO') codigoConsincoPorEmpresaEstado[`${key}|${est}`] = cod;
+        const codMt = f.codigo_interno_consinco_mt || '';
+        const codGo = f.codigo_interno_consinco_go || '';
+        if (codMt) codigoConsincoPorEmpresaEstado[`${key}|MT`] = codMt;
+        if (codGo) codigoConsincoPorEmpresaEstado[`${key}|GO`] = codGo;
+        const legado = f.codigo_interno_consinco || f.codigo_interno || '';
+        if (legado) {
+          const est = String(f.codigo_estado || '').toUpperCase();
+          if ((est === 'MT' || est === 'GO') && !codigoConsincoPorEmpresaEstado[`${key}|${est}`]) {
+            codigoConsincoPorEmpresaEstado[`${key}|${est}`] = legado;
+          }
+        }
+        const generico = codMt || codGo || legado;
+        if (generico && !codigoConsincoPorEmpresa[key]) codigoConsincoPorEmpresa[key] = generico;
       });
     }
+
 
     const parsePrice = (raw: any): number => {
       if (typeof raw === 'number') return raw;
