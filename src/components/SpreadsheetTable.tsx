@@ -1237,17 +1237,25 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       dragOverRow, dragRow, activeRowResize, produtos, getDisplayValue, handleCellClick, handleCellMouseDown,
       handleCellMouseEnter, handleCellDoubleClick, commitEdit, cancelEdit, onPriceChange]);
 
-  // Filtered rows for search
+  // Filtered rows for search + winner filter
   const displayRows = useMemo(() => {
-    if (!searchTerm.trim()) return sortedRows;
+    let rows = sortedRows;
+    if (winnerFilter) {
+      rows = rows.filter(row => {
+        if (row.isEmpty || !row.prod) return false;
+        return getLowestEmpresa(row.prod.codigo_interno, winnerFilter.state) === winnerFilter.empresa;
+      });
+    }
+    if (!searchTerm.trim()) return rows;
     const term = searchTerm.toLowerCase();
-    return sortedRows.filter(row => {
+    return rows.filter(row => {
       if (row.isEmpty || !row.prod) return true;
       return row.prod.codigo_interno.toLowerCase().includes(term) ||
         row.prod.descricao.toLowerCase().includes(term) ||
         row.prod.codigo_barras.toLowerCase().includes(term);
     });
-  }, [sortedRows, searchTerm]);
+  }, [sortedRows, searchTerm, winnerFilter, getLowestEmpresa]);
+
 
   return (
     <div className="flex-1 flex flex-col" style={{ border: '1px solid hsl(var(--border))' }}>
