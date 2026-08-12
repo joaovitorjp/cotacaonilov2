@@ -682,8 +682,48 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
           <FileDown className="w-4 h-4" />
           PDF por Fornecedor
         </button>
+        <button
+          onClick={() => setShowGanhadoresDialog(true)}
+          className="flex items-center gap-2 px-3 py-2 text-xs font-display font-bold text-success bg-success/10 hover:bg-success/20 rounded-lg transition-colors"
+        >
+          <Trophy className="w-4 h-4" />
+          PDF de Ganhadores
+        </button>
 
       </div>
+
+      {/* Winners-only PDF dialog */}
+      <Dialog open={showGanhadoresDialog} onOpenChange={setShowGanhadoresDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">PDF de Produtos Ganhadores</DialogTitle>
+            <DialogDescription>
+              Gera um PDF apenas com os produtos em que o fornecedor tem o menor preço.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground mb-1.5 block">Estado considerado</label>
+              <div className="flex gap-2">
+                <Button type="button" variant={estadoGanhadores === 'mt' ? 'default' : 'outline'} size="sm" className="flex-1 font-display" onClick={() => setEstadoGanhadores('mt')}>MT (Mato Grosso)</Button>
+                <Button type="button" variant={estadoGanhadores === 'go' ? 'default' : 'outline'} size="sm" className="flex-1 font-display" onClick={() => setEstadoGanhadores('go')}>GO (Goiás)</Button>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground mb-1.5 block">Fornecedor</label>
+              <div className="space-y-2 max-h-[300px] overflow-auto">
+                {respostas.map(r => (
+                  <Button key={r.empresa} variant="outline" className="w-full justify-start font-display"
+                    onClick={() => exportGanhadoresPDF(r.empresa)}>
+                    {r.empresa}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Supplier selection dialog for comparative PDF */}
       <Dialog open={showComparativoDialog} onOpenChange={setShowComparativoDialog}>
