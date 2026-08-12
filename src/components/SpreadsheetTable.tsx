@@ -1498,6 +1498,19 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                     <Swords className="w-3.5 h-3.5" /> Cobrir concorrentes
                   </button>
+                  {(() => {
+                    const cd = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
+                    const st = cd?.state as 'MT' | 'GO' | undefined;
+                    if (!st) return null;
+                    const isActive = winnerFilter?.empresa === emp && winnerFilter?.state === st;
+                    return (
+                      <button onClick={() => { setWinnerFilter(isActive ? null : { empresa: emp, state: st }); setContextMenu(null); }}
+                        className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
+                        <Filter className="w-3.5 h-3.5" /> {isActive ? 'Remover filtro de ganhos' : `Filtrar itens ganhos (${st})`}
+                      </button>
+                    );
+                  })()}
+
                   <div className="border-t border-border my-1" />
                 </>
               );
