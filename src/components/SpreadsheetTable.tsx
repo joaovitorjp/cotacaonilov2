@@ -1360,7 +1360,20 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             </button>
           </>
         )}
+
+        {winnerFilter && (
+          <>
+            <div className="w-px h-5 bg-border mx-1" />
+            <button onClick={() => setWinnerFilter(null)}
+              className="px-2 py-1 rounded bg-success/15 text-success text-[10px] font-bold flex items-center gap-1"
+              title="Remover filtro">
+              <Filter className="w-3 h-3" /> Ganhos: {winnerFilter.empresa} ({winnerFilter.state})
+              <X className="w-3 h-3" />
+            </button>
+          </>
+        )}
       </div>
+
 
       {/* Spreadsheet */}
       <div ref={containerRef} className="flex-1 overflow-auto relative" tabIndex={0}>
