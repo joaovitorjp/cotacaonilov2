@@ -172,6 +172,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [winnerFilter, setWinnerFilter] = useState<{ empresa: string; state: 'MT' | 'GO' } | null>(null);
 
   const [activeCell, setActiveCell] = useState<CellPos | null>(null);
   const [selectionAnchor, setSelectionAnchor] = useState<CellPos | null>(null);
