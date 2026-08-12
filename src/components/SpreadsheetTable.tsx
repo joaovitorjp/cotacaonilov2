@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2, Plus, Swords, Trash } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2, Plus, Swords, Trash, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -172,6 +172,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [winnerFilter, setWinnerFilter] = useState<{ empresa: string; state: 'MT' | 'GO' } | null>(null);
 
   const [activeCell, setActiveCell] = useState<CellPos | null>(null);
   const [selectionAnchor, setSelectionAnchor] = useState<CellPos | null>(null);
@@ -1237,17 +1238,25 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       dragOverRow, dragRow, activeRowResize, produtos, getDisplayValue, handleCellClick, handleCellMouseDown,
       handleCellMouseEnter, handleCellDoubleClick, commitEdit, cancelEdit, onPriceChange]);
 
-  // Filtered rows for search
+  // Filtered rows for search + winner filter
   const displayRows = useMemo(() => {
-    if (!searchTerm.trim()) return sortedRows;
+    let rows = sortedRows;
+    if (winnerFilter) {
+      rows = rows.filter(row => {
+        if (row.isEmpty || !row.prod) return false;
+        return getLowestEmpresa(row.prod.codigo_interno, winnerFilter.state) === winnerFilter.empresa;
+      });
+    }
+    if (!searchTerm.trim()) return rows;
     const term = searchTerm.toLowerCase();
-    return sortedRows.filter(row => {
+    return rows.filter(row => {
       if (row.isEmpty || !row.prod) return true;
       return row.prod.codigo_interno.toLowerCase().includes(term) ||
         row.prod.descricao.toLowerCase().includes(term) ||
         row.prod.codigo_barras.toLowerCase().includes(term);
     });
-  }, [sortedRows, searchTerm]);
+  }, [sortedRows, searchTerm, winnerFilter, getLowestEmpresa]);
+
 
   return (
     <div className="flex-1 flex flex-col" style={{ border: '1px solid hsl(var(--border))' }}>
@@ -1351,7 +1360,20 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             </button>
           </>
         )}
+
+        {winnerFilter && (
+          <>
+            <div className="w-px h-5 bg-border mx-1" />
+            <button onClick={() => setWinnerFilter(null)}
+              className="px-2 py-1 rounded bg-success/15 text-success text-[10px] font-bold flex items-center gap-1"
+              title="Remover filtro">
+              <Filter className="w-3 h-3" /> Ganhos: {winnerFilter.empresa} ({winnerFilter.state})
+              <X className="w-3 h-3" />
+            </button>
+          </>
+        )}
       </div>
+
 
       {/* Spreadsheet */}
       <div ref={containerRef} className="flex-1 overflow-auto relative" tabIndex={0}>
@@ -1489,6 +1511,19 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                     <Swords className="w-3.5 h-3.5" /> Cobrir concorrentes
                   </button>
+                  {(() => {
+                    const cd = orderedColDefs.find(c => c.orderIdx === contextMenu.colIdx);
+                    const st = cd?.state as 'MT' | 'GO' | undefined;
+                    if (!st) return null;
+                    const isActive = winnerFilter?.empresa === emp && winnerFilter?.state === st;
+                    return (
+                      <button onClick={() => { setWinnerFilter(isActive ? null : { empresa: emp, state: st }); setContextMenu(null); }}
+                        className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
+                        <Filter className="w-3.5 h-3.5" /> {isActive ? 'Remover filtro de ganhos' : `Filtrar itens ganhos (${st})`}
+                      </button>
+                    );
+                  })()}
+
                   <div className="border-t border-border my-1" />
                 </>
               );

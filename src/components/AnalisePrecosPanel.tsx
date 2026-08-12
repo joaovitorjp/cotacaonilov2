@@ -68,6 +68,94 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
   const [estadoComparativo, setEstadoComparativo] = useState<'mt' | 'go'>('mt');
   const [showFornecedorDialog, setShowFornecedorDialog] = useState(false);
   const [estadoFornecedor, setEstadoFornecedor] = useState<'mt' | 'go' | 'ambos'>('ambos');
+  const [showGanhadoresDialog, setShowGanhadoresDialog] = useState(false);
+  const [estadoGanhadores, setEstadoGanhadores] = useState<'mt' | 'go'>('mt');
+
+  // PDF com apenas os produtos em que o fornecedor tem o menor preço (ganhou)
+  const exportGanhadoresPDF = (empresaSelecionada: string) => {
+    const estado = estadoGanhadores;
+    const getPriceField = (item: any) =>
+      estado === 'mt' ? (item.preco_mt ?? item.preco) : (item.preco_go ?? item.preco);
+    const getNum = (resp: RespostaEmpresa, prod: Produto) => {
+      const item = findRespItem(resp.resposta as any[], prod);
+      if (!item) return NaN;
+      return parsePreco(getPriceField(item));
+    };
+
+    const sel = respostas.find(r => r.empresa === empresaSelecionada);
+    if (!sel) return;
+
+    let total = 0;
+    const body: string[][] = [];
+    produtos.forEach(prod => {
+      const selPrice = getNum(sel, prod);
+      if (isNaN(selPrice) || selPrice <= 0) return;
+      const outros = respostas
+        .filter(r => r.empresa !== empresaSelecionada)
+        .map(r => getNum(r, prod))
+        .filter(v => !isNaN(v) && v > 0);
+      const minOutros = outros.length > 0 ? Math.min(...outros) : Infinity;
+      if (selPrice > minOutros) return; // não ganhou
+      total += selPrice;
+      const segundo = outros.length > 0 ? minOutros : NaN;
+      const diff = !isNaN(segundo) && segundo > 0 ? `-${(((segundo - selPrice) / segundo) * 100).toFixed(1)}%` : '—';
+      body.push([
+        String(body.length + 1),
+        prod.codigo_interno,
+        prod.descricao.substring(0, 55),
+        prod.codigo_barras || '—',
+        formatBRL(selPrice),
+        !isNaN(segundo) ? formatBRL(segundo) : '—',
+        diff,
+      ]);
+    });
+
+    const doc = new jsPDF('portrait', 'mm', 'a4');
+    let y0 = drawHeader(doc, {
+      title: 'Produtos Ganhadores',
+      subtitle: `Cotação: ${listaNome || 'Sem nome'}`,
+      meta: `Fornecedor: ${empresaSelecionada}  ·  Região: ${estado.toUpperCase()}`,
+    });
+    y0 = drawChips(doc, y0, [
+      { label: 'Itens ganhos', value: String(body.length), tone: 'success' },
+      { label: 'Total', value: formatBRL(total), tone: 'primary' },
+      { label: 'Produtos na cotação', value: String(produtos.length), tone: 'muted' },
+    ]);
+    y0 = drawSectionTitle(doc, y0 + 2, 'Itens com Menor Preço');
+
+    autoTable(doc, {
+      ...tableStyles,
+      startY: y0,
+      head: [['#', 'Código', 'Descrição', 'Cód. Barras', 'Preço', '2º Menor', 'Vantagem']],
+      body,
+      headStyles: { ...tableStyles.headStyles, fontSize: 7.5 },
+      bodyStyles: { ...tableStyles.bodyStyles, fontSize: 7.5 },
+      columnStyles: {
+        0: { cellWidth: 8, halign: 'center', textColor: PDF_COLORS.muted as any },
+        1: { cellWidth: 20, fontStyle: 'bold', textColor: PDF_COLORS.ink as any },
+        3: { cellWidth: 24, textColor: PDF_COLORS.muted as any },
+        4: { cellWidth: 22, halign: 'right' },
+        5: { cellWidth: 22, halign: 'right' },
+        6: { cellWidth: 20, halign: 'center' },
+      },
+      didParseCell: (data: any) => {
+        if (data.section !== 'body') return;
+        if (data.column.index === 4) {
+          data.cell.styles.fillColor = PDF_COLORS.successSoft;
+          data.cell.styles.textColor = PDF_COLORS.success;
+          data.cell.styles.fontStyle = 'bold';
+        }
+        if (data.column.index === 6) {
+          data.cell.styles.fontStyle = 'bold';
+          if (String(data.cell.raw || '').startsWith('-')) data.cell.styles.textColor = PDF_COLORS.success;
+        }
+      },
+    });
+
+    drawFooter(doc);
+    doc.save(`ganhadores_${empresaSelecionada.replace(/\s+/g, '_')}_${estado.toUpperCase()}.pdf`);
+    setShowGanhadoresDialog(false);
+  };
 
   const exportFornecedorPDF = (empresaSelecionada: string) => {
     const resp = respostas.find(r => r.empresa === empresaSelecionada);
@@ -594,8 +682,48 @@ const AnalisePrecosPanel: React.FC<AnalisePrecosPanelProps> = ({ produtos, respo
           <FileDown className="w-4 h-4" />
           PDF por Fornecedor
         </button>
+        <button
+          onClick={() => setShowGanhadoresDialog(true)}
+          className="flex items-center gap-2 px-3 py-2 text-xs font-display font-bold text-success bg-success/10 hover:bg-success/20 rounded-lg transition-colors"
+        >
+          <Trophy className="w-4 h-4" />
+          PDF de Ganhadores
+        </button>
 
       </div>
+
+      {/* Winners-only PDF dialog */}
+      <Dialog open={showGanhadoresDialog} onOpenChange={setShowGanhadoresDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">PDF de Produtos Ganhadores</DialogTitle>
+            <DialogDescription>
+              Gera um PDF apenas com os produtos em que o fornecedor tem o menor preço.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground mb-1.5 block">Estado considerado</label>
+              <div className="flex gap-2">
+                <Button type="button" variant={estadoGanhadores === 'mt' ? 'default' : 'outline'} size="sm" className="flex-1 font-display" onClick={() => setEstadoGanhadores('mt')}>MT (Mato Grosso)</Button>
+                <Button type="button" variant={estadoGanhadores === 'go' ? 'default' : 'outline'} size="sm" className="flex-1 font-display" onClick={() => setEstadoGanhadores('go')}>GO (Goiás)</Button>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-display font-bold text-muted-foreground mb-1.5 block">Fornecedor</label>
+              <div className="space-y-2 max-h-[300px] overflow-auto">
+                {respostas.map(r => (
+                  <Button key={r.empresa} variant="outline" className="w-full justify-start font-display"
+                    onClick={() => exportGanhadoresPDF(r.empresa)}>
+                    {r.empresa}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Supplier selection dialog for comparative PDF */}
       <Dialog open={showComparativoDialog} onOpenChange={setShowComparativoDialog}>
