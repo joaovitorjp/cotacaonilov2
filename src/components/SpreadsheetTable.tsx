@@ -1564,7 +1564,20 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
             {(contextMenu.type === 'row' || contextMenu.type === 'cell') && contextMenu.rowIdx !== undefined && (
               <>
+                {(() => {
+                  const prod = produtos[contextMenu.rowIdx!];
+                  if (!prod) return null;
+                  return (
+                    <button
+                      onClick={() => { setHistoricoProduto(prod); setContextMenu(null); }}
+                      className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground"
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" /> Gráfico de preços do produto
+                    </button>
+                  );
+                })()}
                 <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mover Linha</div>
+
                 <button onClick={() => moveRow('up')} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
                   <ArrowUp className="w-3.5 h-3.5" /> Mover para Cima
                 </button>
