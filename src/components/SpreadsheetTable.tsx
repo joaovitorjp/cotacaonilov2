@@ -1450,7 +1450,10 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
         {/* Context Menu */}
         {contextMenu && (
-          <div ref={contextMenuRef} className="fixed bg-popover border border-border rounded-lg shadow-lg py-1 z-50 min-w-[180px]" style={{ left: contextMenu.x, top: contextMenu.y }}>
+          <ContextMenuPortal
+            contextMenu={contextMenu}
+            onClose={() => setContextMenu(null)}
+          >
             <button onClick={handleCopyFromMenu} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-accent transition-colors text-foreground">
               <Copy className="w-3.5 h-3.5" /> Copiar (Ctrl+C)
             </button>
@@ -1588,7 +1591,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 </button>
               </>
             )}
-          </div>
+          </ContextMenuPortal>
         )}
 
         {/* Markup Dialog */}
