@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2, Plus, Swords, Trash, Filter } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Copy, ClipboardPaste, Bold, Italic, Paintbrush, X, Save, Percent, Search, MapPin, Trash2, Plus, Swords, Trash, Filter, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import ProdutoHistoricoChart from '@/components/ProdutoHistoricoChart';
 
 interface Produto {
   codigo_interno: string;
@@ -173,6 +174,7 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [winnerFilter, setWinnerFilter] = useState<{ empresa: string; state: 'MT' | 'GO' } | null>(null);
+  const [historicoProduto, setHistoricoProduto] = useState<Produto | null>(null);
 
   const [activeCell, setActiveCell] = useState<CellPos | null>(null);
   const [selectionAnchor, setSelectionAnchor] = useState<CellPos | null>(null);
@@ -1671,6 +1673,12 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </div>
         )}
       </div>
+
+      <ProdutoHistoricoChart
+        produto={historicoProduto}
+        open={!!historicoProduto}
+        onOpenChange={v => { if (!v) setHistoricoProduto(null); }}
+      />
     </div>
   );
 };
