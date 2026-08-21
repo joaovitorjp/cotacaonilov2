@@ -330,10 +330,43 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
                     >
                       {m.content}
                     </div>
+
+                    {m.shared_lista && (
+                      <div className="mt-2 rounded-lg border border-border bg-card p-3 space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-display font-bold text-foreground">
+                          <FileSpreadsheet className="h-4 w-4 text-primary shrink-0" />
+                          <span className="truncate">{m.shared_lista.nome}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {(m.shared_lista.produtos?.length ?? 0)} produtos · para{' '}
+                          <span className="font-semibold">{m.mentioned_nome}</span>
+                        </div>
+                        {m.mentioned_user_id === user.id &&
+                          ((m.saved_by ?? []).includes(user.id) ? (
+                            <div className="flex items-center gap-1 text-xs text-emerald-600 font-semibold">
+                              <Check className="h-3.5 w-3.5" /> Salva em Cotações Finalizadas
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              disabled={savingId === m.id}
+                              onClick={() => void salvarCotacao(m)}
+                            >
+                              {savingId === m.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Salvar em Finalizadas'
+                              )}
+                            </Button>
+                          ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
+
           </div>
 
           <div className="border-t border-border p-2 flex gap-2 items-end bg-card">
