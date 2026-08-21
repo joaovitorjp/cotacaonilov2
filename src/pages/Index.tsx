@@ -674,6 +674,11 @@ const Index = () => {
               )}
 
               {item.label}
+              {!!item.badge && (
+                <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-black flex items-center justify-center">
+                  {item.badge > 9 ? '9+' : item.badge}
+                </span>
+              )}
             </button>
           ))}
           <button
