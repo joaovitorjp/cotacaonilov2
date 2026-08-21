@@ -830,6 +830,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      listar_usuarios_chat: {
+        Args: never
+        Returns: {
+          email: string
+          nome: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"

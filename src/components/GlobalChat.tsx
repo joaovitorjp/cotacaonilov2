@@ -57,6 +57,8 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
 
   const [shareOpen, setShareOpen] = useState(false);
   const [listas, setListas] = useState<SharedLista[]>([]);
+  const [usuarios, setUsuarios] = useState<{ id: string; nome: string }[]>([]);
+
   const [listaId, setListaId] = useState('');
   const [targetId, setTargetId] = useState('');
   const [sharing, setSharing] = useState(false);
@@ -168,28 +170,44 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
     inputRef.current?.focus();
   };
 
-  /** Usuários conhecidos = autores/mencionados presentes no histórico do chat. */
+  /** Usuários conhecidos = todos os cadastrados + autores/mencionados do histórico. */
   const participantes = useMemo(() => {
     const map = new Map<string, string>();
+    usuarios.forEach(u => {
+      if (u.id !== user?.id) map.set(u.id, u.nome);
+    });
     messages.forEach(m => {
-      if (m.user_id !== user?.id) map.set(m.user_id, m.autor_nome || m.autor_email || 'Usuário');
-      if (m.mentioned_user_id && m.mentioned_user_id !== user?.id)
+      if (m.user_id !== user?.id && !map.has(m.user_id))
+        map.set(m.user_id, m.autor_nome || m.autor_email || 'Usuário');
+      if (m.mentioned_user_id && m.mentioned_user_id !== user?.id && !map.has(m.mentioned_user_id))
         map.set(m.mentioned_user_id, m.mentioned_nome || 'Usuário');
     });
-    return Array.from(map, ([id, nome]) => ({ id, nome }));
-  }, [messages, user?.id]);
+    return Array.from(map, ([id, nome]) => ({ id, nome })).sort((a, b) =>
+      a.nome.localeCompare(b.nome)
+    );
+  }, [messages, usuarios, user?.id]);
 
   const openShare = async () => {
     if (!user) return;
     setShareOpen(true);
-    const { data } = await supabase
-      .from('listas')
-      .select('id, nome, status, produtos')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const [{ data }, { data: users }] = await Promise.all([
+      supabase
+        .from('listas')
+        .select('id, nome, status, produtos')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(100),
+      supabase.rpc('listar_usuarios_chat' as any),
+    ]);
     setListas((data ?? []) as unknown as SharedLista[]);
+    setUsuarios(
+      ((users ?? []) as any[]).map(u => ({
+        id: u.user_id,
+        nome: u.nome || u.email || 'Usuário',
+      }))
+    );
   };
+
 
   const shareLista = async () => {
     if (!user || !listaId || !targetId) return;
