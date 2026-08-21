@@ -139,6 +139,9 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
     if (open && !sending) inputRef.current?.focus();
   }, [open, sending]);
 
+  const pushMsg = (msg: GlobalMsg) =>
+    setMessages(prev => (prev.some(m => m.id === msg.id) ? prev : [...prev, msg]));
+
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || sending || !user) return;
@@ -153,17 +156,97 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
         autor_avatar_path: avatarPath,
         content: text,
       })
-      .select('id, user_id, autor_nome, autor_email, autor_avatar_path, content, created_at')
+      .select(MSG_COLS)
       .maybeSingle();
     if (error) {
       toast.error('Falha ao enviar mensagem.');
       setInput(text);
     } else if (data) {
-      const msg = data as GlobalMsg;
-      setMessages(prev => (prev.some(m => m.id === msg.id) ? prev : [...prev, msg]));
+      pushMsg(data as unknown as GlobalMsg);
     }
     setSending(false);
     inputRef.current?.focus();
+  };
+
+  /** Usuários conhecidos = autores/mencionados presentes no histórico do chat. */
+  const participantes = useMemo(() => {
+    const map = new Map<string, string>();
+    messages.forEach(m => {
+      if (m.user_id !== user?.id) map.set(m.user_id, m.autor_nome || m.autor_email || 'Usuário');
+      if (m.mentioned_user_id && m.mentioned_user_id !== user?.id)
+        map.set(m.mentioned_user_id, m.mentioned_nome || 'Usuário');
+    });
+    return Array.from(map, ([id, nome]) => ({ id, nome }));
+  }, [messages, user?.id]);
+
+  const openShare = async () => {
+    if (!user) return;
+    setShareOpen(true);
+    const { data } = await supabase
+      .from('listas')
+      .select('id, nome, status, produtos')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    setListas((data ?? []) as unknown as SharedLista[]);
+  };
+
+  const shareLista = async () => {
+    if (!user || !listaId || !targetId) return;
+    const lista = listas.find(l => l.id === listaId);
+    const alvo = participantes.find(p => p.id === targetId);
+    if (!lista || !alvo) return;
+    setSharing(true);
+    const { data, error } = await supabase
+      .from('mensagens_globais')
+      .insert({
+        user_id: user.id,
+        autor_nome: profile?.nome || '',
+        autor_email: profile?.email || user.email || '',
+        autor_avatar_path: avatarPath,
+        content: `@${alvo.nome} compartilhei a cotação "${lista.nome}".`,
+        shared_lista: {
+          id: lista.id,
+          nome: lista.nome,
+          status: lista.status,
+          produtos: Array.isArray(lista.produtos) ? lista.produtos : [],
+        } as any,
+        mentioned_user_id: alvo.id,
+        mentioned_nome: alvo.nome,
+      })
+      .select(MSG_COLS)
+      .maybeSingle();
+    setSharing(false);
+    if (error) {
+      toast.error('Falha ao compartilhar a cotação.');
+      return;
+    }
+    if (data) pushMsg(data as unknown as GlobalMsg);
+    setShareOpen(false);
+    setListaId('');
+    setTargetId('');
+    toast.success('Cotação compartilhada.');
+  };
+
+  const salvarCotacao = async (m: GlobalMsg) => {
+    if (!user || !m.shared_lista) return;
+    setSavingId(m.id);
+    const { error } = await supabase.from('listas').insert({
+      nome: `${m.shared_lista.nome} (de ${m.autor_nome || m.autor_email})`,
+      status: 'finalizada',
+      produtos: (m.shared_lista.produtos ?? []) as any,
+      user_id: user.id,
+    });
+    if (error) {
+      setSavingId(null);
+      toast.error('Não foi possível salvar a cotação.');
+      return;
+    }
+    const saved = Array.from(new Set([...(m.saved_by ?? []), user.id]));
+    await supabase.from('mensagens_globais').update({ saved_by: saved }).eq('id', m.id);
+    setMessages(prev => prev.map(x => (x.id === m.id ? { ...x, saved_by: saved } : x)));
+    setSavingId(null);
+    toast.success('Cotação salva em Cotações Finalizadas.');
   };
 
   const formatTime = (iso: string) =>
@@ -175,6 +258,7 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
     });
 
   const items = useMemo(() => messages, [messages]);
+
 
   if (!user) return null;
 
