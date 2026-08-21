@@ -20,8 +20,14 @@ export default defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ estado, limit }, ctx) => {
     if (!ctx.isAuthenticated()) return { content: [{ type: "text", text: "Não autenticado" }], isError: true };
-    let q = sb(ctx).from("fornecedores").select("id,nome,estado,whatsapp").eq("user_id", ctx.getUserId()).limit(limit);
-    if (estado) q = q.eq("estado", estado);
+    let q = sb(ctx)
+      .from("fornecedores")
+      .select(
+        "id,nome,nome_representante,whatsapp,email,codigo_estado,codigo_interno_ciss_mt,codigo_interno_ciss_go,codigo_interno_consinco_mt,codigo_interno_consinco_go",
+      )
+      .eq("user_id", ctx.getUserId())
+      .limit(limit);
+    if (estado) q = q.eq("codigo_estado", estado);
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return { content: [{ type: "text", text: JSON.stringify(data ?? []) }], structuredContent: { rows: data ?? [] } };

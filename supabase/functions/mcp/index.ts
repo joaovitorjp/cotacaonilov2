@@ -87,8 +87,10 @@ var list_fornecedores_default = defineTool3({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ estado, limit }, ctx) => {
     if (!ctx.isAuthenticated()) return { content: [{ type: "text", text: "N\xE3o autenticado" }], isError: true };
-    let q = sb3(ctx).from("fornecedores").select("id,nome,estado,whatsapp").eq("user_id", ctx.getUserId()).limit(limit);
-    if (estado) q = q.eq("estado", estado);
+    let q = sb3(ctx).from("fornecedores").select(
+      "id,nome,nome_representante,whatsapp,email,codigo_estado,codigo_interno_ciss_mt,codigo_interno_ciss_go,codigo_interno_consinco_mt,codigo_interno_consinco_go"
+    ).eq("user_id", ctx.getUserId()).limit(limit);
+    if (estado) q = q.eq("codigo_estado", estado);
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return { content: [{ type: "text", text: JSON.stringify(data ?? []) }], structuredContent: { rows: data ?? [] } };
@@ -113,7 +115,7 @@ var list_respostas_default = defineTool4({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ lista_id }, ctx) => {
     if (!ctx.isAuthenticated()) return { content: [{ type: "text", text: "N\xE3o autenticado" }], isError: true };
-    const { data, error } = await sb4(ctx).from("respostas").select("id,fornecedor,precos,observacoes,created_at").eq("user_id", ctx.getUserId()).eq("lista_id", lista_id).order("created_at", { ascending: false });
+    const { data, error } = await sb4(ctx).from("respostas").select("id,empresa,resposta,created_at").eq("user_id", ctx.getUserId()).eq("lista_id", lista_id).order("created_at", { ascending: false });
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return { content: [{ type: "text", text: JSON.stringify(data ?? []) }], structuredContent: { rows: data ?? [] } };
   }
