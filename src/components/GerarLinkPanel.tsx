@@ -251,6 +251,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const respondedExisting = existingLinks.filter(l => l.respondido);
 
   return (
+    <>
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent side="right" className="w-[95vw] sm:w-[50vw] sm:min-w-[420px] sm:max-w-[600px] p-0 flex flex-col">
         <div className="p-6 pb-0">
@@ -524,6 +525,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
           )}
         </div>
       </SheetContent>
+    </Sheet>
 
       <AlertDialog open={!!linkToDelete} onOpenChange={(o) => !o && setLinkToDelete(null)}>
         <AlertDialogContent>
@@ -543,7 +545,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Sheet>
+    </>
   );
 };
 
