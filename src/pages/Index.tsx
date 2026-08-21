@@ -9,6 +9,7 @@ import FornecedoresPanel from '@/components/FornecedoresPanel';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import Dashboard from '@/components/Dashboard';
 import GlobalChat from '@/components/GlobalChat';
+import { useUnreadChat } from '@/hooks/useUnreadChat';
 import PerfilPanel from '@/components/PerfilPanel';
 import { useAvatar } from '@/hooks/useAvatar';
 import HeaderAvatarButton from '@/components/HeaderAvatarButton';
@@ -48,6 +49,7 @@ const Index = () => {
   const [fornecedoresOpen, setFornecedoresOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
+  const unreadChat = useUnreadChat(chatOpen);
   const { avatarUrl } = useAvatar();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -580,14 +582,14 @@ const Index = () => {
   // Check if deadline passed
   const isExpired = currentLista?.prazo ? new Date(currentLista.prazo) < new Date() : false;
 
-  const navItems = [
+  const navItems: { label: string; icon: any; action: () => void; disabled?: boolean; badge?: number }[] = [
     { label: 'Início', icon: Home, action: handleBackToDashboard },
     { label: 'Importar', icon: Upload, action: () => { setImportOpen(true); setMobileMenuOpen(false); } },
     { label: 'Abertas', icon: FolderOpen, action: () => { setCarregarOpen(true); setMobileMenuOpen(false); } },
     { label: 'Gerar Link', icon: Link2, action: () => { setGerarLinkOpen(true); setMobileMenuOpen(false); }, disabled: !currentLista || isFinalized },
     { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
     { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
-    { label: 'Chat Global', icon: MessageCircle, action: () => { setChatOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Chat Global', icon: MessageCircle, action: () => { setChatOpen(true); setMobileMenuOpen(false); }, badge: unreadChat },
     { label: 'Perfil', icon: UserIcon, action: () => { setPerfilOpen(true); setMobileMenuOpen(false); } },
   ];
 
@@ -618,7 +620,7 @@ const Index = () => {
                   size="sm"
                   onClick={item.action}
                   disabled={item.disabled}
-                  className={`shrink-0 text-xs font-bold rounded-xl h-9 ${
+                  className={`relative shrink-0 text-xs font-bold rounded-xl h-9 ${
                     item.label === 'Gerar Link'
                       ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -626,6 +628,11 @@ const Index = () => {
                 >
                   <item.icon className="w-3.5 h-3.5 mr-2" />
                   {item.label}
+                  {!!item.badge && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center shadow">
+                      {item.badge > 9 ? '9+' : item.badge}
+                    </span>
+                  )}
                 </Button>
               ))}
             </div>
@@ -667,6 +674,11 @@ const Index = () => {
               )}
 
               {item.label}
+              {!!item.badge && (
+                <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-black flex items-center justify-center">
+                  {item.badge > 9 ? '9+' : item.badge}
+                </span>
+              )}
             </button>
           ))}
           <button
