@@ -4,8 +4,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAvatar } from '@/hooks/useAvatar';
 import UserAvatar from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { MessageCircle, X, Send, Loader2, Share2, FileSpreadsheet, Check } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface SharedLista {
+  id: string;
+  nome: string;
+  status: string;
+  produtos: any[];
+}
 
 interface GlobalMsg {
   id: string;
@@ -15,7 +25,14 @@ interface GlobalMsg {
   autor_avatar_path: string | null;
   content: string;
   created_at: string;
+  shared_lista?: SharedLista | null;
+  mentioned_user_id?: string | null;
+  mentioned_nome?: string | null;
+  saved_by?: string[] | null;
 }
+
+const MSG_COLS =
+  'id, user_id, autor_nome, autor_email, autor_avatar_path, content, created_at, shared_lista, mentioned_user_id, mentioned_nome, saved_by';
 
 interface Props {
   open?: boolean;
@@ -38,7 +55,15 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const [shareOpen, setShareOpen] = useState(false);
+  const [listas, setListas] = useState<SharedLista[]>([]);
+  const [listaId, setListaId] = useState('');
+  const [targetId, setTargetId] = useState('');
+  const [sharing, setSharing] = useState(false);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
   const [profile, setProfile] = useState<{ nome: string; email: string } | null>(null);
+
 
   useEffect(() => {
     if (!user) return;
