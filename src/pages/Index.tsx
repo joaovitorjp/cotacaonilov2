@@ -48,6 +48,7 @@ const Index = () => {
   const [fornecedoresOpen, setFornecedoresOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
+  const unreadChat = useUnreadChat(chatOpen);
   const { avatarUrl } = useAvatar();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
