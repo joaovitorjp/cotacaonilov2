@@ -100,7 +100,7 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
     (async () => {
       const { data, error } = await supabase
         .from('mensagens_globais')
-        .select('id, user_id, autor_nome, autor_email, autor_avatar_path, content, created_at')
+        .select(MSG_COLS)
         .order('created_at', { ascending: true })
         .limit(300);
       if (error) toast.error('Não foi possível carregar o chat.');
