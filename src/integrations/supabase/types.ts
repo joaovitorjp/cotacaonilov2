@@ -546,6 +546,10 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          mentioned_nome: string | null
+          mentioned_user_id: string | null
+          saved_by: string[]
+          shared_lista: Json | null
           user_id: string
         }
         Insert: {
@@ -555,6 +559,10 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          mentioned_nome?: string | null
+          mentioned_user_id?: string | null
+          saved_by?: string[]
+          shared_lista?: Json | null
           user_id: string
         }
         Update: {
@@ -564,6 +572,10 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          mentioned_nome?: string | null
+          mentioned_user_id?: string | null
+          saved_by?: string[]
+          shared_lista?: Json | null
           user_id?: string
         }
         Relationships: []
