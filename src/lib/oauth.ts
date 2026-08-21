@@ -52,7 +52,21 @@ export const readOAuthParams = () => {
 export const isAllowedOAuthForwardTarget = (target: string) => {
   try {
     const url = new URL(target);
-    return url.origin === NETLIFY_PRODUCTION_ORIGIN || url.origin === window.location.origin;
+    if (url.protocol !== 'https:' && url.hostname !== 'localhost') return false;
+
+    const allowedOrigins = [
+      NETLIFY_PRODUCTION_ORIGIN,
+      LOVABLE_OAUTH_BRIDGE_ORIGIN,
+      window.location.origin,
+    ];
+    if (allowedOrigins.includes(url.origin)) return true;
+
+    // Ambientes de preview/deploy confiáveis
+    return (
+      url.hostname.endsWith('.lovable.app') ||
+      url.hostname.endsWith('.lovableproject.com') ||
+      url.hostname.endsWith('.netlify.app')
+    );
   } catch {
     return false;
   }
