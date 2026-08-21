@@ -620,7 +620,7 @@ const Index = () => {
                   size="sm"
                   onClick={item.action}
                   disabled={item.disabled}
-                  className={`shrink-0 text-xs font-bold rounded-xl h-9 ${
+                  className={`relative shrink-0 text-xs font-bold rounded-xl h-9 ${
                     item.label === 'Gerar Link'
                       ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -628,6 +628,11 @@ const Index = () => {
                 >
                   <item.icon className="w-3.5 h-3.5 mr-2" />
                   {item.label}
+                  {!!item.badge && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center shadow">
+                      {item.badge > 9 ? '9+' : item.badge}
+                    </span>
+                  )}
                 </Button>
               ))}
             </div>
