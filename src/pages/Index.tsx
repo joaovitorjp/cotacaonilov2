@@ -589,7 +589,7 @@ const Index = () => {
     { label: 'Gerar Link', icon: Link2, action: () => { setGerarLinkOpen(true); setMobileMenuOpen(false); }, disabled: !currentLista || isFinalized },
     { label: 'Finalizadas', icon: CheckSquare, action: () => { setFinalizadasOpen(true); setMobileMenuOpen(false); } },
     { label: 'Fornecedores', icon: Users, action: () => { setFornecedoresOpen(true); setMobileMenuOpen(false); } },
-    { label: 'Chat Global', icon: MessageCircle, action: () => { setChatOpen(true); setMobileMenuOpen(false); } },
+    { label: 'Chat Global', icon: MessageCircle, action: () => { setChatOpen(true); setMobileMenuOpen(false); }, badge: unreadChat },
     { label: 'Perfil', icon: UserIcon, action: () => { setPerfilOpen(true); setMobileMenuOpen(false); } },
   ];
 
