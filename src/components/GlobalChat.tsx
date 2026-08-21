@@ -4,8 +4,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAvatar } from '@/hooks/useAvatar';
 import UserAvatar from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { MessageCircle, X, Send, Loader2, Share2, FileSpreadsheet, Check } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface SharedLista {
+  id: string;
+  nome: string;
+  status: string;
+  produtos: any[];
+}
 
 interface GlobalMsg {
   id: string;
@@ -15,7 +25,14 @@ interface GlobalMsg {
   autor_avatar_path: string | null;
   content: string;
   created_at: string;
+  shared_lista?: SharedLista | null;
+  mentioned_user_id?: string | null;
+  mentioned_nome?: string | null;
+  saved_by?: string[] | null;
 }
+
+const MSG_COLS =
+  'id, user_id, autor_nome, autor_email, autor_avatar_path, content, created_at, shared_lista, mentioned_user_id, mentioned_nome, saved_by';
 
 interface Props {
   open?: boolean;
@@ -38,7 +55,15 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const [shareOpen, setShareOpen] = useState(false);
+  const [listas, setListas] = useState<SharedLista[]>([]);
+  const [listaId, setListaId] = useState('');
+  const [targetId, setTargetId] = useState('');
+  const [sharing, setSharing] = useState(false);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
   const [profile, setProfile] = useState<{ nome: string; email: string } | null>(null);
+
 
   useEffect(() => {
     if (!user) return;
@@ -75,11 +100,11 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
     (async () => {
       const { data, error } = await supabase
         .from('mensagens_globais')
-        .select('id, user_id, autor_nome, autor_email, autor_avatar_path, content, created_at')
+        .select(MSG_COLS)
         .order('created_at', { ascending: true })
         .limit(300);
       if (error) toast.error('Não foi possível carregar o chat.');
-      const list = (data ?? []) as GlobalMsg[];
+      const list = (data ?? []) as unknown as GlobalMsg[];
       setMessages(list);
       void resolveAvatars(list);
       setLoading(false);
@@ -114,6 +139,9 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
     if (open && !sending) inputRef.current?.focus();
   }, [open, sending]);
 
+  const pushMsg = (msg: GlobalMsg) =>
+    setMessages(prev => (prev.some(m => m.id === msg.id) ? prev : [...prev, msg]));
+
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || sending || !user) return;
@@ -128,17 +156,97 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
         autor_avatar_path: avatarPath,
         content: text,
       })
-      .select('id, user_id, autor_nome, autor_email, autor_avatar_path, content, created_at')
+      .select(MSG_COLS)
       .maybeSingle();
     if (error) {
       toast.error('Falha ao enviar mensagem.');
       setInput(text);
     } else if (data) {
-      const msg = data as GlobalMsg;
-      setMessages(prev => (prev.some(m => m.id === msg.id) ? prev : [...prev, msg]));
+      pushMsg(data as unknown as GlobalMsg);
     }
     setSending(false);
     inputRef.current?.focus();
+  };
+
+  /** Usuários conhecidos = autores/mencionados presentes no histórico do chat. */
+  const participantes = useMemo(() => {
+    const map = new Map<string, string>();
+    messages.forEach(m => {
+      if (m.user_id !== user?.id) map.set(m.user_id, m.autor_nome || m.autor_email || 'Usuário');
+      if (m.mentioned_user_id && m.mentioned_user_id !== user?.id)
+        map.set(m.mentioned_user_id, m.mentioned_nome || 'Usuário');
+    });
+    return Array.from(map, ([id, nome]) => ({ id, nome }));
+  }, [messages, user?.id]);
+
+  const openShare = async () => {
+    if (!user) return;
+    setShareOpen(true);
+    const { data } = await supabase
+      .from('listas')
+      .select('id, nome, status, produtos')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    setListas((data ?? []) as unknown as SharedLista[]);
+  };
+
+  const shareLista = async () => {
+    if (!user || !listaId || !targetId) return;
+    const lista = listas.find(l => l.id === listaId);
+    const alvo = participantes.find(p => p.id === targetId);
+    if (!lista || !alvo) return;
+    setSharing(true);
+    const { data, error } = await supabase
+      .from('mensagens_globais')
+      .insert({
+        user_id: user.id,
+        autor_nome: profile?.nome || '',
+        autor_email: profile?.email || user.email || '',
+        autor_avatar_path: avatarPath,
+        content: `@${alvo.nome} compartilhei a cotação "${lista.nome}".`,
+        shared_lista: {
+          id: lista.id,
+          nome: lista.nome,
+          status: lista.status,
+          produtos: Array.isArray(lista.produtos) ? lista.produtos : [],
+        } as any,
+        mentioned_user_id: alvo.id,
+        mentioned_nome: alvo.nome,
+      })
+      .select(MSG_COLS)
+      .maybeSingle();
+    setSharing(false);
+    if (error) {
+      toast.error('Falha ao compartilhar a cotação.');
+      return;
+    }
+    if (data) pushMsg(data as unknown as GlobalMsg);
+    setShareOpen(false);
+    setListaId('');
+    setTargetId('');
+    toast.success('Cotação compartilhada.');
+  };
+
+  const salvarCotacao = async (m: GlobalMsg) => {
+    if (!user || !m.shared_lista) return;
+    setSavingId(m.id);
+    const { error } = await supabase.from('listas').insert({
+      nome: `${m.shared_lista.nome} (de ${m.autor_nome || m.autor_email})`,
+      status: 'finalizada',
+      produtos: (m.shared_lista.produtos ?? []) as any,
+      user_id: user.id,
+    });
+    if (error) {
+      setSavingId(null);
+      toast.error('Não foi possível salvar a cotação.');
+      return;
+    }
+    const saved = Array.from(new Set([...(m.saved_by ?? []), user.id]));
+    await supabase.from('mensagens_globais').update({ saved_by: saved }).eq('id', m.id);
+    setMessages(prev => prev.map(x => (x.id === m.id ? { ...x, saved_by: saved } : x)));
+    setSavingId(null);
+    toast.success('Cotação salva em Cotações Finalizadas.');
   };
 
   const formatTime = (iso: string) =>
@@ -150,6 +258,7 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
     });
 
   const items = useMemo(() => messages, [messages]);
+
 
   if (!user) return null;
 
@@ -221,10 +330,43 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
                     >
                       {m.content}
                     </div>
+
+                    {m.shared_lista && (
+                      <div className="mt-2 rounded-lg border border-border bg-card p-3 space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-display font-bold text-foreground">
+                          <FileSpreadsheet className="h-4 w-4 text-primary shrink-0" />
+                          <span className="truncate">{m.shared_lista.nome}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {(m.shared_lista.produtos?.length ?? 0)} produtos · para{' '}
+                          <span className="font-semibold">{m.mentioned_nome}</span>
+                        </div>
+                        {m.mentioned_user_id === user.id &&
+                          ((m.saved_by ?? []).includes(user.id) ? (
+                            <div className="flex items-center gap-1 text-xs text-emerald-600 font-semibold">
+                              <Check className="h-3.5 w-3.5" /> Salva em Cotações Finalizadas
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              disabled={savingId === m.id}
+                              onClick={() => void salvarCotacao(m)}
+                            >
+                              {savingId === m.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Salvar em Finalizadas'
+                              )}
+                            </Button>
+                          ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
+
           </div>
 
           <div className="border-t border-border p-2 flex gap-2 items-end bg-card">
@@ -242,13 +384,75 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
               placeholder="Escreva uma mensagem para todos..."
               className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring max-h-32"
             />
+            <Button variant="outline" size="icon" onClick={openShare} title="Compartilhar cotação">
+              <Share2 className="h-4 w-4" />
+            </Button>
             <Button onClick={sendMessage} disabled={sending || !input.trim()} size="icon">
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
         </div>
       )}
+
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="z-[60]">
+          <DialogHeader>
+            <DialogTitle>Compartilhar cotação</DialogTitle>
+            <DialogDescription>
+              Escolha a cotação e o usuário que poderá salvá-la nas cotações finalizadas.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Cotação</label>
+              <select
+                value={listaId}
+                onChange={e => setListaId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Selecione...</option>
+                {listas.map(l => (
+                  <option key={l.id} value={l.id}>
+                    {l.nome} ({l.status})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Marcar usuário</label>
+              <select
+                value={targetId}
+                onChange={e => setTargetId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Selecione...</option>
+                {participantes.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+              {participantes.length === 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Nenhum outro usuário no chat ainda. Peça para ele enviar uma mensagem primeiro.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShareOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void shareLista()} disabled={!listaId || !targetId || sharing}>
+              {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Compartilhar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 };
 
