@@ -9,6 +9,7 @@ import FornecedoresPanel from '@/components/FornecedoresPanel';
 import AnalisePrecosPanel from '@/components/AnalisePrecosPanel';
 import Dashboard from '@/components/Dashboard';
 import GlobalChat from '@/components/GlobalChat';
+import { useUnreadChat } from '@/hooks/useUnreadChat';
 import PerfilPanel from '@/components/PerfilPanel';
 import { useAvatar } from '@/hooks/useAvatar';
 import HeaderAvatarButton from '@/components/HeaderAvatarButton';
