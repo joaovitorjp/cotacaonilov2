@@ -384,13 +384,75 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
               placeholder="Escreva uma mensagem para todos..."
               className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring max-h-32"
             />
+            <Button variant="outline" size="icon" onClick={openShare} title="Compartilhar cotação">
+              <Share2 className="h-4 w-4" />
+            </Button>
             <Button onClick={sendMessage} disabled={sending || !input.trim()} size="icon">
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
         </div>
       )}
+
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="z-[60]">
+          <DialogHeader>
+            <DialogTitle>Compartilhar cotação</DialogTitle>
+            <DialogDescription>
+              Escolha a cotação e o usuário que poderá salvá-la nas cotações finalizadas.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Cotação</label>
+              <select
+                value={listaId}
+                onChange={e => setListaId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Selecione...</option>
+                {listas.map(l => (
+                  <option key={l.id} value={l.id}>
+                    {l.nome} ({l.status})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Marcar usuário</label>
+              <select
+                value={targetId}
+                onChange={e => setTargetId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Selecione...</option>
+                {participantes.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+              {participantes.length === 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Nenhum outro usuário no chat ainda. Peça para ele enviar uma mensagem primeiro.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShareOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void shareLista()} disabled={!listaId || !targetId || sharing}>
+              {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Compartilhar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 };
 
