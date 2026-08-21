@@ -104,7 +104,7 @@ const GlobalChat: React.FC<Props> = ({ open: openProp, onOpenChange, hideBubble 
         .order('created_at', { ascending: true })
         .limit(300);
       if (error) toast.error('Não foi possível carregar o chat.');
-      const list = (data ?? []) as GlobalMsg[];
+      const list = (data ?? []) as unknown as GlobalMsg[];
       setMessages(list);
       void resolveAvatars(list);
       setLoading(false);
