@@ -115,7 +115,7 @@ var list_respostas_default = defineTool4({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ lista_id }, ctx) => {
     if (!ctx.isAuthenticated()) return { content: [{ type: "text", text: "N\xE3o autenticado" }], isError: true };
-    const { data, error } = await sb4(ctx).from("respostas").select("id,fornecedor,precos,observacoes,created_at").eq("user_id", ctx.getUserId()).eq("lista_id", lista_id).order("created_at", { ascending: false });
+    const { data, error } = await sb4(ctx).from("respostas").select("id,empresa,resposta,created_at").eq("user_id", ctx.getUserId()).eq("lista_id", lista_id).order("created_at", { ascending: false });
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return { content: [{ type: "text", text: JSON.stringify(data ?? []) }], structuredContent: { rows: data ?? [] } };
   }
