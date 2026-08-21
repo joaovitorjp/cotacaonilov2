@@ -582,7 +582,7 @@ const Index = () => {
   // Check if deadline passed
   const isExpired = currentLista?.prazo ? new Date(currentLista.prazo) < new Date() : false;
 
-  const navItems = [
+  const navItems: { label: string; icon: any; action: () => void; disabled?: boolean; badge?: number }[] = [
     { label: 'Início', icon: Home, action: handleBackToDashboard },
     { label: 'Importar', icon: Upload, action: () => { setImportOpen(true); setMobileMenuOpen(false); } },
     { label: 'Abertas', icon: FolderOpen, action: () => { setCarregarOpen(true); setMobileMenuOpen(false); } },
