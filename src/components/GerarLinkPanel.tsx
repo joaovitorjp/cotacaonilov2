@@ -98,10 +98,11 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       }
       loadExistingLinks();
     }
-  }, [open]);
+  }, [open, user?.id]);
 
 
   const loadExistingLinks = async () => {
+    if (!user?.id) return;
     const { data: links } = await supabase
       .from('links_cotacao')
       .select('id, token, empresa, respondido, estados')
