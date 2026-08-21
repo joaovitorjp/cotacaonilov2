@@ -84,8 +84,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
 
 
   useEffect(() => {
-    if (open) {
-      supabase.from('fornecedores').select('*').eq('user_id', user?.id ?? '').order('nome').then(({ data }) => {
+    if (open && user?.id) {
+      supabase.from('fornecedores').select('*').eq('user_id', user.id).order('nome').then(({ data }) => {
         setFornecedores((data ?? []) as Fornecedor[]);
       });
       supabase.from('listas').select('nome').eq('id', listaId).maybeSingle().then(({ data }) => {
