@@ -1426,6 +1426,8 @@ const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     {col.empresa && col.state ? (
                       <div className="text-[8px] leading-tight font-bold opacity-80 uppercase tracking-wide">
                         {tipoPrecoLabel(tipoPrecoMap[`${col.empresa}_${col.state}`] ?? (col.state === 'MT' ? 'IPI_ST' : 'NOTA'))}
+                        {' · '}
+                        {tipoPrecoMap[`${col.empresa}_${col.state}_FRETE`] ?? 'CIF'}
                       </div>
                     ) : null}
 
