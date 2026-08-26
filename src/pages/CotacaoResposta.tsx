@@ -34,6 +34,10 @@ const CotacaoResposta = () => {
   const [estados, setEstados] = useState<string>('AMBOS');
   const [tipoMT, setTipoMT] = useState<string>('IPI_ST');
   const [tipoGO, setTipoGO] = useState<string>('NOTA');
+  const [freteMT, setFreteMT] = useState<string>('CIF');
+  const [freteGO, setFreteGO] = useState<string>('CIF');
+  const [showBriefing, setShowBriefing] = useState(false);
+  const [briefingProgress, setBriefingProgress] = useState(100);
 
   const tipoLabel = (t: string) => (t === 'NOTA' ? 'PREÇO NOTA' : 'IPI + ST');
 
@@ -50,6 +54,22 @@ const CotacaoResposta = () => {
     const countGO = showGO ? Object.values(pricesGO).filter(v => v && v.trim() !== '').length : 0;
     setFilledCount(countMT + countGO);
   }, [pricesMT, pricesGO, showMT, showGO]);
+
+  useEffect(() => {
+    if (!showBriefing) return;
+    const total = 5000;
+    const start = Date.now();
+    const id = window.setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.max(0, 100 - (elapsed / total) * 100);
+      setBriefingProgress(pct);
+      if (elapsed >= total) {
+        window.clearInterval(id);
+        setShowBriefing(false);
+      }
+    }, 50);
+    return () => window.clearInterval(id);
+  }, [showBriefing]);
 
   const loadData = async () => {
     if (!token) { setError('Link inválido.'); setLoading(false); return; }
@@ -71,6 +91,9 @@ const CotacaoResposta = () => {
     setEstados((linkData as any).estados || 'AMBOS');
     setTipoMT((linkData as any).tipo_preco_mt || 'IPI_ST');
     setTipoGO((linkData as any).tipo_preco_go || 'NOTA');
+    setFreteMT((linkData as any).frete_mt || 'CIF');
+    setFreteGO((linkData as any).frete_go || 'CIF');
+    setShowBriefing(true);
 
 
     if (lista.status === 'finalizada') { setError('Esta cotação já foi encerrada.'); setLoading(false); return; }
@@ -330,8 +353,49 @@ const CotacaoResposta = () => {
 
   const estadoLabel = estados === 'AMBOS' ? 'MT + GO' : estados;
 
+  const freteLabel = (f: string) => (f === 'FOB' ? 'FOB — frete por conta do destinatário' : 'CIF — frete incluso no preço');
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {showBriefing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-xl overflow-hidden">
+            <div className="px-6 py-5 space-y-4">
+              <div className="text-center">
+                <h2 className="text-lg font-display font-bold text-foreground">Atenção às condições da cotação</h2>
+                <p className="text-xs text-muted-foreground mt-1">Leia antes de preencher os preços</p>
+              </div>
+
+              <div className="rounded-lg bg-muted/60 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Estado(s)</p>
+                <p className="text-base font-bold text-foreground">{estadoLabel}</p>
+              </div>
+
+              {showMT && (
+                <div className="rounded-lg border border-border p-3 space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-primary">MT · Mato Grosso</p>
+                  <p className="text-sm text-foreground">Tipo de preço: <span className="font-bold">{tipoLabel(tipoMT)}</span></p>
+                  <p className="text-sm text-foreground">Frete: <span className="font-bold">{freteLabel(freteMT)}</span></p>
+                </div>
+              )}
+              {showGO && (
+                <div className="rounded-lg border border-border p-3 space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-primary">GO · Goiás</p>
+                  <p className="text-sm text-foreground">Tipo de preço: <span className="font-bold">{tipoLabel(tipoGO)}</span></p>
+                  <p className="text-sm text-foreground">Frete: <span className="font-bold">{freteLabel(freteGO)}</span></p>
+                </div>
+              )}
+
+              <p className="text-xs text-center text-muted-foreground">
+                Este aviso fecha em {Math.ceil((briefingProgress / 100) * 5)}s
+              </p>
+            </div>
+            <div className="h-1.5 bg-muted">
+              <div className="h-full bg-primary transition-all duration-75" style={{ width: `${briefingProgress}%` }} />
+            </div>
+          </div>
+        </div>
+      )}
       <header className="bg-primary text-primary-foreground px-4 sm:px-6 py-4 shrink-0 shadow-md">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-lg sm:text-xl font-bold tracking-tight">Nilo Atacadista</h1>
