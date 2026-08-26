@@ -122,13 +122,15 @@ const Index = () => {
 
     const { data: links } = await supabase
       .from('links_cotacao')
-      .select('empresa, tipo_preco_mt, tipo_preco_go')
+      .select('empresa, tipo_preco_mt, tipo_preco_go, frete_mt, frete_go')
       .eq('user_id', user.id)
       .eq('lista_id', listaId);
     const map: Record<string, string> = {};
     (links ?? []).forEach((l: any) => {
       map[`${l.empresa}_MT`] = l.tipo_preco_mt || 'IPI_ST';
       map[`${l.empresa}_GO`] = l.tipo_preco_go || 'NOTA';
+      map[`${l.empresa}_MT_FRETE`] = l.frete_mt || 'CIF';
+      map[`${l.empresa}_GO_FRETE`] = l.frete_go || 'CIF';
     });
     setTipoPrecoMap(map);
   }, [user?.id]);
