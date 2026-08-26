@@ -44,6 +44,8 @@ interface ExistingLink {
 type EstadoOption = 'AMBOS' | 'MT' | 'GO';
 type TipoPreco = 'IPI_ST' | 'NOTA';
 const TIPO_LABELS: Record<TipoPreco, string> = { IPI_ST: 'IPI + ST', NOTA: 'PREÇO NOTA' };
+type Frete = 'CIF' | 'FOB';
+const FRETE_LABELS: Record<Frete, string> = { CIF: 'CIF (frete incluso)', FOB: 'FOB (frete por conta)' };
 
 
 interface GerarLinkPanelProps {
@@ -79,6 +81,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [linkToDelete, setLinkToDelete] = useState<ExistingLink | null>(null);
   const [tipoMT, setTipoMT] = useState<TipoPreco>('IPI_ST');
   const [tipoGO, setTipoGO] = useState<TipoPreco>('NOTA');
+  const [freteMT, setFreteMT] = useState<Frete>('CIF');
+  const [freteGO, setFreteGO] = useState<Frete>('CIF');
 
 
 
@@ -132,6 +136,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
         user_id: user?.id,
         tipo_preco_mt: tipoMT,
         tipo_preco_go: tipoGO,
+        frete_mt: freteMT,
+        frete_go: freteGO,
       })
       .select()
       .single();
@@ -330,6 +336,45 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
             <p className="text-[10px] text-muted-foreground mt-1">
               Essa informação será exibida ao fornecedor na página de resposta.
             </p>
+          </div>
+
+          {/* Tipo de frete por estado */}
+          <div>
+            <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              Tipo de frete (CIF / FOB)
+            </p>
+            <div className="space-y-2">
+              {(selectedEstado === 'AMBOS' || selectedEstado === 'MT') && (
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground mb-1">MT (Mato Grosso)</p>
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                    {(['CIF', 'FOB'] as Frete[]).map(opt => (
+                      <button key={opt} onClick={() => setFreteMT(opt)}
+                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-display font-bold transition-colors ${
+                          freteMT === opt ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                        {FRETE_LABELS[opt]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(selectedEstado === 'AMBOS' || selectedEstado === 'GO') && (
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground mb-1">GO (Goiás)</p>
+                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                    {(['CIF', 'FOB'] as Frete[]).map(opt => (
+                      <button key={opt} onClick={() => setFreteGO(opt)}
+                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-display font-bold transition-colors ${
+                          freteGO === opt ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                        {FRETE_LABELS[opt]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
 
