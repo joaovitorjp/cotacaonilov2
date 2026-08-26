@@ -376,6 +376,8 @@ export type Database = {
           empresa: string
           empresa_id: string
           estados: string
+          frete_go: string
+          frete_mt: string
           id: string
           info_preco: string | null
           lista_id: string
@@ -392,6 +394,8 @@ export type Database = {
           empresa: string
           empresa_id?: string
           estados?: string
+          frete_go?: string
+          frete_mt?: string
           id?: string
           info_preco?: string | null
           lista_id: string
@@ -408,6 +412,8 @@ export type Database = {
           empresa?: string
           empresa_id?: string
           estados?: string
+          frete_go?: string
+          frete_mt?: string
           id?: string
           info_preco?: string | null
           lista_id?: string
