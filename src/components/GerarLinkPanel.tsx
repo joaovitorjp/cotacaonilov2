@@ -1,11 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin, Trash2 } from 'lucide-react';
+import {
+  Copy, Check, Link2, UserPlus, MessageCircle, RefreshCw, MapPin, Trash2,
+  Search, Truck, Tag, Clock, Send, Users,
+} from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,8 +50,7 @@ type EstadoOption = 'AMBOS' | 'MT' | 'GO';
 type TipoPreco = 'IPI_ST' | 'NOTA';
 const TIPO_LABELS: Record<TipoPreco, string> = { IPI_ST: 'IPI + ST', NOTA: 'PREÇO NOTA' };
 type Frete = 'CIF' | 'FOB';
-const FRETE_LABELS: Record<Frete, string> = { CIF: 'CIF (frete incluso)', FOB: 'FOB (frete por conta)' };
-
+const FRETE_LABELS: Record<Frete, string> = { CIF: 'CIF', FOB: 'FOB' };
 
 interface GerarLinkPanelProps {
   open: boolean;
@@ -68,6 +72,35 @@ const ESTADO_LABELS: Record<EstadoOption, string> = {
   'GO': 'Apenas GO',
 };
 
+/** Compact segmented control used across the configuration step. */
+function Segmented<T extends string>({ value, options, onChange, size = 'md' }: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+  size?: 'sm' | 'md';
+}) {
+  return (
+    <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+      {options.map(opt => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`flex-1 rounded-md font-display font-bold transition-all ${
+            size === 'sm' ? 'px-2 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'
+          } ${
+            value === opt.value
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/60'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, listaId }) => {
   const { user } = useAuth();
   const [empresa, setEmpresa] = useState('');
@@ -83,9 +116,9 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
   const [tipoGO, setTipoGO] = useState<TipoPreco>('NOTA');
   const [freteMT, setFreteMT] = useState<Frete>('CIF');
   const [freteGO, setFreteGO] = useState<Frete>('CIF');
-
-
-
+  const [tab, setTab] = useState<'novo' | 'enviados'>('novo');
+  const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (open && user?.id) {
@@ -95,15 +128,12 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       supabase.from('listas').select('nome').eq('id', listaId).maybeSingle().then(({ data }) => {
         setListaNome((data as any)?.nome ?? '');
       });
-      if (user?.id) {
-        supabase.from('profiles').select('nome').eq('user_id', user.id).maybeSingle().then(({ data }) => {
-          setUserNome(((data as any)?.nome ?? '').trim());
-        });
-      }
+      supabase.from('profiles').select('nome').eq('user_id', user.id).maybeSingle().then(({ data }) => {
+        setUserNome(((data as any)?.nome ?? '').trim());
+      });
       loadExistingLinks();
     }
   }, [open, user?.id]);
-
 
   const loadExistingLinks = async () => {
     if (!user?.id) return;
@@ -146,7 +176,6 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     return `${getPublicBaseUrl()}/cotacao/${data.token}`;
   };
 
-
   const handleGerar = async () => {
     if (!empresa.trim()) return;
     setLoading(true);
@@ -155,6 +184,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       setGeneratedLinks(prev => [...prev, { empresa: empresa.trim(), link, copied: false, estados: selectedEstado }]);
       setEmpresa('');
       toast.success('Link gerado!');
+      setTab('enviados');
       loadExistingLinks();
     } catch {
       toast.error('Erro ao gerar link.');
@@ -162,31 +192,12 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     setLoading(false);
   };
 
-  const handleGerarFromFornecedor = async (f: Fornecedor) => {
-    if (generatedLinks.some(l => l.empresa === f.nome) || existingLinks.some(l => l.empresa === f.nome)) {
-      toast.info('Link já gerado para este fornecedor.');
-      return;
-    }
-    try {
-      const link = await generateLink(f.nome, selectedEstado);
-      setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado }]);
-      toast.success(`Link gerado para ${f.nome}!`);
-      loadExistingLinks();
-    } catch {
-      toast.error('Erro ao gerar link.');
-    }
-  };
-
-  const handleGerarTodos = async () => {
-    const allExisting = [...generatedLinks.map(l => l.empresa), ...existingLinks.map(l => l.empresa)];
-    const pendentes = fornecedores.filter(f => !allExisting.includes(f.nome));
-    if (pendentes.length === 0) {
-      toast.info('Links já gerados para todos os fornecedores.');
-      return;
-    }
+  const handleGerarSelecionados = async () => {
+    const alvos = fornecedores.filter(f => selectedIds.includes(f.id));
+    if (alvos.length === 0) return;
     setLoading(true);
     let count = 0;
-    for (const f of pendentes) {
+    for (const f of alvos) {
       try {
         const link = await generateLink(f.nome, selectedEstado);
         setGeneratedLinks(prev => [...prev, { empresa: f.nome, link, copied: false, whatsapp: f.whatsapp, estados: selectedEstado }]);
@@ -194,6 +205,8 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
       } catch { /* skip */ }
     }
     toast.success(`${count} link(s) gerado(s)!`);
+    setSelectedIds([]);
+    setTab('enviados');
     loadExistingLinks();
     setLoading(false);
   };
@@ -244,333 +257,384 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
     setLinkToDelete(null);
   };
 
-
-  const handleClose = (open: boolean) => {
-    if (!open) {
+  const handleClose = (o: boolean) => {
+    if (!o) {
       setGeneratedLinks([]);
       setEmpresa('');
+      setSearch('');
+      setSelectedIds([]);
+      setTab('novo');
     }
-    onOpenChange(open);
+    onOpenChange(o);
   };
 
   const pendingExisting = existingLinks.filter(l => !l.respondido);
   const respondedExisting = existingLinks.filter(l => l.respondido);
 
+  const linkedNames = useMemo(
+    () => new Set([...generatedLinks.map(l => l.empresa), ...existingLinks.map(l => l.empresa)]),
+    [generatedLinks, existingLinks],
+  );
+
+  const filteredFornecedores = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return fornecedores.filter(f => !q || f.nome.toLowerCase().includes(q));
+  }, [fornecedores, search]);
+
+  const disponiveis = filteredFornecedores.filter(f => !linkedNames.has(f.nome));
+  const allSelected = disponiveis.length > 0 && disponiveis.every(f => selectedIds.includes(f.id));
+
+  const toggleAll = () => {
+    setSelectedIds(allSelected ? [] : disponiveis.map(f => f.id));
+  };
+
+  const toggleOne = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const showMT = selectedEstado === 'AMBOS' || selectedEstado === 'MT';
+  const showGO = selectedEstado === 'AMBOS' || selectedEstado === 'GO';
+
+  const resumo = [
+    ESTADO_LABELS[selectedEstado],
+    showMT ? `MT: ${TIPO_LABELS[tipoMT]} · ${FRETE_LABELS[freteMT]}` : null,
+    showGO ? `GO: ${TIPO_LABELS[tipoGO]} · ${FRETE_LABELS[freteGO]}` : null,
+  ].filter(Boolean) as string[];
+
   return (
     <>
-    <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="right" className="w-[95vw] sm:w-[50vw] sm:min-w-[420px] sm:max-w-[600px] p-0 flex flex-col">
-        <div className="p-6 pb-0">
-          <SheetHeader>
-            <SheetTitle className="font-display text-xl flex items-center gap-2">
-              <Link2 className="w-5 h-5" /> Gerar Links de Cotação
-            </SheetTitle>
-            <SheetDescription>Gere links únicos e compartilhe via WhatsApp.</SheetDescription>
-          </SheetHeader>
-        </div>
+      <Sheet open={open} onOpenChange={handleClose}>
+        <SheetContent side="right" className="w-[95vw] sm:w-[52vw] sm:min-w-[440px] sm:max-w-[640px] p-0 flex flex-col gap-0">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 border-b border-border">
+            <SheetHeader className="space-y-1">
+              <SheetTitle className="font-display text-xl flex items-center gap-2">
+                <Link2 className="w-5 h-5 text-primary" /> Links de Cotação
+              </SheetTitle>
+              <SheetDescription className="truncate">
+                {listaNome ? listaNome : 'Gere links únicos e envie via WhatsApp.'}
+              </SheetDescription>
+            </SheetHeader>
 
-        <div className="flex-1 overflow-auto p-6 pt-4 space-y-4">
-          {/* State selector */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-              <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">Estados para cotação</p>
-            </div>
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-              {(['AMBOS', 'MT', 'GO'] as EstadoOption[]).map(opt => (
-                <button
-                  key={opt}
-                  onClick={() => setSelectedEstado(opt)}
-                  className={`flex-1 px-3 py-2 rounded-md text-xs font-display font-bold transition-colors ${
-                    selectedEstado === opt
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-                  }`}
+            <Tabs value={tab} onValueChange={(v) => setTab(v as 'novo' | 'enviados')} className="mt-4">
+              <TabsList className="grid grid-cols-2 w-full">
+                <TabsTrigger value="novo" className="font-display font-bold text-xs">
+                  <Send className="w-3.5 h-3.5 mr-1.5" /> Gerar novos
+                </TabsTrigger>
+                <TabsTrigger value="enviados" className="font-display font-bold text-xs">
+                  <Users className="w-3.5 h-3.5 mr-1.5" /> Enviados ({existingLinks.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* ===== Tab: Gerar novos ===== */}
+          {tab === 'novo' && (
+            <>
+              <div className="flex-1 overflow-auto px-6 py-4 space-y-5">
+                {/* Step 1 — condições */}
+                <section className="rounded-xl border border-border bg-card/50 p-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center">1</span>
+                    <p className="text-xs font-display font-bold uppercase tracking-wider">Condições da cotação</p>
+                  </div>
+
+                  <div>
+                    <p className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground mb-1.5">
+                      <MapPin className="w-3 h-3" /> Estados
+                    </p>
+                    <Segmented
+                      value={selectedEstado}
+                      onChange={setSelectedEstado}
+                      options={(['AMBOS', 'MT', 'GO'] as EstadoOption[]).map(v => ({ value: v, label: ESTADO_LABELS[v] }))}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {showMT && (
+                      <div className="rounded-lg border border-border p-3 space-y-2.5">
+                        <p className="text-[11px] font-display font-bold text-primary">MT · Mato Grosso</p>
+                        <div>
+                          <p className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground mb-1"><Tag className="w-3 h-3" /> Tipo de preço</p>
+                          <Segmented size="sm" value={tipoMT} onChange={setTipoMT}
+                            options={(['IPI_ST', 'NOTA'] as TipoPreco[]).map(v => ({ value: v, label: TIPO_LABELS[v] }))} />
+                        </div>
+                        <div>
+                          <p className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground mb-1"><Truck className="w-3 h-3" /> Frete</p>
+                          <Segmented size="sm" value={freteMT} onChange={setFreteMT}
+                            options={(['CIF', 'FOB'] as Frete[]).map(v => ({ value: v, label: FRETE_LABELS[v] }))} />
+                        </div>
+                      </div>
+                    )}
+                    {showGO && (
+                      <div className="rounded-lg border border-border p-3 space-y-2.5">
+                        <p className="text-[11px] font-display font-bold text-primary">GO · Goiás</p>
+                        <div>
+                          <p className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground mb-1"><Tag className="w-3 h-3" /> Tipo de preço</p>
+                          <Segmented size="sm" value={tipoGO} onChange={setTipoGO}
+                            options={(['IPI_ST', 'NOTA'] as TipoPreco[]).map(v => ({ value: v, label: TIPO_LABELS[v] }))} />
+                        </div>
+                        <div>
+                          <p className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground mb-1"><Truck className="w-3 h-3" /> Frete</p>
+                          <Segmented size="sm" value={freteGO} onChange={setFreteGO}
+                            options={(['CIF', 'FOB'] as Frete[]).map(v => ({ value: v, label: FRETE_LABELS[v] }))} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Essas condições aparecem para o fornecedor ao abrir o link.
+                  </p>
+                </section>
+
+                {/* Step 2 — destinatários */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center">2</span>
+                    <p className="text-xs font-display font-bold uppercase tracking-wider">Escolher fornecedores</p>
+                  </div>
+
+                  {fornecedores.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="Buscar fornecedor..."
+                            className="pl-9 h-9 text-sm"
+                          />
+                        </div>
+                        <Button variant="outline" size="sm" onClick={toggleAll} disabled={disponiveis.length === 0} className="h-9 text-xs shrink-0">
+                          {allSelected ? 'Limpar' : 'Todos'}
+                        </Button>
+                      </div>
+
+                      <div className="rounded-xl border border-border divide-y divide-border max-h-64 overflow-auto">
+                        {filteredFornecedores.length === 0 && (
+                          <p className="text-xs text-muted-foreground p-4 text-center">Nenhum fornecedor encontrado.</p>
+                        )}
+                        {filteredFornecedores.map(f => {
+                          const already = linkedNames.has(f.nome);
+                          const checked = selectedIds.includes(f.id);
+                          return (
+                            <label
+                              key={f.id}
+                              className={`flex items-center gap-3 px-3 py-2.5 transition-colors ${
+                                already ? 'opacity-60' : 'cursor-pointer hover:bg-muted/50'
+                              } ${checked ? 'bg-primary/5' : ''}`}
+                            >
+                              {already ? (
+                                <Check className="w-4 h-4 text-success shrink-0" />
+                              ) : (
+                                <Checkbox checked={checked} onCheckedChange={() => toggleOne(f.id)} />
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-display font-bold truncate">{f.nome}</p>
+                                {f.whatsapp && <p className="text-[10px] text-muted-foreground">{f.whatsapp}</p>}
+                              </div>
+                              {already && <span className="text-[10px] font-bold text-success shrink-0">Link gerado</span>}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Manual */}
+                  <div>
+                    <p className="text-[11px] font-bold text-muted-foreground mb-1.5">
+                      {fornecedores.length > 0 ? 'Ou adicionar empresa avulsa' : 'Nome da empresa'}
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        value={empresa}
+                        onChange={e => setEmpresa(e.target.value)}
+                        placeholder="Ex: Distribuidora ABC"
+                        className="h-9 text-sm"
+                        onKeyDown={e => e.key === 'Enter' && handleGerar()}
+                      />
+                      <Button onClick={handleGerar} disabled={loading || !empresa.trim()} size="sm" className="shrink-0 h-9">
+                        <UserPlus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              {/* Sticky footer action */}
+              <div className="border-t border-border bg-background/95 backdrop-blur px-6 py-3 space-y-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {resumo.map(r => (
+                    <span key={r} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{r}</span>
+                  ))}
+                </div>
+                <Button
+                  className="w-full font-display font-bold"
+                  disabled={loading || selectedIds.length === 0}
+                  onClick={handleGerarSelecionados}
                 >
-                  {ESTADO_LABELS[opt]}
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              O fornecedor verá apenas os campos de preço do(s) estado(s) selecionado(s).
-            </p>
-          </div>
-
-          {/* Tipo de preço por estado */}
-          <div>
-            <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
-              Tipo de preço solicitado
-            </p>
-            <div className="space-y-2">
-              {(selectedEstado === 'AMBOS' || selectedEstado === 'MT') && (
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground mb-1">MT (Mato Grosso)</p>
-                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                    {(['IPI_ST', 'NOTA'] as TipoPreco[]).map(opt => (
-                      <button key={opt} onClick={() => setTipoMT(opt)}
-                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-display font-bold transition-colors ${
-                          tipoMT === opt ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}>
-                        {TIPO_LABELS[opt]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {(selectedEstado === 'AMBOS' || selectedEstado === 'GO') && (
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground mb-1">GO (Goiás)</p>
-                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                    {(['IPI_ST', 'NOTA'] as TipoPreco[]).map(opt => (
-                      <button key={opt} onClick={() => setTipoGO(opt)}
-                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-display font-bold transition-colors ${
-                          tipoGO === opt ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}>
-                        {TIPO_LABELS[opt]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Essa informação será exibida ao fornecedor na página de resposta.
-            </p>
-          </div>
-
-          {/* Tipo de frete por estado */}
-          <div>
-            <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
-              Tipo de frete (CIF / FOB)
-            </p>
-            <div className="space-y-2">
-              {(selectedEstado === 'AMBOS' || selectedEstado === 'MT') && (
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground mb-1">MT (Mato Grosso)</p>
-                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                    {(['CIF', 'FOB'] as Frete[]).map(opt => (
-                      <button key={opt} onClick={() => setFreteMT(opt)}
-                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-display font-bold transition-colors ${
-                          freteMT === opt ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}>
-                        {FRETE_LABELS[opt]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {(selectedEstado === 'AMBOS' || selectedEstado === 'GO') && (
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground mb-1">GO (Goiás)</p>
-                  <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                    {(['CIF', 'FOB'] as Frete[]).map(opt => (
-                      <button key={opt} onClick={() => setFreteGO(opt)}
-                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-display font-bold transition-colors ${
-                          freteGO === opt ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}>
-                        {FRETE_LABELS[opt]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-
-          {/* Quick add from saved fornecedores */}
-          {fornecedores.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">Fornecedores salvos</p>
-                <Button variant="outline" size="sm" onClick={handleGerarTodos} disabled={loading} className="text-xs h-7">
-                  Gerar todos
+                  <Link2 className="w-4 h-4 mr-2" />
+                  {selectedIds.length > 0 ? `Gerar ${selectedIds.length} link(s)` : 'Selecione os fornecedores'}
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {fornecedores.map(f => {
-                  const alreadyGenerated = generatedLinks.some(l => l.empresa === f.nome) || existingLinks.some(l => l.empresa === f.nome);
-                  return (
-                    <button
-                      key={f.id}
-                      onClick={() => handleGerarFromFornecedor(f)}
-                      disabled={alreadyGenerated}
-                      className={`text-xs px-3 py-1.5 rounded-full font-display transition-colors ${
-                        alreadyGenerated
-                          ? 'bg-success/10 text-success cursor-default'
-                          : 'bg-muted text-foreground hover:bg-primary/10 hover:text-primary'
-                      }`}
-                    >
-                      {alreadyGenerated ? '✓ ' : '+ '}{f.nome}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            </>
           )}
 
-          {/* Manual add */}
-          <div>
-            <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
-              {fornecedores.length > 0 ? 'Ou adicionar manualmente' : 'Nome da empresa'}
-            </p>
-            <div className="flex gap-2">
-              <Input
-                value={empresa}
-                onChange={e => setEmpresa(e.target.value)}
-                placeholder="Ex: Distribuidora ABC"
-                onKeyDown={e => e.key === 'Enter' && handleGerar()}
-              />
-              <Button onClick={handleGerar} disabled={loading || !empresa.trim()} size="sm" className="shrink-0">
-                <UserPlus className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Newly generated links */}
-          {generatedLinks.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">
-                  Links gerados ({generatedLinks.length})
-                </p>
-                {generatedLinks.length > 1 && (
-                  <Button variant="outline" size="sm" onClick={handleCopyAll} className="text-xs h-7">
-                    <Copy className="w-3 h-3 mr-1" /> Copiar todos
-                  </Button>
-                )}
-              </div>
-              <div className="space-y-2">
-                {generatedLinks.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`border rounded-lg p-3 transition-colors ${
-                      item.copied ? 'border-success bg-success/5' : 'border-border'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <p className="font-display font-bold text-foreground text-sm truncate">{item.empresa}</p>
-                        {item.estados && item.estados !== 'AMBOS' && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold shrink-0">
-                            {item.estados}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {item.whatsapp && (
-                          <button
-                            onClick={() => handleShareWhatsAppGenerated(item)}
-                            className="p-1.5 rounded transition-colors text-green-600 hover:bg-green-500/10"
-                            title="Enviar via WhatsApp"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleCopy(idx)}
-                          className={`p-1.5 rounded transition-colors ${
-                            item.copied ? 'text-success' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                          }`}
-                        >
-                          {item.copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground break-all font-mono">{item.link}</p>
+          {/* ===== Tab: Enviados ===== */}
+          {tab === 'enviados' && (
+            <div className="flex-1 overflow-auto px-6 py-4 space-y-5">
+              {generatedLinks.length > 0 && (
+                <section>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider">
+                      Gerados agora ({generatedLinks.length})
+                    </p>
+                    {generatedLinks.length > 1 && (
+                      <Button variant="outline" size="sm" onClick={handleCopyAll} className="text-xs h-7">
+                        <Copy className="w-3 h-3 mr-1" /> Copiar todos
+                      </Button>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                  <div className="space-y-2">
+                    {generatedLinks.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={`border rounded-xl p-3 transition-colors ${item.copied ? 'border-success bg-success/5' : 'border-border'}`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <p className="font-display font-bold text-foreground text-sm truncate">{item.empresa}</p>
+                            {item.estados && item.estados !== 'AMBOS' && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold shrink-0">
+                                {item.estados}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {item.whatsapp && (
+                              <button
+                                onClick={() => handleShareWhatsAppGenerated(item)}
+                                className="p-1.5 rounded transition-colors text-green-600 hover:bg-green-500/10"
+                                title="Enviar via WhatsApp"
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleCopy(idx)}
+                              className={`p-1.5 rounded transition-colors ${
+                                item.copied ? 'text-success' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                              }`}
+                            >
+                              {item.copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground break-all font-mono">{item.link}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-          {/* Existing links - pending (resend) */}
-          {pendingExisting.length > 0 && (
-            <div>
-              <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                ⏳ Aguardando resposta ({pendingExisting.length})
-              </p>
-              <div className="space-y-2">
-                {pendingExisting.map(link => (
-                  <div key={link.id} className="border border-border rounded-lg p-3 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-display font-bold text-foreground text-sm truncate">{link.empresa}</p>
+              {pendingExisting.length > 0 && (
+                <section>
+                  <p className="flex items-center gap-1.5 text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                    <Clock className="w-3.5 h-3.5" /> Aguardando resposta ({pendingExisting.length})
+                  </p>
+                  <div className="space-y-2">
+                    {pendingExisting.map(link => (
+                      <div key={link.id} className="border border-border rounded-xl p-3 flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-display font-bold text-foreground text-sm truncate">{link.empresa}</p>
+                            {link.estados && link.estados !== 'AMBOS' && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-bold shrink-0">
+                                {link.estados}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">Ainda não respondeu</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {link.whatsapp && (
+                            <button
+                              onClick={() => handleShareWhatsApp(link.empresa, link.token, link.whatsapp)}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-display font-bold text-green-600 bg-green-500/10 hover:bg-green-500/20 transition-colors"
+                              title="Reenviar via WhatsApp"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                              <MessageCircle className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={async () => {
+                              const url = `${getPublicBaseUrl()}/cotacao/${link.token}`;
+                              await navigator.clipboard.writeText(url);
+                              toast.success('Link copiado!');
+                            }}
+                            className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            title="Copiar link"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setLinkToDelete(link)}
+                            className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Excluir link"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {respondedExisting.length > 0 && (
+                <section>
+                  <p className="flex items-center gap-1.5 text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                    <Check className="w-3.5 h-3.5 text-success" /> Respondidos ({respondedExisting.length})
+                  </p>
+                  <div className="space-y-1">
+                    {respondedExisting.map(link => (
+                      <div key={link.id} className="border border-success/20 bg-success/5 rounded-xl px-3 py-2 flex items-center gap-2">
+                        <Check className="w-4 h-4 text-success shrink-0" />
+                        <p className="font-display font-bold text-foreground text-sm truncate flex-1">{link.empresa}</p>
                         {link.estados && link.estados !== 'AMBOS' && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-bold shrink-0">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-bold shrink-0">
                             {link.estados}
                           </span>
                         )}
-                      </div>
-                      <p className="text-[10px] text-muted-foreground">Ainda não respondeu</p>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {link.whatsapp && (
                         <button
-                          onClick={() => handleShareWhatsApp(link.empresa, link.token, link.whatsapp)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-display font-bold text-green-600 bg-green-500/10 hover:bg-green-500/20 transition-colors"
-                          title="Reenviar via WhatsApp"
+                          onClick={() => setLinkToDelete(link)}
+                          className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                          title="Excluir link"
                         >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          <MessageCircle className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      )}
-                      <button
-                        onClick={async () => {
-                          const url = `${getPublicBaseUrl()}/cotacao/${link.token}`;
-                          await navigator.clipboard.writeText(url);
-                          toast.success('Link copiado!');
-                        }}
-                        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                        title="Copiar link"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setLinkToDelete(link)}
-                        className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        title="Excluir link"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </section>
+              )}
 
-          {/* Existing links - responded */}
-          {respondedExisting.length > 0 && (
-            <div>
-              <p className="text-xs font-display font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                ✅ Respondidos ({respondedExisting.length})
-              </p>
-              <div className="space-y-1">
-                {respondedExisting.map(link => (
-                  <div key={link.id} className="border border-success/20 bg-success/5 rounded-lg px-3 py-2 flex items-center gap-2">
-                    <Check className="w-4 h-4 text-success shrink-0" />
-                    <p className="font-display font-bold text-foreground text-sm truncate flex-1">{link.empresa}</p>
-                    {link.estados && link.estados !== 'AMBOS' && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-bold shrink-0">
-                        {link.estados}
-                      </span>
-                    )}
-                    <button
-                      onClick={() => setLinkToDelete(link)}
-                      className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-                      title="Excluir link"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+              {existingLinks.length === 0 && generatedLinks.length === 0 && (
+                <div className="text-center py-16">
+                  <Link2 className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">Nenhum link gerado ainda.</p>
+                  <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={() => setTab('novo')}>
+                    Gerar primeiro link
+                  </Button>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={!!linkToDelete} onOpenChange={(o) => !o && setLinkToDelete(null)}>
         <AlertDialogContent>
