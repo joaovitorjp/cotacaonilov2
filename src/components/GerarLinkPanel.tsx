@@ -345,7 +345,7 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                     </p>
                     <Segmented
                       value={selectedEstado}
-                      onChange={setSelectedEstado}
+                      onChange={(v) => setSelectedEstado(v as EstadoOption)}
                       options={(['AMBOS', 'MT', 'GO'] as EstadoOption[]).map(v => ({ value: v, label: ESTADO_LABELS[v] }))}
                     />
                   </div>
@@ -356,12 +356,12 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                         <p className="text-[11px] font-display font-bold text-primary">MT · Mato Grosso</p>
                         <div>
                           <p className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground mb-1"><Tag className="w-3 h-3" /> Tipo de preço</p>
-                          <Segmented size="sm" value={tipoMT} onChange={setTipoMT}
+                          <Segmented size="sm" value={tipoMT} onChange={(v) => setTipoMT(v as TipoPreco)}
                             options={(['IPI_ST', 'NOTA'] as TipoPreco[]).map(v => ({ value: v, label: TIPO_LABELS[v] }))} />
                         </div>
                         <div>
                           <p className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground mb-1"><Truck className="w-3 h-3" /> Frete</p>
-                          <Segmented size="sm" value={freteMT} onChange={setFreteMT}
+                          <Segmented size="sm" value={freteMT} onChange={(v) => setFreteMT(v as Frete)}
                             options={(['CIF', 'FOB'] as Frete[]).map(v => ({ value: v, label: FRETE_LABELS[v] }))} />
                         </div>
                       </div>
@@ -371,12 +371,12 @@ const GerarLinkPanel: React.FC<GerarLinkPanelProps> = ({ open, onOpenChange, lis
                         <p className="text-[11px] font-display font-bold text-primary">GO · Goiás</p>
                         <div>
                           <p className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground mb-1"><Tag className="w-3 h-3" /> Tipo de preço</p>
-                          <Segmented size="sm" value={tipoGO} onChange={setTipoGO}
+                          <Segmented size="sm" value={tipoGO} onChange={(v) => setTipoGO(v as TipoPreco)}
                             options={(['IPI_ST', 'NOTA'] as TipoPreco[]).map(v => ({ value: v, label: TIPO_LABELS[v] }))} />
                         </div>
                         <div>
                           <p className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground mb-1"><Truck className="w-3 h-3" /> Frete</p>
-                          <Segmented size="sm" value={freteGO} onChange={setFreteGO}
+                          <Segmented size="sm" value={freteGO} onChange={(v) => setFreteGO(v as Frete)}
                             options={(['CIF', 'FOB'] as Frete[]).map(v => ({ value: v, label: FRETE_LABELS[v] }))} />
                         </div>
                       </div>
