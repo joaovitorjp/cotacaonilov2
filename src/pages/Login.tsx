@@ -81,7 +81,7 @@ const Login = () => {
       <div className="relative z-10 w-full max-w-sm mx-auto p-8 rounded-3xl bg-white/80 backdrop-blur-2xl border border-white/50 shadow-2xl shadow-primary/5">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
-            Nilo Atacadista
+            ADR-SYSTEM
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isSignUp ? 'Criar novo acesso' : 'Acesso administrativo'}

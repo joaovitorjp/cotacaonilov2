@@ -7,7 +7,7 @@ function createWindow() {
     width: 1400,
     height: 900,
     autoHideMenuBar: true,
-    title: 'Nilo Atacadista - Cotações',
+    title: 'ADR-SYSTEM - Cotações',
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
   win.loadURL(APP_URL);

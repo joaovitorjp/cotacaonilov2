@@ -398,7 +398,7 @@ const CotacaoResposta = () => {
       )}
       <header className="bg-primary text-primary-foreground px-4 sm:px-6 py-4 shrink-0 shadow-md">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight">Nilo Atacadista</h1>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight">ADR-SYSTEM</h1>
           <p className="text-primary-foreground/80 text-xs sm:text-sm mt-0.5">
             Cotação: {listaNome}
           </p>
