@@ -265,7 +265,7 @@ const Index = () => {
     const goEmpresas = resps.map(r => r.empresa).filter(e => Object.keys(goByEmp[e]).length > 0);
 
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'Nilo Atacadista';
+    wb.creator = 'ADR-SYSTEM';
     wb.created = new Date();
     const ws = wb.addWorksheet('Cotação', {
       views: [{ state: 'frozen', xSplit: 3, ySplit: 4 }],
@@ -606,7 +606,7 @@ const Index = () => {
             </button>
             <div>
               <h1 className="text-lg font-display font-bold text-slate-900 tracking-tight cursor-pointer" onClick={handleBackToDashboard}>
-                Nilo Atacadista
+                ADR-SYSTEM
               </h1>
               <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Gestão de Cotações</p>
             </div>

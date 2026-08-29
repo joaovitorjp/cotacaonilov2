@@ -53,7 +53,7 @@ export function AuthPage({
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
             <AtSignIcon className="w-5 h-5 text-white" />
           </div>
-          Nilo Atacadista
+          ADR-SYSTEM
         </div>
 
         <div className="max-w-md">
@@ -65,12 +65,12 @@ export function AuthPage({
             <p className="text-3xl font-medium leading-tight mb-6">
               “Esta plataforma nos ajudou a economizar tempo e atender nossos fornecedores mais rápido do que nunca.”
             </p>
-            <p className="text-lg text-slate-400">~ Equipe Nilo</p>
+            <p className="text-lg text-slate-400">~ Equipe ADR-SYSTEM</p>
           </motion.div>
         </div>
 
         <div className="flex items-center gap-4 text-sm text-slate-500">
-          <span>© 2026 Nilo Atacadista</span>
+          <span>© 2026 ADR-SYSTEM</span>
         </div>
       </div>
 
@@ -89,7 +89,7 @@ export function AuthPage({
               <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
                 <AtSignIcon className="w-5 h-5 text-white" />
               </div>
-              Nilo Atacadista
+              ADR-SYSTEM
             </div>
 
             <div className="space-y-2">
