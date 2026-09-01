@@ -13,6 +13,7 @@ import { useUnreadChat } from '@/hooks/useUnreadChat';
 import PerfilPanel from '@/components/PerfilPanel';
 import { useAvatar } from '@/hooks/useAvatar';
 import HeaderAvatarButton from '@/components/HeaderAvatarButton';
+import adrLogo from '@/assets/adr-logo.jpeg.asset.json';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
@@ -601,8 +602,8 @@ const Index = () => {
         {/* Modern Header */}
         <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <button onClick={handleBackToDashboard} className="bg-primary/10 p-2 rounded-xl">
-              <Package className="w-5 h-5 text-primary" />
+            <button onClick={handleBackToDashboard} className="p-1 rounded-xl" title="ADR-SYSTEM">
+              <img src={adrLogo.url} alt="ADR-SYSTEM" className="h-9 w-9 rounded-lg object-contain" />
             </button>
             <div>
               <h1 className="text-lg font-display font-bold text-slate-900 tracking-tight cursor-pointer" onClick={handleBackToDashboard}>

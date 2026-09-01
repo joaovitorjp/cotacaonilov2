@@ -1,4 +1,5 @@
 import type jsPDF from 'jspdf';
+import { LOGO_BASE64 } from './pdf-logo';
 
 // =========================================================================
 // PDF Design System — paleta única, tipografia consistente e componentes
@@ -55,21 +56,27 @@ export function drawHeader(doc: jsPDF, opts: HeaderOptions): number {
   doc.setFillColor(...PDF_COLORS.accent);
   doc.rect(0, H, pw, 1.2, 'F');
 
+  // Logo à esquerda
+  try {
+    doc.addImage(LOGO_BASE64, 'JPEG', 11, 5, 22, 22);
+  } catch { /* logo opcional */ }
+  const tx = 38; // textos deslocados para a direita da logo
+
   // Marca à esquerda
   doc.setTextColor(...PDF_COLORS.white);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.text(BRAND_NAME.toUpperCase(), 14, 9);
+  doc.text(BRAND_NAME.toUpperCase(), tx, 9);
 
   // Título
   doc.setFontSize(17);
-  doc.text(opts.title, 14, 19);
+  doc.text(opts.title, tx, 19);
 
   // Subtítulo / metadados
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  if (opts.subtitle) doc.text(opts.subtitle, 14, 25.5);
-  if (opts.meta) doc.text(opts.meta, 14, 30);
+  if (opts.subtitle) doc.text(opts.subtitle, tx, 25.5);
+  if (opts.meta) doc.text(opts.meta, tx, 30);
 
   // Data à direita
   if (opts.dateRight !== false) {

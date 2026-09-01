@@ -7,6 +7,7 @@ import { CheckCircle2, AlertCircle, Loader2, Package, Send, Search, FileDown } f
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { drawHeader, drawChips, drawSectionTitle, drawFooter, tableStyles, PDF_COLORS } from '@/lib/pdf-theme';
+import adrLogo from '@/assets/adr-logo.jpeg.asset.json';
 
 interface Produto {
   codigo_interno: string;
